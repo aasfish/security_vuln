@@ -2,13 +2,16 @@
 
 {% block content %}
 <div class="container-fluid px-4">
-    <h1 class="h4 mb-4">Comparación de Escaneos</h1>
+    <h1 class="h4 mb-4">COMPARACIÓN DE ESCANEOS</h1>
 
     <div class="card mb-4">
         <div class="card-body">
             <form class="row g-3" method="get">
                 <div class="col-md-4">
-                    <label class="form-label">Sede</label>
+                    <label class="form-label">
+                        <i class="bi bi-building me-2"></i>
+                        Sede
+                    </label>
                     <select class="form-select" name="sede" onchange="this.form.submit()">
                         {% for s in sedes %}
                         <option value="{{ s }}" {% if s == sede_seleccionada %}selected{% endif %}>{{ s }}</option>
@@ -17,7 +20,10 @@
                 </div>
                 {% if sede_seleccionada %}
                 <div class="col-md-4">
-                    <label class="form-label">Primer Escaneo</label>
+                    <label class="form-label">
+                        <i class="bi bi-calendar me-2"></i>
+                        Primer Escaneo
+                    </label>
                     <select class="form-select" name="primer_escaneo" onchange="this.form.submit()">
                         {% for e in escaneos %}
                         <option value="{{ e.fecha_escaneo.strftime('%Y-%m-%d') }}" {% if e.fecha_escaneo.strftime('%Y-%m-%d') == primer_escaneo %}selected{% endif %}>
@@ -27,7 +33,10 @@
                     </select>
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label">Segundo Escaneo</label>
+                    <label class="form-label">
+                        <i class="bi bi-calendar me-2"></i>
+                        Segundo Escaneo
+                    </label>
                     <select class="form-select" name="segundo_escaneo" onchange="this.form.submit()">
                         {% for e in escaneos %}
                         <option value="{{ e.fecha_escaneo.strftime('%Y-%m-%d') }}" {% if e.fecha_escaneo.strftime('%Y-%m-%d') == segundo_escaneo %}selected{% endif %}>
@@ -55,31 +64,25 @@
         </div>
     </div>
 
-    <div class="card">
+    <div class="card bg-dark">
         <div class="card-body">
             <h5 class="card-title h6 mb-4">Resumen de Cambios</h5>
-            <div class="table-responsive">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Total Anterior</th>
-                            <th>Total Actual</th>
-                            <th>Variación</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>{{ resultados.primer_escaneo.total }}</td>
-                            <td>{{ resultados.segundo_escaneo.total }}</td>
-                            <td>
-                                <span class="{% if resultados.variacion.total > 0 %}text-danger{% elif resultados.variacion.total < 0 %}text-success{% else %}text-muted{% endif %}">
-                                    {% if resultados.variacion.total > 0 %}+{% endif %}{{ resultados.variacion.total }}
-                                    ({{ "%.1f"|format(resultados.variacion.porcentaje) }}%)
-                                </span>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div class="row">
+                <div class="col-md-4 text-center">
+                    <p class="text-muted mb-1">Total Anterior</p>
+                    <h3 class="mb-0">{{ resultados.primer_escaneo.total }}</h3>
+                </div>
+                <div class="col-md-4 text-center">
+                    <p class="text-muted mb-1">Total Actual</p>
+                    <h3 class="mb-0">{{ resultados.segundo_escaneo.total }}</h3>
+                </div>
+                <div class="col-md-4 text-center">
+                    <p class="text-muted mb-1">Variación</p>
+                    <h3 class="mb-0 {% if resultados.variacion.total > 0 %}text-danger{% elif resultados.variacion.total < 0 %}text-success{% else %}text-muted{% endif %}">
+                        {% if resultados.variacion.total > 0 %}+{% endif %}{{ resultados.variacion.total }}
+                        <small>({{ "%.1f"|format(resultados.variacion.porcentaje) }}%)</small>
+                    </h3>
+                </div>
             </div>
         </div>
     </div>
@@ -116,14 +119,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     data: primerDatos,
                     backgroundColor: 'rgba(103, 119, 239, 0.8)',
                     borderColor: 'rgba(103, 119, 239, 1)',
-                    borderWidth: 1
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    maxBarThickness: 35
                 },
                 {
                     label: '{{ sede_seleccionada }} ({{ resultados.segundo_escaneo.fecha }})',
                     data: segundoDatos,
                     backgroundColor: 'rgba(145, 215, 172, 0.8)',
                     borderColor: 'rgba(145, 215, 172, 1)',
-                    borderWidth: 1
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    maxBarThickness: 35
                 }
             ]
         },
