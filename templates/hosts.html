@@ -5,6 +5,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="h4 mb-0">Resumen de Hosts</h2>
         <div class="d-flex gap-2">
+            {% if resultados %}
             <div class="dropdown">
                 <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="bi bi-download"></i> Exportar
@@ -18,99 +19,110 @@
                     </a></li>
                 </ul>
             </div>
+            {% endif %}
             {% include 'components/filtros.html' %}
         </div>
     </div>
 
-    {% for resultado in resultados %}
-    <div class="card mb-4">
-        <div class="card-header bg-dark bg-gradient">
-            <div>
-                <h5 class="mb-0 text-white">Sede: {{ resultado.sede }}</h5>
-                <small class="text-muted">Fecha de escaneo: {{ resultado.fecha_escaneo }}</small>
+    {% if resultados %}
+        {% for resultado in resultados %}
+        <div class="card mb-4">
+            <div class="card-header bg-dark bg-gradient">
+                <div>
+                    <h5 class="mb-0 text-white">Sede: {{ resultado.sede }}</h5>
+                    <small class="text-muted">Fecha de escaneo: {{ resultado.fecha_escaneo }}</small>
+                </div>
             </div>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0" id="hostsTable">
-                    <thead>
-                        <tr>
-                            <th style="width: 25%">
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="sortable" data-column="0">Host 
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="hostsTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 25%">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="sortable" data-column="0">Host 
+                                            <i class="bi bi-arrow-down-up text-muted ms-1" style="font-size: 0.75rem;"></i>
+                                        </span>
+                                        <input type="text" class="form-control form-control-sm" 
+                                               placeholder="Filtrar..." style="width: 100px">
+                                    </div>
+                                </th>
+                                <th class="text-center" style="width: 15%">
+                                    <span class="sortable" data-column="1">Críticas
                                         <i class="bi bi-arrow-down-up text-muted ms-1" style="font-size: 0.75rem;"></i>
                                     </span>
-                                    <input type="text" class="form-control form-control-sm" 
-                                           placeholder="Filtrar..." style="width: 100px">
-                                </div>
-                            </th>
-                            <th class="text-center" style="width: 15%">
-                                <span class="sortable" data-column="1">Críticas
-                                    <i class="bi bi-arrow-down-up text-muted ms-1" style="font-size: 0.75rem;"></i>
-                                </span>
-                            </th>
-                            <th class="text-center" style="width: 15%">
-                                <span class="sortable" data-column="2">Altas
-                                    <i class="bi bi-arrow-down-up text-muted ms-1" style="font-size: 0.75rem;"></i>
-                                </span>
-                            </th>
-                            <th class="text-center" style="width: 15%">
-                                <span class="sortable" data-column="3">Medias
-                                    <i class="bi bi-arrow-down-up text-muted ms-1" style="font-size: 0.75rem;"></i>
-                                </span>
-                            </th>
-                            <th class="text-center" style="width: 15%">
-                                <span class="sortable" data-column="4">Bajas
-                                    <i class="bi bi-arrow-down-up text-muted ms-1" style="font-size: 0.75rem;"></i>
-                                </span>
-                            </th>
-                            <th class="text-center" style="width: 15%">
-                                <span class="sortable" data-column="5">Total
-                                    <i class="bi bi-arrow-down-up text-muted ms-1" style="font-size: 0.75rem;"></i>
-                                </span>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for ip, host in resultado.hosts_detalle.items() %}
-                        {% set vulnerabilidades = { 'Critical': 0, 'High': 0, 'Medium': 0, 'Low': 0 } %}
-                        {% for vuln in host.vulnerabilidades %}
-                            {% if vuln.nivel_amenaza == 'Critical' %}
-                                {% set _ = vulnerabilidades.update({'Critical': vulnerabilidades.Critical + 1}) %}
-                            {% elif vuln.nivel_amenaza == 'High' %}
-                                {% set _ = vulnerabilidades.update({'High': vulnerabilidades.High + 1}) %}
-                            {% elif vuln.nivel_amenaza == 'Medium' %}
-                                {% set _ = vulnerabilidades.update({'Medium': vulnerabilidades.Medium + 1}) %}
-                            {% elif vuln.nivel_amenaza == 'Low' %}
-                                {% set _ = vulnerabilidades.update({'Low': vulnerabilidades.Low + 1}) %}
-                            {% endif %}
-                        {% endfor %}
-                        <tr>
-                            <td>
-                                <div class="d-flex flex-column">
-                                    <span class="fw-medium">{{ ip }}</span>
-                                    {% if host.nombre_host %}
-                                    <small class="text-muted">{{ host.nombre_host }}</small>
-                                    {% endif %}
-                                </div>
-                            </td>
-                            <td class="text-center"><span class="badge bg-dark">{{ vulnerabilidades.Critical }}</span></td>
-                            <td class="text-center"><span class="badge bg-danger">{{ vulnerabilidades.High }}</span></td>
-                            <td class="text-center"><span class="badge bg-warning">{{ vulnerabilidades.Medium }}</span></td>
-                            <td class="text-center"><span class="badge bg-info">{{ vulnerabilidades.Low }}</span></td>
-                            <td class="text-center">
-                                <span class="badge bg-primary">
-                                    {{ vulnerabilidades.Critical + vulnerabilidades.High + vulnerabilidades.Medium + vulnerabilidades.Low }}
-                                </span>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                                </th>
+                                <th class="text-center" style="width: 15%">
+                                    <span class="sortable" data-column="2">Altas
+                                        <i class="bi bi-arrow-down-up text-muted ms-1" style="font-size: 0.75rem;"></i>
+                                    </span>
+                                </th>
+                                <th class="text-center" style="width: 15%">
+                                    <span class="sortable" data-column="3">Medias
+                                        <i class="bi bi-arrow-down-up text-muted ms-1" style="font-size: 0.75rem;"></i>
+                                    </span>
+                                </th>
+                                <th class="text-center" style="width: 15%">
+                                    <span class="sortable" data-column="4">Bajas
+                                        <i class="bi bi-arrow-down-up text-muted ms-1" style="font-size: 0.75rem;"></i>
+                                    </span>
+                                </th>
+                                <th class="text-center" style="width: 15%">
+                                    <span class="sortable" data-column="5">Total
+                                        <i class="bi bi-arrow-down-up text-muted ms-1" style="font-size: 0.75rem;"></i>
+                                    </span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ip, host in resultado.hosts_detalle.items() %}
+                            {% set vulnerabilidades = { 'Critical': 0, 'High': 0, 'Medium': 0, 'Low': 0 } %}
+                            {% for vuln in host.vulnerabilidades %}
+                                {% if vuln.nivel_amenaza == 'Critical' %}
+                                    {% set _ = vulnerabilidades.update({'Critical': vulnerabilidades.Critical + 1}) %}
+                                {% elif vuln.nivel_amenaza == 'High' %}
+                                    {% set _ = vulnerabilidades.update({'High': vulnerabilidades.High + 1}) %}
+                                {% elif vuln.nivel_amenaza == 'Medium' %}
+                                    {% set _ = vulnerabilidades.update({'Medium': vulnerabilidades.Medium + 1}) %}
+                                {% elif vuln.nivel_amenaza == 'Low' %}
+                                    {% set _ = vulnerabilidades.update({'Low': vulnerabilidades.Low + 1}) %}
+                                {% endif %}
+                            {% endfor %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex flex-column">
+                                        <span class="fw-medium">{{ ip }}</span>
+                                        {% if host.nombre_host %}
+                                        <small class="text-muted">{{ host.nombre_host }}</small>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td class="text-center"><span class="badge bg-dark">{{ vulnerabilidades.Critical }}</span></td>
+                                <td class="text-center"><span class="badge bg-danger">{{ vulnerabilidades.High }}</span></td>
+                                <td class="text-center"><span class="badge bg-warning">{{ vulnerabilidades.Medium }}</span></td>
+                                <td class="text-center"><span class="badge bg-info">{{ vulnerabilidades.Low }}</span></td>
+                                <td class="text-center">
+                                    <span class="badge bg-primary">
+                                        {{ vulnerabilidades.Critical + vulnerabilidades.High + vulnerabilidades.Medium + vulnerabilidades.Low }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
-    </div>
-    {% endfor %}
+        {% endfor %}
+    {% else %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-info-circle fs-1 text-muted mb-3"></i>
+                <h5 class="text-muted">No hay escaneos disponibles</h5>
+                <p class="text-muted mb-0">No se encontraron escaneos para los filtros seleccionados.</p>
+            </div>
+        </div>
+    {% endif %}
 </div>
 {% endblock %}
 
@@ -123,7 +135,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let isAscending = true;
 
     // Configurar filtro de host
-    hostFilter.addEventListener('input', function() {
+    hostFilter && hostFilter.addEventListener('input', function() {
         filterTable(this.value);
     });
 

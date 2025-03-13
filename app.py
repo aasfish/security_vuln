@@ -90,8 +90,17 @@ def filtrar_resultados(sede=None, fecha_inicio=None, fecha_fin=None, riesgo=None
     return resultados
 
 def obtener_sedes():
-    """Obtiene la lista única de sedes activas"""
-    return sorted([sede.nombre for sede in Sede.query.filter_by(activa=True).all()])
+    """Obtiene la lista única de sedes activas que tienen escaneos"""
+    # Query para obtener solo las sedes que tienen escaneos
+    sql = text("""
+        SELECT DISTINCT s.nombre
+        FROM sedes s
+        JOIN escaneos e ON e.sede_id = s.id
+        WHERE s.activa = true
+        ORDER BY s.nombre
+    """)
+    result = db.session.execute(sql)
+    return [row[0] for row in result]
 
 @app.route('/')
 def index():
