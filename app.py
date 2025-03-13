@@ -2,87 +2,105 @@ import os
 import logging
 from datetime import datetime
 from flask import Flask, render_template, request, flash, redirect, url_for, send_from_directory, jsonify
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import DeclarativeBase
 from werkzeug.utils import secure_filename
 from parser import analizar_vulnerabilidades
 
-# Configuración de logging más detallado
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-app = Flask(__name__, static_folder='static')
-app.secret_key = os.environ.get("SESSION_SECRET", "clave-secreta-desarrollo")
+class Base(DeclarativeBase):
+    pass
+
+db = SQLAlchemy(model_class=Base)
+app = Flask(__name__)
+app.secret_key = os.environ.get("SESSION_SECRET")
+
+# configure the database, relative to the app instance folder
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_recycle": 300,
+    "pool_pre_ping": True,
+}
+# initialize the app with the extension, flask-sqlalchemy >= 3.0.x
+db.init_app(app)
+
+with app.app_context():
+    # Make sure to import the models here or their tables won't be created
+    import models  # noqa: F401
+
+    db.create_all()
 
 # Configuración para subida de archivos
 ALLOWED_EXTENSIONS = {'txt'}
 UPLOAD_FOLDER = '/tmp'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# Almacenamiento temporal de resultados (en producción usar una base de datos)
-resultados_analisis = []
-estados_vulnerabilidades = {}  # {(ip, oid): estado}
-
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def filtrar_resultados(resultados, sede=None, fecha_inicio=None, fecha_fin=None, riesgo=None):
+def filtrar_resultados(sede=None, fecha_inicio=None, fecha_fin=None, riesgo=None):
     """Filtra los resultados según los criterios especificados"""
-    if not any([sede, fecha_inicio, fecha_fin, riesgo]):
-        return resultados
+    from models import Escaneo, Host, Vulnerabilidad
 
-    filtrados = []
-    for resultado in resultados:
-        # Filtrar por sede
-        if sede and resultado['sede'].lower() != sede.lower():
-            continue
+    query = Escaneo.query
 
-        # Convertir fecha del resultado a objeto datetime
-        fecha_escaneo = datetime.strptime(resultado['fecha_escaneo'], '%Y-%m-%d')
+    if sede:
+        query = query.filter(Escaneo.sede == sede)
 
-        # Filtrar por fecha inicio
-        if fecha_inicio:
-            fecha_inicio_dt = datetime.strptime(fecha_inicio, '%Y-%m-%d')
-            if fecha_escaneo < fecha_inicio_dt:
-                continue
+    if fecha_inicio:
+        query = query.filter(Escaneo.fecha_escaneo >= datetime.strptime(fecha_inicio, '%Y-%m-%d').date())
 
-        # Filtrar por fecha fin
-        if fecha_fin:
-            fecha_fin_dt = datetime.strptime(fecha_fin, '%Y-%m-%d')
-            if fecha_escaneo > fecha_fin_dt:
-                continue
+    if fecha_fin:
+        query = query.filter(Escaneo.fecha_escaneo <= datetime.strptime(fecha_fin, '%Y-%m-%d').date())
 
-        # Si hay filtro de riesgo, clonar y filtrar vulnerabilidades
-        if riesgo and riesgo != 'all':
-            resultado_filtrado = resultado.copy()
-            hosts_filtrados = {}
+    escaneos = query.all()
+    resultados = []
 
-            for ip, host in resultado['hosts_detalle'].items():
-                vulns_filtradas = [v for v in host['vulnerabilidades'] if v['nivel_amenaza'] == riesgo]
-                if vulns_filtradas:
-                    hosts_filtrados[ip] = host.copy()
-                    hosts_filtrados[ip]['vulnerabilidades'] = vulns_filtradas
+    for escaneo in escaneos:
+        hosts_detalle = {}
+        for host in escaneo.hosts:
+            vulns = host.vulnerabilidades
+            if riesgo and riesgo != 'all':
+                vulns = [v for v in vulns if v.nivel_amenaza == riesgo]
+                if not vulns:
+                    continue
 
-            if hosts_filtrados:
-                resultado_filtrado['hosts_detalle'] = hosts_filtrados
-                filtrados.append(resultado_filtrado)
-        else:
-            filtrados.append(resultado)
+            hosts_detalle[host.ip] = {
+                'nombre_host': host.nombre_host,
+                'vulnerabilidades': [{
+                    'nvt': v.nvt,
+                    'oid': v.oid,
+                    'nivel_amenaza': v.nivel_amenaza,
+                    'cvss': v.cvss,
+                    'puerto': v.puerto,
+                    'resumen': v.resumen,
+                    'impacto': v.impacto,
+                    'solucion': v.solucion,
+                    'metodo_deteccion': v.metodo_deteccion,
+                    'referencias': v.referencias,
+                    'estado': v.estado
+                } for v in vulns]
+            }
 
-    return filtrados
+        if hosts_detalle:
+            resultados.append({
+                'sede': escaneo.sede,
+                'fecha_escaneo': escaneo.fecha_escaneo.strftime('%Y-%m-%d'),
+                'hosts_detalle': hosts_detalle
+            })
+
+    return resultados
 
 def obtener_sedes():
     """Obtiene la lista única de sedes de los resultados"""
-    return sorted(list(set(r['sede'] for r in resultados_analisis)))
+    from models import Escaneo
+    return sorted(list(set(r.sede for r in Escaneo.query.all())))
 
 @app.route('/')
 def index():
     return render_template('index.html', today=datetime.now().strftime('%Y-%m-%d'))
-
-@app.route('/static/<path:filename>')
-def serve_static(filename):
-    return send_from_directory(app.static_folder, filename)
 
 @app.route('/analizar', methods=['POST'])
 def analizar():
@@ -111,17 +129,7 @@ def analizar():
         archivo.save(filepath)
         logger.debug(f"Archivo guardado en: {filepath}")
 
-        # Leer contenido del archivo para debugging
-        with open(filepath, 'r', encoding='utf-8') as f:
-            contenido = f.read()
-            logger.debug(f"Contenido del archivo ({len(contenido)} caracteres):\n{contenido[:500]}...")
-
-        # Analizar el archivo
-        logger.debug("Iniciando análisis de vulnerabilidades")
         resultado = analizar_vulnerabilidades(filepath)
-        logger.debug(f"Resultado del análisis: {resultado}")
-
-        # Eliminar archivo temporal
         os.remove(filepath)
 
         if not resultado or 'hosts_detalle' not in resultado:
@@ -129,22 +137,41 @@ def analizar():
             flash('No se encontraron vulnerabilidades para analizar en el archivo', 'warning')
             return redirect(url_for('index'))
 
-        # Agregar información adicional al resultado
-        resultado['sede'] = sede
-        resultado['fecha_escaneo'] = fecha_escaneo
+        # Crear nuevo escaneo en la base de datos
+        from models import Escaneo, Host, Vulnerabilidad
 
-        # Actualizar estados existentes para las vulnerabilidades
-        for ip, host in resultado['hosts_detalle'].items():
-            for vuln in host['vulnerabilidades']:
-                key = (ip, vuln['oid'])
-                if key in estados_vulnerabilidades:
-                    vuln['estado'] = estados_vulnerabilidades[key]
-                else:
-                    vuln['estado'] = 'ACTIVA'
+        escaneo = Escaneo(
+            sede=sede,
+            fecha_escaneo=datetime.strptime(fecha_escaneo, '%Y-%m-%d').date()
+        )
+        db.session.add(escaneo)
 
-        # Almacenar resultado
-        resultados_analisis.append(resultado)
+        for ip, host_data in resultado['hosts_detalle'].items():
+            host = Host(
+                ip=ip,
+                nombre_host=host_data['nombre_host'],
+                escaneo=escaneo
+            )
+            db.session.add(host)
 
+            for vuln_data in host_data['vulnerabilidades']:
+                vulnerabilidad = Vulnerabilidad(
+                    oid=vuln_data['oid'],
+                    nvt=vuln_data['nvt'],
+                    nivel_amenaza=vuln_data['nivel_amenaza'],
+                    cvss=vuln_data['cvss'],
+                    puerto=vuln_data['puerto'],
+                    resumen=vuln_data['resumen'],
+                    impacto=vuln_data['impacto'],
+                    solucion=vuln_data['solucion'],
+                    metodo_deteccion=vuln_data['metodo_deteccion'],
+                    referencias=vuln_data['referencias'],
+                    estado='ACTIVA',
+                    host=host
+                )
+                db.session.add(vulnerabilidad)
+
+        db.session.commit()
         logger.info(f"Análisis completado exitosamente para {filename}")
         return redirect(url_for('hosts'))
 
@@ -163,17 +190,27 @@ def actualizar_estado():
     if not all([ip, oid, nuevo_estado]):
         return jsonify({'success': False, 'error': 'Datos incompletos'}), 400
 
-    # Actualizar el estado en el almacenamiento temporal
-    estados_vulnerabilidades[(ip, oid)] = nuevo_estado
+    try:
+        from models import Host, Vulnerabilidad
 
-    # Actualizar el estado en los resultados
-    for resultado in resultados_analisis:
-        if ip in resultado['hosts_detalle']:
-            for vuln in resultado['hosts_detalle'][ip]['vulnerabilidades']:
-                if vuln['oid'] == oid:
-                    vuln['estado'] = nuevo_estado
+        # Buscar la vulnerabilidad por IP y OID
+        host = Host.query.filter_by(ip=ip).first()
+        if host:
+            vulnerabilidad = Vulnerabilidad.query.filter_by(
+                host_id=host.id,
+                oid=oid
+            ).first()
 
-    return jsonify({'success': True})
+            if vulnerabilidad:
+                vulnerabilidad.estado = nuevo_estado
+                db.session.commit()
+                return jsonify({'success': True})
+
+        return jsonify({'success': False, 'error': 'Vulnerabilidad no encontrada'}), 404
+
+    except Exception as e:
+        logger.error(f"Error al actualizar estado: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/hosts')
 def hosts():
@@ -182,7 +219,7 @@ def hosts():
     fecha_fin = request.args.get('fecha_fin')
     riesgo = request.args.get('riesgo')
 
-    resultados_filtrados = filtrar_resultados(resultados_analisis, sede, fecha_inicio, fecha_fin, riesgo)
+    resultados_filtrados = filtrar_resultados(sede, fecha_inicio, fecha_fin, riesgo)
 
     return render_template('hosts.html', 
                          resultados=resultados_filtrados,
@@ -198,7 +235,7 @@ def vulnerabilidades():
     fecha_fin = request.args.get('fecha_fin')
     riesgo = request.args.get('riesgo')
 
-    resultados_filtrados = filtrar_resultados(resultados_analisis, sede, fecha_inicio, fecha_fin, riesgo)
+    resultados_filtrados = filtrar_resultados(sede, fecha_inicio, fecha_fin, riesgo)
 
     return render_template('vulnerabilidades.html', 
                          resultados=resultados_filtrados,
@@ -214,7 +251,7 @@ def comparativa():
     fecha_fin = request.args.get('fecha_fin')
     riesgo = request.args.get('riesgo')
 
-    resultados_filtrados = filtrar_resultados(resultados_analisis, sede, fecha_inicio, fecha_fin, riesgo)
+    resultados_filtrados = filtrar_resultados(sede, fecha_inicio, fecha_fin, riesgo)
 
     return render_template('comparativa.html', 
                          resultados=resultados_filtrados,
@@ -222,3 +259,7 @@ def comparativa():
                          sede_seleccionada=sede,
                          fecha_inicio=fecha_inicio,
                          fecha_fin=fecha_fin)
+
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    return send_from_directory(app.static_folder, filename)
