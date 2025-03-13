@@ -132,26 +132,28 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     let criticidadChart, estadoChart, tendenciasChart;
+
+    // Colores para los gráficos
     const colors = {
         critical: {
             border: 'rgba(220, 53, 69, 1)',
-            background: 'rgba(220, 53, 69, 0.8)'
+            background: 'rgba(220, 53, 69, 0.1)'
         },
         high: {
             border: 'rgba(255, 193, 7, 1)',
-            background: 'rgba(255, 193, 7, 0.8)'
+            background: 'rgba(255, 193, 7, 0.1)'
         },
         medium: {
             border: 'rgba(255, 159, 64, 1)',
-            background: 'rgba(255, 159, 64, 0.8)'
+            background: 'rgba(255, 159, 64, 0.1)'
         },
         low: {
             border: 'rgba(40, 167, 69, 1)',
-            background: 'rgba(40, 167, 69, 0.8)'
+            background: 'rgba(40, 167, 69, 0.1)'
         }
     };
 
-    // Initialize criticidad and estado charts
+    // Inicializar gráficos de criticidad y estado
     function initializeCharts() {
         // Criticidad Chart
         const criticidadCtx = document.getElementById('criticidadChart');
@@ -237,16 +239,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Initialize all charts
-    initializeCharts();
-
-    // Function to update tendencias chart
-    async function updateTendenciasChart() {
+    // Función para actualizar el gráfico de tendencias
+    async function updateTendencias() {
         const tendenciasCtx = document.getElementById('tendenciasChart');
-        if (!tendenciasCtx) return;
+        if (!tendenciasCtx) {
+            console.error('No se encontró el elemento canvas para tendencias');
+            return;
+        }
 
         try {
-            // Get current filter values
             const sede = document.querySelector('select[name="sede"]').value;
             const fechaInicio = document.querySelector('input[name="fecha_inicio"]').value;
             const fechaFin = document.querySelector('input[name="fecha_fin"]').value;
@@ -260,12 +261,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch(`/tendencias?${params}`);
             const data = await response.json();
 
-            // Destroy existing chart if it exists
             if (tendenciasChart) {
                 tendenciasChart.destroy();
             }
 
-            // Create new chart
             tendenciasChart = new Chart(tendenciasCtx, {
                 type: 'line',
                 data: {
@@ -276,28 +275,32 @@ document.addEventListener('DOMContentLoaded', function() {
                             data: data.map(d => d.Critical || 0),
                             borderColor: colors.critical.border,
                             backgroundColor: colors.critical.background,
-                            fill: true
+                            fill: true,
+                            tension: 0.4
                         },
                         {
                             label: 'Altas',
                             data: data.map(d => d.High || 0),
                             borderColor: colors.high.border,
                             backgroundColor: colors.high.background,
-                            fill: true
+                            fill: true,
+                            tension: 0.4
                         },
                         {
                             label: 'Medias',
                             data: data.map(d => d.Medium || 0),
                             borderColor: colors.medium.border,
                             backgroundColor: colors.medium.background,
-                            fill: true
+                            fill: true,
+                            tension: 0.4
                         },
                         {
                             label: 'Bajas',
                             data: data.map(d => d.Low || 0),
                             borderColor: colors.low.border,
                             backgroundColor: colors.low.background,
-                            fill: true
+                            fill: true,
+                            tension: 0.4
                         }
                     ]
                 },
@@ -305,12 +308,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     responsive: true,
                     maintainAspectRatio: false,
                     interaction: {
-                        mode: 'index',
+                        mode: 'nearest',
+                        axis: 'x',
                         intersect: false
                     },
                     plugins: {
                         legend: {
-                            position: 'top'
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
                         }
                     },
                     scales: {
@@ -329,26 +341,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         } catch (error) {
-            console.error('Error updating tendencias chart:', error);
+            console.error('Error actualizando el gráfico de tendencias:', error);
         }
     }
 
-    // Update tendencias chart initially
-    updateTendenciasChart();
+    // Inicializar todos los gráficos
+    initializeCharts();
+    updateTendencias();
 
-    // Add event listeners for filter changes
-    const filters = ['sede', 'fecha_inicio', 'fecha_fin'];
+    // Actualizar gráficos cuando cambien los filtros
+    const filters = document.querySelectorAll('select[name="sede"], input[name="fecha_inicio"], input[name="fecha_fin"]');
     filters.forEach(filter => {
-        const element = filter === 'sede' ? 
-            document.querySelector(`select[name="${filter}"]`) :
-            document.querySelector(`input[name="${filter}"]`);
-
-        if (element) {
-            element.addEventListener('change', () => {
-                initializeCharts();
-                updateTendenciasChart();
-            });
-        }
+        filter.addEventListener('change', () => {
+            initializeCharts();
+            updateTendencias();
+        });
     });
 });
 </script>
