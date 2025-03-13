@@ -24,42 +24,54 @@
                         <tr>
                             <th style="width: 25%">
                                 <div class="d-flex align-items-center gap-2">
-                                    <span>Host</span>
+                                    <span class="sortable" data-column="0">Host 
+                                        <i class="bi bi-arrow-down-up text-muted ms-1" style="font-size: 0.75rem;"></i>
+                                    </span>
                                     <input type="text" class="form-control form-control-sm column-filter" 
                                            placeholder="Filtrar..." style="width: 100px">
                                 </div>
                             </th>
                             <th class="text-center" style="width: 15%">
                                 <div class="d-flex align-items-center justify-content-center gap-2">
-                                    <span>Críticas</span>
+                                    <span class="sortable" data-column="1">Críticas
+                                        <i class="bi bi-arrow-down-up text-muted ms-1" style="font-size: 0.75rem;"></i>
+                                    </span>
                                     <input type="number" class="form-control form-control-sm column-filter" 
                                            placeholder="Min" style="width: 60px">
                                 </div>
                             </th>
                             <th class="text-center" style="width: 15%">
                                 <div class="d-flex align-items-center justify-content-center gap-2">
-                                    <span>Altas</span>
+                                    <span class="sortable" data-column="2">Altas
+                                        <i class="bi bi-arrow-down-up text-muted ms-1" style="font-size: 0.75rem;"></i>
+                                    </span>
                                     <input type="number" class="form-control form-control-sm column-filter" 
                                            placeholder="Min" style="width: 60px">
                                 </div>
                             </th>
                             <th class="text-center" style="width: 15%">
                                 <div class="d-flex align-items-center justify-content-center gap-2">
-                                    <span>Medias</span>
+                                    <span class="sortable" data-column="3">Medias
+                                        <i class="bi bi-arrow-down-up text-muted ms-1" style="font-size: 0.75rem;"></i>
+                                    </span>
                                     <input type="number" class="form-control form-control-sm column-filter" 
                                            placeholder="Min" style="width: 60px">
                                 </div>
                             </th>
                             <th class="text-center" style="width: 15%">
                                 <div class="d-flex align-items-center justify-content-center gap-2">
-                                    <span>Bajas</span>
+                                    <span class="sortable" data-column="4">Bajas
+                                        <i class="bi bi-arrow-down-up text-muted ms-1" style="font-size: 0.75rem;"></i>
+                                    </span>
                                     <input type="number" class="form-control form-control-sm column-filter" 
                                            placeholder="Min" style="width: 60px">
                                 </div>
                             </th>
                             <th class="text-center" style="width: 15%">
                                 <div class="d-flex align-items-center justify-content-center gap-2">
-                                    <span>Total</span>
+                                    <span class="sortable" data-column="5">Total
+                                        <i class="bi bi-arrow-down-up text-muted ms-1" style="font-size: 0.75rem;"></i>
+                                    </span>
                                     <input type="number" class="form-control form-control-sm column-filter" 
                                            placeholder="Min" style="width: 60px">
                                 </div>
@@ -113,10 +125,39 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const filters = document.querySelectorAll('.column-filter');
+    const sortables = document.querySelectorAll('.sortable');
+    let currentSortColumn = null;
+    let isAscending = true;
 
+    // Configurar filtros
     filters.forEach((filter, index) => {
         filter.addEventListener('input', function() {
             filterTable(index, this.value);
+        });
+    });
+
+    // Configurar ordenamiento
+    sortables.forEach(sortable => {
+        sortable.style.cursor = 'pointer';
+        sortable.addEventListener('click', function() {
+            const column = parseInt(this.dataset.column);
+            const icon = this.querySelector('.bi');
+
+            // Reset otros íconos
+            document.querySelectorAll('.sortable .bi').forEach(i => {
+                if (i !== icon) i.className = 'bi bi-arrow-down-up text-muted ms-1';
+            });
+
+            if (currentSortColumn === column) {
+                isAscending = !isAscending;
+                icon.className = `bi ${isAscending ? 'bi-arrow-up' : 'bi-arrow-down'} text-primary ms-1`;
+            } else {
+                currentSortColumn = column;
+                isAscending = true;
+                icon.className = 'bi bi-arrow-up text-primary ms-1';
+            }
+
+            sortTable(column, isAscending);
         });
     });
 
@@ -130,23 +171,19 @@ document.addEventListener('DOMContentLoaded', function() {
             if (cell) {
                 let textValue = '';
                 if (columnIndex === 0) {
-                    // Para la columna Host, buscar en IP y nombre_host
                     textValue = cell.textContent || cell.innerText;
                 } else {
-                    // Para columnas numéricas, obtener el número del badge
                     const badge = cell.querySelector('.badge');
                     textValue = badge ? badge.textContent || badge.innerText : '';
                 }
 
                 if (columnIndex === 0) {
-                    // Filtro de texto para la columna Host
                     if (textValue.toLowerCase().includes(value.toLowerCase())) {
                         row.style.display = '';
                     } else {
                         row.style.display = 'none';
                     }
                 } else {
-                    // Filtro numérico para las demás columnas
                     const numValue = parseInt(textValue);
                     const filterValue = parseInt(value) || 0;
                     if (numValue >= filterValue) {
@@ -157,6 +194,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         }
+    }
+
+    function sortTable(column, ascending) {
+        const table = document.getElementById('hostsTable');
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.getElementsByTagName('tr'));
+
+        rows.sort((a, b) => {
+            let aValue, bValue;
+            const aCell = a.getElementsByTagName('td')[column];
+            const bCell = b.getElementsByTagName('td')[column];
+
+            if (column === 0) {
+                // Ordenar por IP para la columna Host
+                aValue = aCell.querySelector('.fw-medium').textContent;
+                bValue = bCell.querySelector('.fw-medium').textContent;
+                return ascending ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+            } else {
+                // Ordenar por número para las demás columnas
+                aValue = parseInt(aCell.querySelector('.badge').textContent);
+                bValue = parseInt(bCell.querySelector('.badge').textContent);
+                return ascending ? aValue - bValue : bValue - aValue;
+            }
+        });
+
+        // Reordenar las filas en la tabla
+        rows.forEach(row => tbody.appendChild(row));
     }
 });
 </script>
