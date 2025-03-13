@@ -111,27 +111,13 @@
             </div>
         </div>
     </div>
-
-    <div class="row mt-4">
-        <!-- Tendencias de Vulnerabilidades -->
-        <div class="col-12">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body p-4">
-                    <h5 class="card-title h6 mb-3 text-muted">Tendencias de Vulnerabilidades</h5>
-                    <div style="height: 300px">
-                        <canvas id="tendenciasChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    let criticidadChart, estadoChart, tendenciasChart;
+    let criticidadChart, estadoChart;
 
     // Configuración común para los gráficos
     Chart.defaults.color = '#6c757d';
@@ -240,125 +226,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Inicializar gráficos principales
+    // Inicializar los gráficos
     initializeCharts();
-
-    // Función separada para el gráfico de tendencias
-    async function actualizarTendencias() {
-        const tendenciasCtx = document.getElementById('tendenciasChart');
-        if (!tendenciasCtx) return;
-
-        try {
-            const sede = document.querySelector('select[name="sede"]').value;
-            const fechaInicio = document.querySelector('input[name="fecha_inicio"]').value;
-            const fechaFin = document.querySelector('input[name="fecha_fin"]').value;
-
-            const params = new URLSearchParams({
-                sede: sede || '',
-                fecha_inicio: fechaInicio || '',
-                fecha_fin: fechaFin || ''
-            });
-
-            const response = await fetch(`/tendencias?${params}`);
-            const data = await response.json();
-
-            if (tendenciasChart) {
-                tendenciasChart.destroy();
-            }
-
-            tendenciasChart = new Chart(tendenciasCtx, {
-                type: 'line',
-                data: {
-                    labels: data.map(d => d.fecha),
-                    datasets: [
-                        {
-                            label: 'Críticas',
-                            data: data.map(d => d.Critical || 0),
-                            borderColor: 'rgba(220, 53, 69, 1)',
-                            backgroundColor: 'rgba(220, 53, 69, 0.1)',
-                            fill: true,
-                            tension: 0.4
-                        },
-                        {
-                            label: 'Altas',
-                            data: data.map(d => d.High || 0),
-                            borderColor: 'rgba(255, 193, 7, 1)',
-                            backgroundColor: 'rgba(255, 193, 7, 0.1)',
-                            fill: true,
-                            tension: 0.4
-                        },
-                        {
-                            label: 'Medias',
-                            data: data.map(d => d.Medium || 0),
-                            borderColor: 'rgba(255, 159, 64, 1)',
-                            backgroundColor: 'rgba(255, 159, 64, 0.1)',
-                            fill: true,
-                            tension: 0.4
-                        },
-                        {
-                            label: 'Bajas',
-                            data: data.map(d => d.Low || 0),
-                            borderColor: 'rgba(40, 167, 69, 1)',
-                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                            fill: true,
-                            tension: 0.4
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'nearest',
-                        axis: 'x',
-                        intersect: false
-                    },
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                            labels: {
-                                usePointStyle: true,
-                                padding: 20,
-                                font: {
-                                    size: 12
-                                }
-                            }
-                        },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: 'rgba(255, 255, 255, 0.1)'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        }
-                    }
-                }
-            });
-        } catch (error) {
-            console.error('Error al cargar tendencias:', error);
-        }
-    }
-
-    // Inicializar tendencias
-    actualizarTendencias();
 
     // Escuchar cambios en los filtros
     const filtros = document.querySelectorAll('select[name="sede"], input[name="fecha_inicio"], input[name="fecha_fin"]');
     filtros.forEach(filtro => {
-        filtro.addEventListener('change', () => {
-            initializeCharts();
-            actualizarTendencias();
-        });
+        filtro.addEventListener('change', initializeCharts);
     });
 });
 </script>
