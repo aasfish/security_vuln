@@ -551,6 +551,9 @@ def generar_informe(tipo, formato):
         fecha_fin = request.args.get('fecha_fin')
         riesgo = request.args.get('riesgo')
 
+        logger.debug(f"Generando informe - Tipo: {tipo}, Formato: {formato}, Sede: {sede}")
+        logger.debug(f"Fechas - Inicio: {fecha_inicio}, Fin: {fecha_fin}, Riesgo: {riesgo}")
+
         # Validar parámetros
         if tipo not in ['ejecutivo', 'tecnico']:
             flash('Tipo de informe no válido', 'error')
@@ -567,6 +570,8 @@ def generar_informe(tipo, formato):
             flash('No hay datos disponibles para generar el informe. Por favor, seleccione otros filtros.', 'warning')
             return redirect(url_for('informes'))
 
+        logger.debug(f"Resultados obtenidos: {len(resultados)} registros")
+
         # Preparar datos para el informe
         datos_informe = {
             'sede': sede,
@@ -578,6 +583,8 @@ def generar_informe(tipo, formato):
         for resultado in resultados:
             datos_informe['hosts_detalle'].update(resultado['hosts_detalle'])
 
+        logger.debug(f"Datos preparados: {len(datos_informe['hosts_detalle'])} hosts")
+
         # Generar el informe según el tipo y formato
         if tipo == 'ejecutivo':
             from informes import generar_informe_ejecutivo
@@ -587,6 +594,7 @@ def generar_informe(tipo, formato):
             output = generar_informe_tecnico(datos_informe, formato)
 
         if not output:
+            logger.error("La función de generación de informes retornó None")
             flash('Error al generar el informe. No se pudo crear el archivo.', 'error')
             return redirect(url_for('informes'))
 
