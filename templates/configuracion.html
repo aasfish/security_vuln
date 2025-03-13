@@ -41,70 +41,18 @@
                                 <small class="text-muted">{{ sede.descripcion or 'Sin descripción' }}</small>
                             </div>
                             <div class="btn-group">
-                                <form action="{{ url_for('toggle_sede', sede_id=sede.id) }}" method="post" class="me-2">
-                                    <button type="submit" class="btn btn-sm {% if sede.activa %}btn-success{% else %}btn-secondary{% endif %}">
-                                        {% if sede.activa %}
-                                        <i class="bi bi-check-circle"></i> Activa
-                                        {% else %}
-                                        <i class="bi bi-x-circle"></i> Inactiva
-                                        {% endif %}
-                                    </button>
-                                </form>
+                                <button type="button" class="btn btn-sm {% if sede.activa %}btn-success{% else %}btn-secondary{% endif %}"
+                                        onclick="toggleSede({{ sede.id }}, '{{ sede.nombre }}')">
+                                    {% if sede.activa %}
+                                    <i class="bi bi-check-circle"></i> Activa
+                                    {% else %}
+                                    <i class="bi bi-x-circle"></i> Inactiva
+                                    {% endif %}
+                                </button>
                             </div>
                         </div>
                         {% endfor %}
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Escaneos Registrados -->
-        <div class="col-lg-6">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-transparent border-0">
-                    <h5 class="mb-0">Escaneos Registrados</h5>
-                </div>
-                <div class="card-body">
-                    {% if escaneos_por_sede %}
-                        <div class="accordion" id="acordeonEscaneos">
-                            {% for sede, escaneos in escaneos_por_sede.items() %}
-                            <div class="accordion-item bg-dark border-0">
-                                <h2 class="accordion-header">
-                                    <button class="accordion-button collapsed bg-dark text-white" type="button" 
-                                            data-bs-toggle="collapse" data-bs-target="#sede{{ loop.index }}">
-                                        {{ sede }} ({{ escaneos|length }} escaneos)
-                                    </button>
-                                </h2>
-                                <div id="sede{{ loop.index }}" class="accordion-collapse collapse" data-bs-parent="#acordeonEscaneos">
-                                    <div class="accordion-body p-0">
-                                        <div class="list-group list-group-flush">
-                                            {% for escaneo in escaneos %}
-                                            <div class="list-group-item bg-dark border-secondary d-flex justify-content-between align-items-center p-3">
-                                                <div>
-                                                    <h6 class="mb-1">{{ escaneo.fecha }}</h6>
-                                                    <small class="text-muted">
-                                                        {{ escaneo.total_hosts }} hosts, 
-                                                        {{ escaneo.total_vulnerabilidades }} vulnerabilidades
-                                                    </small>
-                                                </div>
-                                                <button class="btn btn-outline-danger btn-sm" 
-                                                        onclick="confirmarEliminacion('{{ sede }}', '{{ escaneo.fecha }}', {{ escaneo.id }})">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <div class="text-center text-muted py-4">
-                            <i class="bi bi-info-circle fs-4"></i>
-                            <p class="mt-2">No hay escaneos registrados</p>
-                        </div>
-                    {% endif %}
                 </div>
             </div>
         </div>
@@ -116,7 +64,7 @@
                     <h5 class="mb-0">Cargar Archivo de Vulnerabilidades</h5>
                 </div>
                 <div class="card-body">
-                    <form id="uploadForm" action="{{ url_for('analizar') }}" method="post" enctype="multipart/form-data">
+                    <form id="uploadForm" action="{{ url_for('subir_reporte') }}" method="post" enctype="multipart/form-data">
                         <div class="mb-4">
                             <h6 class="text-muted mb-3">Instrucciones:</h6>
                             <ul class="text-muted mb-4">
@@ -127,8 +75,8 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="sede" class="form-label">Sede</label>
-                            <select class="form-select" id="sede" name="sede" required>
+                            <label for="sede_id" class="form-label">Sede</label>
+                            <select class="form-select" id="sede_id" name="sede_id" required>
                                 <option value="">Seleccione una sede</option>
                                 {% for sede in sedes_activas %}
                                 <option value="{{ sede.id }}">{{ sede.nombre }}</option>
@@ -147,15 +95,6 @@
                             <input type="file" class="form-control" id="archivo" name="archivo" accept=".txt" required>
                         </div>
 
-                        <!-- Barra de Progreso (inicialmente oculta) -->
-                        <div id="progressContainer" class="mb-4 d-none">
-                            <div class="progress" style="height: 20px;">
-                                <div id="uploadProgress" class="progress-bar progress-bar-striped progress-bar-animated" 
-                                     role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                            </div>
-                            <small id="uploadStatus" class="text-muted mt-2 d-block"></small>
-                        </div>
-
                         <button type="submit" id="submitBtn" class="btn btn-primary">
                             <i class="bi bi-upload"></i> Subir y Analizar
                         </button>
@@ -166,27 +105,28 @@
     </div>
 </div>
 
-<!-- Modal de confirmación -->
-<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmar eliminación</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                ¿Está seguro que desea eliminar el escaneo <span id="scanInfo"></span>?
-                Esta acción no se puede deshacer.
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <form id="deleteForm" method="POST">
-                    <button type="submit" class="btn btn-danger">Eliminar</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- Script para manejar el toggle de sedes -->
+<script>
+function toggleSede(sedeId, nombreSede) {
+    if (confirm(`¿Desea cambiar el estado de la sede ${nombreSede}?`)) {
+        fetch(`/toggle_sede/${sedeId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        }).then(response => {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert('Error al cambiar el estado de la sede');
+            }
+        }).catch(error => {
+            console.error('Error:', error);
+            alert('Error al cambiar el estado de la sede');
+        });
+    }
+}
+</script>
 {% endblock %}
 
 {% block scripts %}
