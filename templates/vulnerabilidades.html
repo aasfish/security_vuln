@@ -4,6 +4,8 @@
 <div class="container">
     <h2 class="mb-4">Vulnerabilidades Detectadas</h2>
 
+    {% include 'components/filtros.html' %}
+
     {% for resultado in resultados %}
     <div class="card mb-4">
         <div class="card-header bg-primary text-white">
@@ -97,7 +99,6 @@
 
 {% block scripts %}
 <script>
-// Activar todos los tooltips
 document.addEventListener('DOMContentLoaded', function() {
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
     var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {

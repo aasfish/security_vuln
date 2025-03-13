@@ -1,0 +1,30 @@
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="sede" class="form-label">Sede</label>
+                <select class="form-select" id="sede" name="sede">
+                    <option value="">Todas las sedes</option>
+                    {% for sede in sedes %}
+                    <option value="{{ sede }}" {% if sede == sede_seleccionada %}selected{% endif %}>{{ sede }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
+                <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" 
+                       value="{{ fecha_inicio if fecha_inicio }}">
+            </div>
+            <div class="col-md-3">
+                <label for="fecha_fin" class="form-label">Fecha Fin</label>
+                <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" 
+                       value="{{ fecha_fin if fecha_fin }}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel"></i> Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

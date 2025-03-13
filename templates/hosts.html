@@ -4,6 +4,8 @@
 <div class="container">
     <h2 class="mb-4">Resumen de Hosts</h2>
 
+    {% include 'components/filtros.html' %}
+
     {% for resultado in resultados %}
     <div class="card mb-4">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
