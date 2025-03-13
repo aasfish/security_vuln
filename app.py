@@ -362,3 +362,30 @@ def dashboard():
 def configuracion():
     """Vista de configuración que incluye la carga de archivos"""
     return render_template('configuracion.html', today=datetime.now().strftime('%Y-%m-%d'))
+
+@app.route('/tendencias')
+def obtener_tendencias():
+    """Endpoint para obtener datos de tendencias de vulnerabilidades"""
+    from models import Escaneo, Host, Vulnerabilidad
+
+    # Obtener todas las fechas de escaneo ordenadas
+    escaneos = Escaneo.query.order_by(Escaneo.fecha_escaneo).all()
+
+    tendencias = []
+    for escaneo in escaneos:
+        vulnerabilidades = Vulnerabilidad.query\
+            .join(Host)\
+            .filter(Host.escaneo_id == escaneo.id)\
+            .all()
+
+        # Contar vulnerabilidades por nivel
+        stats = {
+            'fecha': escaneo.fecha_escaneo.strftime('%Y-%m-%d'),
+            'Critical': len([v for v in vulnerabilidades if v.nivel_amenaza == 'Critical']),
+            'High': len([v for v in vulnerabilidades if v.nivel_amenaza == 'High']),
+            'Medium': len([v for v in vulnerabilidades if v.nivel_amenaza == 'Medium']),
+            'Low': len([v for v in vulnerabilidades if v.nivel_amenaza == 'Low'])
+        }
+        tendencias.append(stats)
+
+    return jsonify(tendencias)
