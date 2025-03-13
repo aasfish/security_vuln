@@ -133,119 +133,120 @@
 document.addEventListener('DOMContentLoaded', function() {
     let criticidadChart, estadoChart, tendenciasChart;
 
-    // Colores para los gráficos
-    const colors = {
-        critical: {
-            border: 'rgba(220, 53, 69, 1)',
-            background: 'rgba(220, 53, 69, 0.1)'
-        },
-        high: {
-            border: 'rgba(255, 193, 7, 1)',
-            background: 'rgba(255, 193, 7, 0.1)'
-        },
-        medium: {
-            border: 'rgba(255, 159, 64, 1)',
-            background: 'rgba(255, 159, 64, 0.1)'
-        },
-        low: {
-            border: 'rgba(40, 167, 69, 1)',
-            background: 'rgba(40, 167, 69, 0.1)'
-        }
-    };
+    // Configuración común para los gráficos
+    Chart.defaults.color = '#6c757d';
+    Chart.defaults.borderColor = '#2c3338';
 
-    // Inicializar gráficos de criticidad y estado
     function initializeCharts() {
-        // Criticidad Chart
-        const criticidadCtx = document.getElementById('criticidadChart');
-        if (criticidadCtx) {
-            if (criticidadChart) criticidadChart.destroy();
-            criticidadChart = new Chart(criticidadCtx, {
-                type: 'bar',
-                data: {
-                    labels: ['Critical', 'High', 'Medium', 'Low'],
-                    datasets: [{
-                        label: '# de Vulnerabilidades',
-                        data: {{ criticidad|tojson }},
-                        backgroundColor: [
-                            colors.critical.background,
-                            colors.high.background,
-                            colors.medium.background,
-                            colors.low.background
-                        ],
-                        borderWidth: 1,
-                        borderRadius: 6,
-                        maxBarThickness: 50
-                    }]
+        // Gráfico de Criticidad
+        const criticidadCtx = document.getElementById('criticidadChart').getContext('2d');
+        criticidadChart = new Chart(criticidadCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Critical', 'High', 'Medium', 'Low'],
+                datasets: [{
+                    label: '# de Vulnerabilidades',
+                    data: {{ criticidad|tojson }},
+                    backgroundColor: [
+                        'rgba(220, 53, 69, 0.8)',   // Rojo para Critical
+                        'rgba(255, 193, 7, 0.8)',   // Amarillo para High
+                        'rgba(255, 159, 64, 0.8)',  // Naranja para Medium
+                        'rgba(40, 167, 69, 0.8)'    // Verde para Low
+                    ],
+                    borderColor: [
+                        'rgba(220, 53, 69, 1)',
+                        'rgba(255, 193, 7, 1)',
+                        'rgba(255, 159, 64, 1)',
+                        'rgba(40, 167, 69, 1)'
+                    ],
+                    borderWidth: 1,
+                    borderRadius: 6,
+                    maxBarThickness: 50
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: 'rgba(255, 255, 255, 0.1)'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            }
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
                         }
                     },
-                    plugins: {
-                        legend: {
+                    x: {
+                        grid: {
                             display: false
                         }
                     }
-                }
-            });
-        }
-
-        // Estado Chart
-        const estadoCtx = document.getElementById('estadoChart');
-        if (estadoCtx) {
-            if (estadoChart) estadoChart.destroy();
-            estadoChart = new Chart(estadoCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['MITIGADA', 'ASUMIDA', 'VIGENTE'],
-                    datasets: [{
-                        data: [{{ estados.mitigada }}, {{ estados.asumida }}, {{ estados.vigente }}],
-                        backgroundColor: [
-                            colors.low.background,
-                            colors.high.background,
-                            colors.critical.background
-                        ],
-                        borderWidth: 2
-                    }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: {
-                                padding: 20,
-                                usePointStyle: true,
-                                pointStyle: 'circle'
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+
+        // Gráfico de Estado
+        const estadoCtx = document.getElementById('estadoChart').getContext('2d');
+        estadoChart = new Chart(estadoCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['MITIGADA', 'ASUMIDA', 'VIGENTE'],
+                datasets: [{
+                    data: [{{ estados.mitigada }}, {{ estados.asumida }}, {{ estados.vigente }}],
+                    backgroundColor: [
+                        'rgba(40, 167, 69, 0.8)',  // Verde para MITIGADA
+                        'rgba(255, 193, 7, 0.8)',  // Amarillo para ASUMIDA
+                        'rgba(220, 53, 69, 0.8)'   // Rojo para VIGENTE
+                    ],
+                    borderColor: [
+                        'rgba(40, 167, 69, 1)',
+                        'rgba(255, 193, 7, 1)',
+                        'rgba(220, 53, 69, 1)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    animateRotate: true,
+                    animateScale: true,
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
+                },
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            font: {
+                                size: 12
                             }
                         }
-                    },
-                    cutout: '75%'
-                }
-            });
-        }
+                    }
+                },
+                cutout: '75%'
+            }
+        });
     }
 
-    // Función para actualizar el gráfico de tendencias
-    async function updateTendencias() {
+    // Inicializar gráficos principales
+    initializeCharts();
+
+    // Función separada para el gráfico de tendencias
+    async function actualizarTendencias() {
         const tendenciasCtx = document.getElementById('tendenciasChart');
-        if (!tendenciasCtx) {
-            console.error('No se encontró el elemento canvas para tendencias');
-            return;
-        }
+        if (!tendenciasCtx) return;
 
         try {
             const sede = document.querySelector('select[name="sede"]').value;
@@ -273,32 +274,32 @@ document.addEventListener('DOMContentLoaded', function() {
                         {
                             label: 'Críticas',
                             data: data.map(d => d.Critical || 0),
-                            borderColor: colors.critical.border,
-                            backgroundColor: colors.critical.background,
+                            borderColor: 'rgba(220, 53, 69, 1)',
+                            backgroundColor: 'rgba(220, 53, 69, 0.1)',
                             fill: true,
                             tension: 0.4
                         },
                         {
                             label: 'Altas',
                             data: data.map(d => d.High || 0),
-                            borderColor: colors.high.border,
-                            backgroundColor: colors.high.background,
+                            borderColor: 'rgba(255, 193, 7, 1)',
+                            backgroundColor: 'rgba(255, 193, 7, 0.1)',
                             fill: true,
                             tension: 0.4
                         },
                         {
                             label: 'Medias',
                             data: data.map(d => d.Medium || 0),
-                            borderColor: colors.medium.border,
-                            backgroundColor: colors.medium.background,
+                            borderColor: 'rgba(255, 159, 64, 1)',
+                            backgroundColor: 'rgba(255, 159, 64, 0.1)',
                             fill: true,
                             tension: 0.4
                         },
                         {
                             label: 'Bajas',
                             data: data.map(d => d.Low || 0),
-                            borderColor: colors.low.border,
-                            backgroundColor: colors.low.background,
+                            borderColor: 'rgba(40, 167, 69, 1)',
+                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
                             fill: true,
                             tension: 0.4
                         }
@@ -317,7 +318,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             position: 'top',
                             labels: {
                                 usePointStyle: true,
-                                padding: 20
+                                padding: 20,
+                                font: {
+                                    size: 12
+                                }
                             }
                         },
                         tooltip: {
@@ -341,20 +345,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         } catch (error) {
-            console.error('Error actualizando el gráfico de tendencias:', error);
+            console.error('Error al cargar tendencias:', error);
         }
     }
 
-    // Inicializar todos los gráficos
-    initializeCharts();
-    updateTendencias();
+    // Inicializar tendencias
+    actualizarTendencias();
 
-    // Actualizar gráficos cuando cambien los filtros
-    const filters = document.querySelectorAll('select[name="sede"], input[name="fecha_inicio"], input[name="fecha_fin"]');
-    filters.forEach(filter => {
-        filter.addEventListener('change', () => {
+    // Escuchar cambios en los filtros
+    const filtros = document.querySelectorAll('select[name="sede"], input[name="fecha_inicio"], input[name="fecha_fin"]');
+    filtros.forEach(filtro => {
+        filtro.addEventListener('change', () => {
             initializeCharts();
-            updateTendencias();
+            actualizarTendencias();
         });
     });
 });
