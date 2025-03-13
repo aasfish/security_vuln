@@ -112,14 +112,14 @@ document.addEventListener('DOMContentLoaded', function() {
             labels: labels,
             datasets: [
                 {
-                    label: 'CENTRAL ({{ resultados.primer_escaneo.fecha }})',
+                    label: '{{ sede_seleccionada }} ({{ resultados.primer_escaneo.fecha }})',
                     data: primerDatos,
                     backgroundColor: 'rgba(103, 119, 239, 0.8)',
                     borderColor: 'rgba(103, 119, 239, 1)',
                     borderWidth: 1
                 },
                 {
-                    label: 'CENTRAL ({{ resultados.segundo_escaneo.fecha }})',
+                    label: '{{ sede_seleccionada }} ({{ resultados.segundo_escaneo.fecha }})',
                     data: segundoDatos,
                     backgroundColor: 'rgba(145, 215, 172, 0.8)',
                     borderColor: 'rgba(145, 215, 172, 1)',
