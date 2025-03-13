@@ -1,12 +1,13 @@
 import os
 import logging
 from datetime import datetime
-from flask import Flask, render_template, request, flash, redirect, url_for, send_from_directory, jsonify
+from flask import Flask, render_template, request, flash, redirect, url_for, send_from_directory, jsonify, send_file
 from sqlalchemy import text
 from werkzeug.utils import secure_filename
 from parser import analizar_vulnerabilidades
 from database import db, init_db
 from models import Sede, Escaneo, Host, Vulnerabilidad
+from exportar import exportar_a_csv, exportar_a_pdf
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -603,6 +604,55 @@ def actualizar_estado():
     except Exception as e:
         logger.error(f"Error al actualizar estado: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/exportar/<tipo>/<formato>')
+def exportar(tipo, formato):
+    """
+    Exporta los datos en el formato especificado (csv o pdf)
+    tipo: 'hosts' o 'vulnerabilidades'
+    formato: 'csv' o 'pdf'
+    """
+    try:
+        sede = request.args.get('sede')
+        fecha_inicio = request.args.get('fecha_inicio')
+        fecha_fin = request.args.get('fecha_fin')
+        riesgo = request.args.get('riesgo')
+
+        if tipo == 'hosts':
+            resultados = filtrar_resultados(sede, fecha_inicio, fecha_fin, riesgo)
+        else:  # vulnerabilidades
+            query = Vulnerabilidad.query.join(Host).join(Escaneo).join(Sede)
+            if sede:
+                query = query.filter(Sede.nombre == sede)
+            if fecha_inicio:
+                query = query.filter(Escaneo.fecha_escaneo >= datetime.strptime(fecha_inicio, '%Y-%m-%d').date())
+            if fecha_fin:
+                query = query.filter(Escaneo.fecha_escaneo <= datetime.strptime(fecha_fin, '%Y-%m-%d').date())
+            if riesgo:
+                query = query.filter(Vulnerabilidad.nivel_amenaza == riesgo)
+            resultados = query.all()
+
+        if formato == 'csv':
+            output = exportar_a_csv(resultados, tipo)
+            mimetype = 'text/csv'
+            extension = 'csv'
+        else:  # pdf
+            output = exportar_a_pdf(resultados, tipo)
+            mimetype = 'application/pdf'
+            extension = 'pdf'
+
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        return send_file(
+            output,
+            mimetype=mimetype,
+            as_attachment=True,
+            download_name=f'reporte_{tipo}_{timestamp}.{extension}'
+        )
+
+    except Exception as e:
+        logger.error(f"Error en la exportación: {str(e)}", exc_info=True)
+        flash('Error al generar el reporte', 'error')
+        return redirect(url_for(tipo))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
