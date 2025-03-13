@@ -109,6 +109,9 @@ document.addEventListener('DOMContentLoaded', function() {
         {{ resultados.segundo_escaneo.datos.Low }}
     ];
 
+    console.log('Datos del primer escaneo:', primerDatos);
+    console.log('Datos del segundo escaneo:', segundoDatos);
+
     new Chart(ctx, {
         type: 'bar',
         data: {

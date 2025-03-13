@@ -287,82 +287,95 @@ def comparacion():
     primer_escaneo = request.args.get('primer_escaneo')
     segundo_escaneo = request.args.get('segundo_escaneo')
 
+    logger.debug(f"Parámetros recibidos: sede={sede}, primer_escaneo={primer_escaneo}, segundo_escaneo={segundo_escaneo}")
+
     from models import Escaneo, Host, Vulnerabilidad
 
     # Obtener todas las sedes disponibles
     sedes = obtener_sedes()
+    logger.debug(f"Sedes disponibles: {sedes}")
 
     # Si no hay sede seleccionada y hay sedes disponibles, usar la primera
     if not sede and sedes:
         sede = sedes[0]
+        logger.debug(f"Usando sede por defecto: {sede}")
 
     # Obtener los escaneos de la sede seleccionada
     query = Escaneo.query.order_by(Escaneo.fecha_escaneo.desc())
     if sede:
         query = query.filter(Escaneo.sede == sede)
     escaneos = query.all()
+    logger.debug(f"Número de escaneos encontrados: {len(escaneos)}")
 
     # Si hay escaneos disponibles pero no hay selección, usar los dos más recientes
-    if escaneos and not primer_escaneo:
+    if escaneos and not primer_escaneo and len(escaneos) > 0:
         primer_escaneo = escaneos[0].fecha_escaneo.strftime('%Y-%m-%d')
+        logger.debug(f"Usando primer escaneo por defecto: {primer_escaneo}")
     if len(escaneos) > 1 and not segundo_escaneo:
         segundo_escaneo = escaneos[1].fecha_escaneo.strftime('%Y-%m-%d')
+        logger.debug(f"Usando segundo escaneo por defecto: {segundo_escaneo}")
 
     resultados = None
     if primer_escaneo and segundo_escaneo:
-        primer_fecha = datetime.strptime(primer_escaneo, '%Y-%m-%d').date()
-        segunda_fecha = datetime.strptime(segundo_escaneo, '%Y-%m-%d').date()
+        try:
+            primer_fecha = datetime.strptime(primer_escaneo, '%Y-%m-%d').date()
+            segunda_fecha = datetime.strptime(segundo_escaneo, '%Y-%m-%d').date()
 
-        # Obtener datos del primer escaneo
-        primer_datos = Vulnerabilidad.query\
-            .join(Host)\
-            .join(Escaneo)\
-            .filter(Escaneo.sede == sede, Escaneo.fecha_escaneo == primer_fecha)\
-            .all()
+            # Obtener datos del primer escaneo
+            primer_datos = Vulnerabilidad.query\
+                .join(Host)\
+                .join(Escaneo)\
+                .filter(Escaneo.sede == sede, Escaneo.fecha_escaneo == primer_fecha)\
+                .all()
+            logger.debug(f"Vulnerabilidades encontradas en primer escaneo: {len(primer_datos)}")
 
-        # Obtener datos del segundo escaneo
-        segundo_datos = Vulnerabilidad.query\
-            .join(Host)\
-            .join(Escaneo)\
-            .filter(Escaneo.sede == sede, Escaneo.fecha_escaneo == segunda_fecha)\
-            .all()
+            # Obtener datos del segundo escaneo
+            segundo_datos = Vulnerabilidad.query\
+                .join(Host)\
+                .join(Escaneo)\
+                .filter(Escaneo.sede == sede, Escaneo.fecha_escaneo == segunda_fecha)\
+                .all()
+            logger.debug(f"Vulnerabilidades encontradas en segundo escaneo: {len(segundo_datos)}")
 
-        # Contar vulnerabilidades por nivel para cada escaneo
-        primer_conteo = {
-            'Critical': len([v for v in primer_datos if v.nivel_amenaza == 'Critical']),
-            'High': len([v for v in primer_datos if v.nivel_amenaza == 'High']),
-            'Medium': len([v for v in primer_datos if v.nivel_amenaza == 'Medium']),
-            'Low': len([v for v in primer_datos if v.nivel_amenaza == 'Low'])
-        }
-        segundo_conteo = {
-            'Critical': len([v for v in segundo_datos if v.nivel_amenaza == 'Critical']),
-            'High': len([v for v in segundo_datos if v.nivel_amenaza == 'High']),
-            'Medium': len([v for v in segundo_datos if v.nivel_amenaza == 'Medium']),
-            'Low': len([v for v in segundo_datos if v.nivel_amenaza == 'Low'])
-        }
-
-        # Calcular totales y variación
-        primer_total = sum(primer_conteo.values())
-        segundo_total = sum(segundo_conteo.values())
-        variacion = segundo_total - primer_total
-        porcentaje_variacion = (variacion / primer_total * 100) if primer_total > 0 else 0
-
-        resultados = {
-            'primer_escaneo': {
-                'fecha': primer_escaneo,
-                'datos': primer_conteo,
-                'total': primer_total
-            },
-            'segundo_escaneo': {
-                'fecha': segundo_escaneo,
-                'datos': segundo_conteo,
-                'total': segundo_total
-            },
-            'variacion': {
-                'total': variacion,
-                'porcentaje': porcentaje_variacion
+            # Contar vulnerabilidades por nivel para cada escaneo
+            primer_conteo = {
+                'Critical': len([v for v in primer_datos if v.nivel_amenaza == 'Critical']),
+                'High': len([v for v in primer_datos if v.nivel_amenaza == 'High']),
+                'Medium': len([v for v in primer_datos if v.nivel_amenaza == 'Medium']),
+                'Low': len([v for v in primer_datos if v.nivel_amenaza == 'Low'])
             }
-        }
+            segundo_conteo = {
+                'Critical': len([v for v in segundo_datos if v.nivel_amenaza == 'Critical']),
+                'High': len([v for v in segundo_datos if v.nivel_amenaza == 'High']),
+                'Medium': len([v for v in segundo_datos if v.nivel_amenaza == 'Medium']),
+                'Low': len([v for v in segundo_datos if v.nivel_amenaza == 'Low'])
+            }
+
+            # Calcular totales y variación
+            primer_total = sum(primer_conteo.values())
+            segundo_total = sum(segundo_conteo.values())
+            variacion = segundo_total - primer_total
+            porcentaje_variacion = (variacion / primer_total * 100) if primer_total > 0 else 0
+
+            resultados = {
+                'primer_escaneo': {
+                    'fecha': primer_escaneo,
+                    'datos': primer_conteo,
+                    'total': primer_total
+                },
+                'segundo_escaneo': {
+                    'fecha': segundo_escaneo,
+                    'datos': segundo_conteo,
+                    'total': segundo_total
+                },
+                'variacion': {
+                    'total': variacion,
+                    'porcentaje': porcentaje_variacion
+                }
+            }
+            logger.debug(f"Resultados calculados: {resultados}")
+        except Exception as e:
+            logger.error(f"Error al procesar los datos de comparación: {str(e)}", exc_info=True)
 
     return render_template('comparacion.html',
                          sedes=sedes,
