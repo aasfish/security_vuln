@@ -13,18 +13,30 @@
                         <h5>Instrucciones:</h5>
                         <ul>
                             <li>Seleccione un archivo de texto (.txt) para analizar</li>
-                            <li>El archivo debe contener el código o texto a analizar</li>
+                            <li>Complete la información de sede y fecha del escaneo</li>
                             <li>El sistema detectará posibles vulnerabilidades de seguridad</li>
                         </ul>
                     </div>
-                    
+
+                    <div class="mb-3">
+                        <label for="sede" class="form-label">Sede</label>
+                        <input type="text" class="form-control" id="sede" name="sede" required
+                               placeholder="Ingrese el nombre de la sede">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="fecha_escaneo" class="form-label">Fecha de Escaneo</label>
+                        <input type="date" class="form-control" id="fecha_escaneo" name="fecha_escaneo"
+                               value="{{ today }}" required>
+                    </div>
+
                     <div class="mb-3">
                         <label for="archivo" class="form-label">Seleccionar Archivo</label>
                         <input type="file" class="form-control" id="archivo" name="archivo" accept=".txt" required>
                     </div>
-                    
+
                     <button type="submit" class="btn btn-primary">
-                        Analizar Archivo
+                        <i class="bi bi-search"></i> Analizar Archivo
                     </button>
                 </form>
             </div>

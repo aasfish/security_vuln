@@ -1,5 +1,6 @@
 import os
 import logging
+from datetime import datetime
 from flask import Flask, render_template, request, flash, redirect, url_for, send_from_directory
 from werkzeug.utils import secure_filename
 from parser import analizar_vulnerabilidades
@@ -18,6 +19,9 @@ app.secret_key = os.environ.get("SESSION_SECRET", "clave-secreta-desarrollo")
 ALLOWED_EXTENSIONS = {'txt'}
 UPLOAD_FOLDER = '/tmp'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# Almacenamiento temporal de resultados (en producción usar una base de datos)
+resultados_analisis = []
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -38,6 +42,8 @@ def analizar():
         return redirect(url_for('index'))
 
     archivo = request.files['archivo']
+    sede = request.form.get('sede', '')
+    fecha_escaneo = request.form.get('fecha_escaneo', datetime.now().strftime('%Y-%m-%d'))
 
     if archivo.filename == '':
         logger.error("Nombre de archivo vacío")
@@ -73,12 +79,29 @@ def analizar():
             flash('No se encontraron vulnerabilidades para analizar en el archivo', 'warning')
             return redirect(url_for('index'))
 
+        # Agregar información adicional al resultado
+        resultado['sede'] = sede
+        resultado['fecha_escaneo'] = fecha_escaneo
+
+        # Almacenar resultado
+        resultados_analisis.append(resultado)
+
         logger.info(f"Análisis completado exitosamente para {filename}")
-        return render_template('resultados.html', 
-                             resultado=resultado,
-                             nombre_archivo=filename)
+        return redirect(url_for('hosts'))
 
     except Exception as e:
         logger.error(f"Error al procesar el archivo: {str(e)}", exc_info=True)
         flash('Error al procesar el archivo. Por favor, inténtelo de nuevo.', 'error')
         return redirect(url_for('index'))
+
+@app.route('/hosts')
+def hosts():
+    return render_template('hosts.html', resultados=resultados_analisis)
+
+@app.route('/vulnerabilidades')
+def vulnerabilidades():
+    return render_template('vulnerabilidades.html', resultados=resultados_analisis)
+
+@app.route('/comparativa')
+def comparativa():
+    return render_template('comparativa.html', resultados=resultados_analisis)

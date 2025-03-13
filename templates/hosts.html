@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Resumen de Hosts</h2>
+
+    {% for resultado in resultados %}
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-0">Sede: {{ resultado.sede }}</h5>
+                <small>Fecha de escaneo: {{ resultado.fecha_escaneo }}</small>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Host</th>
+                                    <th>Críticas</th>
+                                    <th>Altas</th>
+                                    <th>Medias</th>
+                                    <th>Bajas</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ip, host in resultado.hosts_detalle.items() %}
+                                {% set vulnerabilidades = { 'Critical': 0, 'High': 0, 'Medium': 0, 'Low': 0 } %}
+                                {% for vuln in host.vulnerabilidades %}
+                                    {% if vuln.nivel_amenaza == 'Critical' %}
+                                        {% set _ = vulnerabilidades.update({'Critical': vulnerabilidades.Critical + 1}) %}
+                                    {% elif vuln.nivel_amenaza == 'High' %}
+                                        {% set _ = vulnerabilidades.update({'High': vulnerabilidades.High + 1}) %}
+                                    {% elif vuln.nivel_amenaza == 'Medium' %}
+                                        {% set _ = vulnerabilidades.update({'Medium': vulnerabilidades.Medium + 1}) %}
+                                    {% elif vuln.nivel_amenaza == 'Low' %}
+                                        {% set _ = vulnerabilidades.update({'Low': vulnerabilidades.Low + 1}) %}
+                                    {% endif %}
+                                {% endfor %}
+                                <tr>
+                                    <td>
+                                        {{ ip }}
+                                        {% if host.nombre_host %}
+                                        <br><small class="text-muted">{{ host.nombre_host }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td><span class="badge bg-dark">{{ vulnerabilidades.Critical }}</span></td>
+                                    <td><span class="badge bg-danger">{{ vulnerabilidades.High }}</span></td>
+                                    <td><span class="badge bg-warning">{{ vulnerabilidades.Medium }}</span></td>
+                                    <td><span class="badge bg-info">{{ vulnerabilidades.Low }}</span></td>
+                                    <td><strong>{{ vulnerabilidades.Critical + vulnerabilidades.High + vulnerabilidades.Medium + vulnerabilidades.Low }}</strong></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <canvas id="vulnerabilidadesChart-{{ loop.index }}" width="400" height="400"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% for resultado in resultados %}
+    const vulnerabilidadesData{{ loop.index }} = {
+        labels: ['Críticas', 'Altas', 'Medias', 'Bajas'],
+        datasets: [{
+            data: [
+                {% set total = {'Critical': 0, 'High': 0, 'Medium': 0, 'Low': 0} %}
+                {% for ip, host in resultado.hosts_detalle.items() %}
+                    {% for vuln in host.vulnerabilidades %}
+                        {% if vuln.nivel_amenaza == 'Critical' %}
+                            {% set _ = total.update({'Critical': total.Critical + 1}) %}
+                        {% elif vuln.nivel_amenaza == 'High' %}
+                            {% set _ = total.update({'High': total.High + 1}) %}
+                        {% elif vuln.nivel_amenaza == 'Medium' %}
+                            {% set _ = total.update({'Medium': total.Medium + 1}) %}
+                        {% elif vuln.nivel_amenaza == 'Low' %}
+                            {% set _ = total.update({'Low': total.Low + 1}) %}
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+                {{ total.Critical }}, {{ total.High }}, {{ total.Medium }}, {{ total.Low }}
+            ],
+            backgroundColor: [
+                'rgba(0, 0, 0, 0.8)',
+                'rgba(255, 99, 132, 0.8)',
+                'rgba(255, 205, 86, 0.8)',
+                'rgba(54, 162, 235, 0.8)'
+            ],
+            borderColor: [
+                'rgba(0, 0, 0, 1)',
+                'rgba(255, 99, 132, 1)',
+                'rgba(255, 205, 86, 1)',
+                'rgba(54, 162, 235, 1)'
+            ],
+            borderWidth: 1
+        }]
+    };
+
+    new Chart(document.getElementById('vulnerabilidadesChart-{{ loop.index }}'), {
+        type: 'doughnut',
+        data: vulnerabilidadesData{{ loop.index }},
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                title: {
+                    display: true,
+                    text: 'Distribución de Vulnerabilidades'
+                }
+            }
+        }
+    });
+    {% endfor %}
+});
+</script>
+{% endblock %}
