@@ -301,29 +301,33 @@ def dashboard():
     total_vulnerabilidades = len(vulnerabilidades)
 
     # Calcular riesgo promedio (CVSS)
-    riesgo_total = sum(float(v.cvss) for v in vulnerabilidades if v.cvss.replace('.','').isdigit())
-    riesgo_promedio = round(riesgo_total / total_vulnerabilidades, 1) if total_vulnerabilidades > 0 else 0
+    vulnerabilidades_con_cvss = [v for v in vulnerabilidades if v.cvss and v.cvss.replace('.','').isdigit()]
+    if vulnerabilidades_con_cvss:
+        riesgo_total = sum(float(v.cvss) for v in vulnerabilidades_con_cvss)
+        riesgo_promedio = round(riesgo_total / len(vulnerabilidades_con_cvss), 1)
+    else:
+        riesgo_promedio = 0.0
 
     # Contar estados
     estados = {
-        'fix': sum(1 for v in vulnerabilidades if v.estado == 'FIX'),
-        'asumida': sum(1 for v in vulnerabilidades if v.estado == 'ASUMIDA'),
-        'vigente': sum(1 for v in vulnerabilidades if v.estado == 'VIGENTE')
+        'fix': len([v for v in vulnerabilidades if v.estado == 'FIX']),
+        'asumida': len([v for v in vulnerabilidades if v.estado == 'ASUMIDA']),
+        'vigente': len([v for v in vulnerabilidades if v.estado == 'ACTIVA'])
     }
 
     # Contar por criticidad
-    criticidad = [
-        sum(1 for v in vulnerabilidades if v.nivel_amenaza == 'Critical'),
-        sum(1 for v in vulnerabilidades if v.nivel_amenaza == 'High'),
-        sum(1 for v in vulnerabilidades if v.nivel_amenaza == 'Medium'),
-        sum(1 for v in vulnerabilidades if v.nivel_amenaza == 'Low')
-    ]
+    criticidad = {
+        'Critical': len([v for v in vulnerabilidades if v.nivel_amenaza == 'Critical']),
+        'High': len([v for v in vulnerabilidades if v.nivel_amenaza == 'High']),
+        'Medium': len([v for v in vulnerabilidades if v.nivel_amenaza == 'Medium']),
+        'Low': len([v for v in vulnerabilidades if v.nivel_amenaza == 'Low'])
+    }
 
     return render_template('dashboard.html',
                          riesgo_promedio=riesgo_promedio,
                          total_vulnerabilidades=total_vulnerabilidades,
                          estados=estados,
-                         criticidad=criticidad,
+                         criticidad=list(criticidad.values()),
                          sedes=obtener_sedes(),
                          sede_seleccionada=sede,
                          fecha_inicio=fecha_inicio,
