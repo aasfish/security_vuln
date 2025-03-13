@@ -21,12 +21,20 @@ def generar_grafico_distribucion(niveles):
     """Genera un gráfico de torta con la distribución de vulnerabilidades"""
     plt.figure(figsize=(6, 4))
     colores = {'Critical': '#dc3545', 'High': '#fd7e14', 'Medium': '#ffc107', 'Low': '#0dcaf0'}
-    valores = list(niveles.values())
-    etiquetas = [f"{k} ({v})" for k, v in niveles.items() if v > 0]
 
-    plt.pie(valores, labels=etiquetas, colors=[colores[k] for k in niveles.keys()],
-            autopct='%1.1f%%' if sum(valores) > 0 else None)
-    plt.title('Distribución de Vulnerabilidades por Nivel')
+    # Filtrar niveles con valores > 0
+    niveles_filtrados = {k: v for k, v in niveles.items() if v > 0}
+    valores = list(niveles_filtrados.values())
+    etiquetas = [f"{k} ({v})" for k, v in niveles_filtrados.items()]
+    colores_filtrados = [colores[k] for k in niveles_filtrados.keys()]
+
+    if valores:
+        plt.pie(valores, labels=etiquetas, colors=colores_filtrados, autopct='%1.1f%%')
+        plt.title('Distribución de Vulnerabilidades por Nivel')
+    else:
+        # Si no hay datos, crear un gráfico vacío con un mensaje
+        plt.text(0.5, 0.5, 'No hay vulnerabilidades para mostrar', 
+                horizontalalignment='center', verticalalignment='center')
 
     # Guardar el gráfico en un buffer
     img_buffer = BytesIO()

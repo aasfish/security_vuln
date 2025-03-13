@@ -538,7 +538,6 @@ def informes():
                          fecha_inicio=fecha_inicio,
                          fecha_fin=fecha_fin)
 
-@app.route('/generar_informe/<tipo>/<formato>')
 def generar_informe(tipo, formato):
     """
     Genera un informe en el formato especificado
@@ -587,11 +586,21 @@ def generar_informe(tipo, formato):
 
         # Generar el informe según el tipo y formato
         if tipo == 'ejecutivo':
-            from informes import generar_informe_ejecutivo
-            output = generar_informe_ejecutivo(datos_informe, formato)
+            try:
+                from informes import generar_informe_ejecutivo
+                output = generar_informe_ejecutivo(datos_informe, formato)
+                logger.debug("Informe ejecutivo generado exitosamente")
+            except Exception as e:
+                logger.error(f"Error al generar informe ejecutivo: {str(e)}", exc_info=True)
+                raise
         else:  # técnico
-            from informes import generar_informe_tecnico
-            output = generar_informe_tecnico(datos_informe, formato)
+            try:
+                from informes import generar_informe_tecnico
+                output = generar_informe_tecnico(datos_informe, formato)
+                logger.debug("Informe técnico generado exitosamente")
+            except Exception as e:
+                logger.error(f"Error al generar informe técnico: {str(e)}", exc_info=True)
+                raise
 
         if not output:
             logger.error("La función de generación de informes retornó None")
