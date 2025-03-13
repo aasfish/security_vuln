@@ -538,6 +538,7 @@ def informes():
                          fecha_inicio=fecha_inicio,
                          fecha_fin=fecha_fin)
 
+@app.route('/generar_informe/<tipo>/<formato>')
 def generar_informe(tipo, formato):
     """
     Genera un informe en el formato especificado
@@ -624,19 +625,6 @@ def generar_informe(tipo, formato):
         flash('Error al generar el informe. Por favor, inténtelo de nuevo.', 'error')
         return redirect(url_for('informes'))
 
-def generar_informe_ejecutivo(datos_informe, formato):
-    """
-    Genera un informe ejecutivo usando la función del módulo informes
-    """
-    from informes import generar_informe_ejecutivo
-    return generar_informe_ejecutivo(datos_informe, tipo=formato)
-
-def generar_informe_tecnico(datos_informe, formato):
-    """
-    Genera un informe técnico usando la función del módulo informes
-    """
-    from informes import generar_informe_tecnico
-    return generar_informe_tecnico(datos_informe, tipo=formato)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
