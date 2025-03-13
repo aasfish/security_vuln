@@ -706,5 +706,181 @@ def exportar(tipo, formato):
         flash('Error al exportar los datos', 'error')
         return redirect(url_for('dashboard'))
 
+@app.route('/crear_sede', methods=['POST'])
+def crear_sede():
+    """Crea una nueva sede"""
+    try:
+        nombre = request.form.get('nombre')
+        descripcion = request.form.get('descripcion')
+
+        if not nombre:
+            flash('El nombre de la sede es requerido', 'error')
+            return redirect(url_for('configuracion'))
+
+        # Verificar si ya existe una sede con ese nombre
+        sede_existente = Sede.query.filter_by(nombre=nombre).first()
+        if sede_existente:
+            flash('Ya existe una sede con ese nombre', 'error')
+            return redirect(url_for('configuracion'))
+
+        nueva_sede = Sede(
+            nombre=nombre,
+            descripcion=descripcion,
+            activa=True
+        )
+
+        db.session.add(nueva_sede)
+        db.session.commit()
+
+        flash('Sede creada exitosamente', 'success')
+
+    except Exception as e:
+        logger.error(f"Error al crear sede: {str(e)}", exc_info=True)
+        db.session.rollback()
+        flash('Error al crear la sede', 'error')
+
+    return redirect(url_for('configuracion'))
+
+@app.route('/editar_sede/<int:sede_id>', methods=['POST'])
+def editar_sede(sede_id):
+    """Edita una sede existente"""
+    try:
+        sede = Sede.query.get_or_404(sede_id)
+        nombre = request.form.get('nombre')
+        descripcion = request.form.get('descripcion')
+        activa = request.form.get('activa') == 'true'
+
+        if not nombre:
+            flash('El nombre de la sede es requerido', 'error')
+            return redirect(url_for('configuracion'))
+
+        # Verificar si ya existe otra sede con ese nombre
+        sede_existente = Sede.query.filter(
+            Sede.nombre == nombre,
+            Sede.id != sede_id
+        ).first()
+
+        if sede_existente:
+            flash('Ya existe otra sede con ese nombre', 'error')
+            return redirect(url_for('configuracion'))
+
+        sede.nombre = nombre
+        sede.descripcion = descripcion
+        sede.activa = activa
+
+        db.session.commit()
+        flash('Sede actualizada exitosamente', 'success')
+
+    except Exception as e:
+        logger.error(f"Error al editar sede: {str(e)}", exc_info=True)
+        db.session.rollback()
+        flash('Error al editar la sede', 'error')
+
+    return redirect(url_for('configuracion'))
+
+@app.route('/eliminar_sede/<int:sede_id>', methods=['POST'])
+def eliminar_sede(sede_id):
+    """Elimina una sede si no tiene escaneos asociados"""
+    try:
+        sede = Sede.query.get_or_404(sede_id)
+
+        # Verificar si tiene escaneos
+        if sede.escaneos:
+            flash('No se puede eliminar la sede porque tiene escaneos asociados', 'error')
+            return redirect(url_for('configuracion'))
+
+        db.session.delete(sede)
+        db.session.commit()
+        flash('Sede eliminada exitosamente', 'success')
+
+    except Exception as e:
+        logger.error(f"Error al eliminar sede: {str(e)}", exc_info=True)
+        db.session.rollback()
+        flash('Error al eliminar la sede', 'error')
+
+    return redirect(url_for('configuracion'))
+
+@app.route('/subir_reporte', methods=['POST'])
+def subir_reporte():
+    """Maneja la subida de un nuevo reporte de vulnerabilidades"""
+    if 'archivo' not in request.files:
+        flash('No se seleccionó ningún archivo', 'error')
+        return redirect(url_for('configuracion'))
+
+    archivo = request.files['archivo']
+    if archivo.filename == '':
+        flash('No se seleccionó ningún archivo', 'error')
+        return redirect(url_for('configuracion'))
+
+    if not allowed_file(archivo.filename):
+        flash('Tipo de archivo no permitido. Solo se permiten archivos .txt', 'error')
+        return redirect(url_for('configuracion'))
+
+    try:
+        # Obtener datos del formulario
+        sede_id = request.form.get('sede_id')
+        fecha_escaneo = request.form.get('fecha_escaneo')
+
+        if not sede_id or not fecha_escaneo:
+            flash('La sede y la fecha de escaneo son requeridas', 'error')
+            return redirect(url_for('configuracion'))
+
+        # Guardar el archivo
+        filename = secure_filename(archivo.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        archivo.save(filepath)
+
+        # Procesar el archivo
+        resultados = analizar_vulnerabilidades(filepath)
+        if not resultados:
+            flash('No se encontraron vulnerabilidades en el archivo', 'warning')
+            return redirect(url_for('configuracion'))
+
+        # Crear el escaneo y sus relaciones
+        fecha_escaneo_obj = datetime.strptime(fecha_escaneo, '%Y-%m-%d').date()
+        nuevo_escaneo = Escaneo(
+            sede_id=sede_id,
+            fecha_escaneo=fecha_escaneo_obj
+        )
+        db.session.add(nuevo_escaneo)
+
+        # Procesar cada host y sus vulnerabilidades
+        for ip, host_data in resultados['hosts_detalle'].items():
+            nuevo_host = Host(
+                ip=ip,
+                nombre_host=host_data['nombre_host'],
+                escaneo=nuevo_escaneo
+            )
+            db.session.add(nuevo_host)
+
+            for vuln_data in host_data['vulnerabilidades']:
+                nueva_vuln = Vulnerabilidad(
+                    oid=vuln_data['oid'],
+                    nvt=vuln_data['nvt'],
+                    nivel_amenaza=vuln_data['nivel_amenaza'],
+                    cvss=vuln_data['cvss'],
+                    puerto=vuln_data['puerto'],
+                    resumen=vuln_data['resumen'],
+                    impacto=vuln_data['impacto'],
+                    solucion=vuln_data['solucion'],
+                    metodo_deteccion=vuln_data['metodo_deteccion'],
+                    referencias=vuln_data['referencias'],
+                    host=nuevo_host
+                )
+                db.session.add(nueva_vuln)
+
+        db.session.commit()
+        flash('Reporte procesado exitosamente', 'success')
+
+        # Eliminar el archivo temporal
+        os.remove(filepath)
+
+    except Exception as e:
+        logger.error(f"Error al procesar el reporte: {str(e)}", exc_info=True)
+        db.session.rollback()
+        flash('Error al procesar el reporte', 'error')
+
+    return redirect(url_for('configuracion'))
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
