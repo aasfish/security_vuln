@@ -181,6 +181,12 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'informes' %}active{% endif %}" href="{{ url_for('informes') }}">
+                    <i class="bi bi-file-earmark-text"></i>
+                    Informes
+                </a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link {% if request.endpoint == 'configuracion' %}active{% endif %}" href="{{ url_for('configuracion') }}">
                     <i class="bi bi-gear"></i>
                     Configuración

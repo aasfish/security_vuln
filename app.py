@@ -8,6 +8,7 @@ from parser import analizar_vulnerabilidades
 from database import db, init_db
 from models import Sede, Escaneo, Host, Vulnerabilidad
 from exportar import exportar_a_csv, exportar_a_pdf
+from informes import generar_informe_ejecutivo, generar_informe_tecnico
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -697,7 +698,102 @@ def eliminar_escaneo(escaneo_id):
         logger.error(f"Error al eliminar escaneo: {str(e)}", exc_info=True)
         flash('Error al eliminar el escaneo', 'error')
 
-    return redirect(url_for('hosts'))
+    return redirect(url_for('configuracion'))
+
+@app.route('/informes')
+def informes():
+    """Vista de informes que permite generar diferentes tipos de reportes"""
+    sede = request.args.get('sede')
+    fecha_inicio = request.args.get('fecha_inicio')
+    fecha_fin = request.args.get('fecha_fin')
+    riesgo = request.args.get('riesgo')
+
+    # Query base para obtener estadísticas
+    query = Vulnerabilidad.query.join(Host).join(Escaneo).join(Sede)
+
+    # Aplicar filtros
+    if sede:
+        query = query.filter(Sede.nombre == sede)
+    if fecha_inicio:
+        query = query.filter(Escaneo.fecha_escaneo >= datetime.strptime(fecha_inicio, '%Y-%m-%d').date())
+    if fecha_fin:
+        query = query.filter(Escaneo.fecha_escaneo <= datetime.strptime(fecha_fin, '%Y-%m-%d').date())
+
+    # Obtener todas las vulnerabilidades que cumplen los filtros
+    vulnerabilidades = query.all()
+
+    # Contar por criticidad
+    criticidad = {
+        'Critical': len([v for v in vulnerabilidades if v.nivel_amenaza == 'Critical']),
+        'High': len([v for v in vulnerabilidades if v.nivel_amenaza == 'High']),
+        'Medium': len([v for v in vulnerabilidades if v.nivel_amenaza == 'Medium']),
+        'Low': len([v for v in vulnerabilidades if v.nivel_amenaza == 'Low'])
+    }
+
+    return render_template('informes.html',
+                         criticidad=list(criticidad.values()),
+                         sedes=obtener_sedes(),
+                         sede_seleccionada=sede,
+                         fecha_inicio=fecha_inicio,
+                         fecha_fin=fecha_fin)
+
+@app.route('/generar_informe/<tipo>/<formato>')
+def generar_informe(tipo, formato):
+    """
+    Genera un informe en el formato especificado
+    tipo: 'ejecutivo' o 'tecnico'
+    formato: 'pdf' o 'csv'
+    """
+    try:
+        sede = request.args.get('sede')
+        fecha_inicio = request.args.get('fecha_inicio')
+        fecha_fin = request.args.get('fecha_fin')
+        riesgo = request.args.get('riesgo')
+
+        # Obtener datos filtrados
+        resultados = filtrar_resultados(sede, fecha_inicio, fecha_fin, riesgo)
+
+        if not resultados:
+            flash('No hay datos disponibles para generar el informe', 'warning')
+            return redirect(url_for('informes'))
+
+        # Preparar datos para el informe
+        datos_informe = {}
+        for resultado in resultados:
+            datos_informe.update(resultado['hosts_detalle'])
+
+        # Generar el informe según el tipo y formato
+        if tipo == 'ejecutivo':
+            output = generar_informe_ejecutivo(datos_informe, formato)
+        else:  # técnico
+            output = generar_informe_tecnico(datos_informe, formato)
+
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        return send_file(
+            output,
+            mimetype='application/pdf' if formato == 'pdf' else 'text/csv',
+            as_attachment=True,
+            download_name=f'informe_{tipo}_{timestamp}.{formato}'
+        )
+
+    except Exception as e:
+        logger.error(f"Error al generar informe: {str(e)}", exc_info=True)
+        flash('Error al generar el informe', 'error')
+        return redirect(url_for('informes'))
+
+def generar_informe_ejecutivo(datos_informe, formato):
+    """
+    Genera un informe ejecutivo usando la función del módulo informes
+    """
+    from informes import generar_informe_ejecutivo
+    return generar_informe_ejecutivo(datos_informe, tipo=formato)
+
+def generar_informe_tecnico(datos_informe, formato):
+    """
+    Genera un informe técnico usando la función del módulo informes
+    """
+    from informes import generar_informe_tecnico
+    return generar_informe_tecnico(datos_informe, tipo=formato)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

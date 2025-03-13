@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h4 mb-0">Generación de Informes</h1>
+        {% include 'components/filtros.html' %}
+    </div>
+
+    <div class="row">
+        <!-- Informe Ejecutivo -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-dark bg-gradient">
+                    <h5 class="card-title mb-0 text-white">Informe Ejecutivo</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Genera un informe resumido con las estadísticas más importantes y gráficos ejecutivos.
+                        Ideal para presentaciones y revisiones de alto nivel.
+                    </p>
+                    <ul class="list-unstyled mb-4">
+                        <li><i class="bi bi-check2 text-success me-2"></i>Resumen estadístico</li>
+                        <li><i class="bi bi-check2 text-success me-2"></i>Gráficos de distribución</li>
+                        <li><i class="bi bi-check2 text-success me-2"></i>Tendencias principales</li>
+                        <li><i class="bi bi-check2 text-success me-2"></i>Recomendaciones clave</li>
+                    </ul>
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('generar_informe', tipo='ejecutivo', formato='pdf') }}{{ '?' + request.query_string.decode() if request.query_string else '' }}" 
+                           class="btn btn-primary">
+                            <i class="bi bi-file-earmark-pdf me-2"></i>PDF
+                        </a>
+                        <a href="{{ url_for('generar_informe', tipo='ejecutivo', formato='csv') }}{{ '?' + request.query_string.decode() if request.query_string else '' }}" 
+                           class="btn btn-success">
+                            <i class="bi bi-file-earmark-spreadsheet me-2"></i>CSV
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Informe Técnico -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-dark bg-gradient">
+                    <h5 class="card-title mb-0 text-white">Informe Técnico</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Genera un informe técnico detallado con toda la información de vulnerabilidades.
+                        Ideal para equipos técnicos y análisis profundo.
+                    </p>
+                    <ul class="list-unstyled mb-4">
+                        <li><i class="bi bi-check2 text-success me-2"></i>Detalles completos de vulnerabilidades</li>
+                        <li><i class="bi bi-check2 text-success me-2"></i>Información técnica exhaustiva</li>
+                        <li><i class="bi bi-check2 text-success me-2"></i>Referencias y CVEs</li>
+                        <li><i class="bi bi-check2 text-success me-2"></i>Recomendaciones técnicas</li>
+                    </ul>
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('generar_informe', tipo='tecnico', formato='pdf') }}{{ '?' + request.query_string.decode() if request.query_string else '' }}" 
+                           class="btn btn-primary">
+                            <i class="bi bi-file-earmark-pdf me-2"></i>PDF
+                        </a>
+                        <a href="{{ url_for('generar_informe', tipo='tecnico', formato='csv') }}{{ '?' + request.query_string.decode() if request.query_string else '' }}" 
+                           class="btn btn-success">
+                            <i class="bi bi-file-earmark-spreadsheet me-2"></i>CSV
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vista previa de gráficos -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-dark bg-gradient">
+                    <h5 class="card-title mb-0 text-white">Vista Previa de Gráficos</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <canvas id="vulnerabilidadesPorNivel"></canvas>
+                        </div>
+                        <div class="col-md-6">
+                            <canvas id="tendenciasVulnerabilidades"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Gráfico de distribución de vulnerabilidades por nivel
+    const ctxNivel = document.getElementById('vulnerabilidadesPorNivel').getContext('2d');
+    new Chart(ctxNivel, {
+        type: 'pie',
+        data: {
+            labels: ['Críticas', 'Altas', 'Medias', 'Bajas'],
+            datasets: [{
+                data: [{{ criticidad[0] }}, {{ criticidad[1] }}, {{ criticidad[2] }}, {{ criticidad[3] }}],
+                backgroundColor: [
+                    'rgba(220, 53, 69, 0.8)',   // Rojo para críticas
+                    'rgba(255, 193, 7, 0.8)',   // Amarillo para altas
+                    'rgba(23, 162, 184, 0.8)',  // Cyan para medias
+                    'rgba(40, 167, 69, 0.8)'    // Verde para bajas
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                title: {
+                    display: true,
+                    text: 'Distribución de Vulnerabilidades por Nivel',
+                    color: '#e9ecef'
+                }
+            }
+        }
+    });
+
+    // Obtener datos de tendencias
+    fetch('/tendencias{{ "?" + request.query_string.decode() if request.query_string else "" }}')
+        .then(response => response.json())
+        .then(data => {
+            const fechas = data.map(item => item.fecha);
+            const criticas = data.map(item => item.Critical);
+            const altas = data.map(item => item.High);
+            const medias = data.map(item => item.Medium);
+            const bajas = data.map(item => item.Low);
+
+            const ctxTendencias = document.getElementById('tendenciasVulnerabilidades').getContext('2d');
+            new Chart(ctxTendencias, {
+                type: 'line',
+                data: {
+                    labels: fechas,
+                    datasets: [
+                        {
+                            label: 'Críticas',
+                            data: criticas,
+                            borderColor: 'rgba(220, 53, 69, 1)',
+                            backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Altas',
+                            data: altas,
+                            borderColor: 'rgba(255, 193, 7, 1)',
+                            backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Medias',
+                            data: medias,
+                            borderColor: 'rgba(23, 162, 184, 1)',
+                            backgroundColor: 'rgba(23, 162, 184, 0.1)',
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Bajas',
+                            data: bajas,
+                            borderColor: 'rgba(40, 167, 69, 1)',
+                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            tension: 0.1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Tendencia de Vulnerabilidades',
+                            color: '#e9ecef'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#e9ecef'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#e9ecef'
+                            }
+                        }
+                    }
+                }
+            });
+        });
+});
+</script>
+{% endblock %}
