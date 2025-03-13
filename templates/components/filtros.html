@@ -1,7 +1,7 @@
 <div class="d-flex gap-3">
     <div class="dropdown">
-        <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2 shadow-sm" type="button" data-bs-toggle="dropdown">
-            <i class="bi bi-geo-alt-fill"></i>
+        <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
+            <i class="bi bi-geo-alt"></i>
             {{ sede_seleccionada if sede_seleccionada else 'Todas las sedes' }}
         </button>
         <ul class="dropdown-menu shadow-sm">
@@ -15,9 +15,9 @@
     </div>
 
     <div class="dropdown">
-        <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2 shadow-sm" type="button" data-bs-toggle="dropdown">
-            <i class="bi bi-calendar3-fill"></i>
-            {{ fecha_inicio if fecha_inicio else 'Seleccionar Fecha' }}
+        <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
+            <i class="bi bi-calendar3"></i>
+            {{ fecha_inicio if fecha_inicio else '2025' }}
         </button>
         <ul class="dropdown-menu shadow-sm p-3" style="min-width: 300px">
             <div class="list-group" id="fechas-disponibles">
@@ -31,17 +31,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     const sedeSeleccionada = '{{ sede_seleccionada if sede_seleccionada else "Todas las sedes" }}';
     actualizarFechasDisponibles(sedeSeleccionada);
-
-    // Agregar event listeners para los enlaces de sede
-    document.querySelectorAll('.dropdown-item').forEach(link => {
-        link.addEventListener('click', function(e) {
-            if (this.textContent === 'Todas las sedes') {
-                actualizarFechasDisponibles('Todas las sedes');
-            } else {
-                actualizarFechasDisponibles(this.textContent.trim());
-            }
-        });
-    });
 });
 
 function actualizarFechasDisponibles(sede) {
