@@ -551,11 +551,20 @@ def generar_informe(tipo, formato):
         fecha_fin = request.args.get('fecha_fin')
         riesgo = request.args.get('riesgo')
 
+        # Validar parámetros
+        if tipo not in ['ejecutivo', 'tecnico']:
+            flash('Tipo de informe no válido', 'error')
+            return redirect(url_for('informes'))
+
+        if formato not in ['pdf', 'csv']:
+            flash('Formato de informe no válido', 'error')
+            return redirect(url_for('informes'))
+
         # Obtener datos filtrados
         resultados = filtrar_resultados(sede, fecha_inicio, fecha_fin, riesgo)
 
         if not resultados:
-            flash('No hay datos disponibles para generar el informe', 'warning')
+            flash('No hay datos disponibles para generar el informe. Por favor, seleccione otros filtros.', 'warning')
             return redirect(url_for('informes'))
 
         # Preparar datos para el informe
@@ -571,9 +580,15 @@ def generar_informe(tipo, formato):
 
         # Generar el informe según el tipo y formato
         if tipo == 'ejecutivo':
+            from informes import generar_informe_ejecutivo
             output = generar_informe_ejecutivo(datos_informe, formato)
         else:  # técnico
+            from informes import generar_informe_tecnico
             output = generar_informe_tecnico(datos_informe, formato)
+
+        if not output:
+            flash('Error al generar el informe. No se pudo crear el archivo.', 'error')
+            return redirect(url_for('informes'))
 
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         return send_file(
@@ -583,9 +598,13 @@ def generar_informe(tipo, formato):
             download_name=f'informe_{tipo}_{timestamp}.{formato}'
         )
 
+    except ImportError as e:
+        logger.error(f"Error al importar módulo de informes: {str(e)}", exc_info=True)
+        flash('Error interno: No se pudo cargar el generador de informes', 'error')
+        return redirect(url_for('informes'))
     except Exception as e:
         logger.error(f"Error al generar informe: {str(e)}", exc_info=True)
-        flash('Error al generar el informe', 'error')
+        flash('Error al generar el informe. Por favor, inténtelo de nuevo.', 'error')
         return redirect(url_for('informes'))
 
 def generar_informe_ejecutivo(datos_informe, formato):
