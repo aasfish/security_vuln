@@ -1,30 +1,30 @@
-<div class="card mb-4">
-    <div class="card-body">
-        <form method="get" class="row g-3">
-            <div class="col-md-4">
-                <label for="sede" class="form-label">Sede</label>
-                <select class="form-select" id="sede" name="sede">
-                    <option value="">Todas las sedes</option>
-                    {% for sede in sedes %}
-                    <option value="{{ sede }}" {% if sede == sede_seleccionada %}selected{% endif %}>{{ sede }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
-                <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" 
-                       value="{{ fecha_inicio if fecha_inicio }}">
-            </div>
-            <div class="col-md-3">
-                <label for="fecha_fin" class="form-label">Fecha Fin</label>
-                <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" 
-                       value="{{ fecha_fin if fecha_fin }}">
-            </div>
-            <div class="col-md-2 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary w-100">
-                    <i class="bi bi-funnel"></i> Filtrar
-                </button>
-            </div>
-        </form>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex gap-3">
+        <div class="dropdown">
+            <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
+                <i class="bi bi-geo-alt"></i>
+                {{ sede_seleccionada if sede_seleccionada else 'CENTRAL' }}
+            </button>
+            <ul class="dropdown-menu">
+                {% for sede in sedes %}
+                <li><a class="dropdown-item {% if sede == sede_seleccionada %}active{% endif %}" href="?sede={{ sede }}">{{ sede }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="dropdown">
+            <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
+                <i class="bi bi-calendar3"></i>
+                {{ fecha_inicio if fecha_inicio else '5/3/2025' }}
+            </button>
+            <ul class="dropdown-menu p-3" style="min-width: 300px">
+                <div class="mb-3">
+                    <label class="form-label">Fecha de Escaneo</label>
+                    <input type="date" class="form-control" id="fecha_escaneo" name="fecha_escaneo" 
+                           value="{{ fecha_inicio if fecha_inicio }}" 
+                           onchange="window.location.href='?fecha_inicio=' + this.value">
+                </div>
+            </ul>
+        </div>
     </div>
 </div>
