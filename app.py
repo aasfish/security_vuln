@@ -4,6 +4,7 @@ from datetime import datetime
 from flask import Flask, render_template, request, flash, redirect, url_for, send_from_directory, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy import text
 from werkzeug.utils import secure_filename
 from parser import analizar_vulnerabilidades
 
@@ -322,7 +323,7 @@ def comparacion():
             segunda_fecha = datetime.strptime(segundo_escaneo, '%Y-%m-%d').date()
 
             # Consulta SQL directa para obtener los conteos
-            sql = """
+            sql_query = text("""
             SELECT e.fecha_escaneo, v.nivel_amenaza, COUNT(*) as total
             FROM escaneos e
             JOIN hosts h ON h.escaneo_id = e.id
@@ -330,9 +331,9 @@ def comparacion():
             WHERE e.sede = :sede 
             AND e.fecha_escaneo IN (:fecha1, :fecha2)
             GROUP BY e.fecha_escaneo, v.nivel_amenaza
-            """
+            """)
 
-            result = db.session.execute(sql, {
+            result = db.session.execute(sql_query, {
                 'sede': sede,
                 'fecha1': primer_fecha,
                 'fecha2': segunda_fecha
@@ -343,20 +344,30 @@ def comparacion():
             segundo_conteo = {'Critical': 0, 'High': 0, 'Medium': 0, 'Low': 0}
 
             for row in result:
-                if row[0] == primer_fecha:
-                    primer_conteo[row[1]] = row[2]
+                fecha_escaneo = row[0]
+                nivel_amenaza = row[1]
+                total = row[2]
+                logger.debug(f"Procesando resultado: fecha={fecha_escaneo}, nivel={nivel_amenaza}, total={total}")
+
+                if fecha_escaneo == primer_fecha:
+                    primer_conteo[nivel_amenaza] = total
                 else:
-                    segundo_conteo[row[1]] = row[2]
+                    segundo_conteo[nivel_amenaza] = total
 
             # Calcular totales
             primer_total = sum(primer_conteo.values())
             segundo_total = sum(segundo_conteo.values())
+
+            logger.debug(f"Totales antes de normalización - Primer escaneo: {primer_total}, Segundo escaneo: {segundo_total}")
+            logger.debug(f"Conteos antes de normalización - Primer: {primer_conteo}, Segundo: {segundo_conteo}")
 
             # Convertir a porcentajes
             if primer_total > 0:
                 primer_conteo = {k: round(v/primer_total, 3) for k, v in primer_conteo.items()}
             if segundo_total > 0:
                 segundo_conteo = {k: round(v/segundo_total, 3) for k, v in segundo_conteo.items()}
+
+            logger.debug(f"Conteos después de normalización - Primer: {primer_conteo}, Segundo: {segundo_conteo}")
 
             # Calcular variación
             variacion = segundo_total - primer_total
@@ -389,7 +400,6 @@ def comparacion():
                          primer_escaneo=primer_escaneo,
                          segundo_escaneo=segundo_escaneo,
                          resultados=resultados)
-
 
 @app.route('/static/<path:filename>')
 def serve_static(filename):
