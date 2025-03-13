@@ -6,8 +6,60 @@
         <h1 class="h4 mb-0">Configuración</h1>
     </div>
 
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
+    <div class="row">
+        <!-- Gestión de Sedes -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">Gestión de Sedes</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('crear_sede') }}" method="post">
+                        <div class="mb-3">
+                            <label for="nombre" class="form-label">Nombre de la Sede</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" required
+                                   placeholder="Ingrese el nombre de la sede">
+                        </div>
+                        <div class="mb-3">
+                            <label for="descripcion" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="descripcion" name="descripcion" rows="3"
+                                    placeholder="Descripción de la sede"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Agregar Sede
+                        </button>
+                    </form>
+
+                    <hr class="my-4">
+
+                    <h6 class="mb-3">Sedes Registradas</h6>
+                    <div class="list-group">
+                        {% for sede in sedes %}
+                        <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ sede.nombre }}</h6>
+                                <small class="text-muted">{{ sede.descripcion or 'Sin descripción' }}</small>
+                            </div>
+                            <div class="btn-group">
+                                <form action="{{ url_for('toggle_sede', sede_id=sede.id) }}" method="post" class="me-2">
+                                    <button type="submit" class="btn btn-sm {% if sede.activa %}btn-success{% else %}btn-secondary{% endif %}">
+                                        {% if sede.activa %}
+                                        <i class="bi bi-check-circle"></i> Activa
+                                        {% else %}
+                                        <i class="bi bi-x-circle"></i> Inactiva
+                                        {% endif %}
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Carga de Archivos -->
+        <div class="col-lg-6">
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-transparent border-0">
                     <h5 class="mb-0">Cargar Archivo de Vulnerabilidades</h5>
@@ -25,8 +77,12 @@
 
                         <div class="mb-3">
                             <label for="sede" class="form-label">Sede</label>
-                            <input type="text" class="form-control" id="sede" name="sede" required
-                                   placeholder="Ingrese el nombre de la sede">
+                            <select class="form-select" id="sede" name="sede" required>
+                                <option value="">Seleccione una sede</option>
+                                {% for sede in sedes_activas %}
+                                <option value="{{ sede.id }}">{{ sede.nombre }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
 
                         <div class="mb-3">

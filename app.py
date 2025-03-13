@@ -43,12 +43,12 @@ def allowed_file(filename):
 
 def filtrar_resultados(sede=None, fecha_inicio=None, fecha_fin=None, riesgo=None):
     """Filtra los resultados según los criterios especificados"""
-    from models import Escaneo, Host, Vulnerabilidad
+    from models import Escaneo, Host, Vulnerabilidad, Sede
 
-    query = Escaneo.query
+    query = Escaneo.query.join(Sede)
 
     if sede and sede != 'Todas las sedes':
-        query = query.filter(Escaneo.sede == sede)
+        query = query.filter(Sede.nombre == sede)
 
     if fecha_inicio:
         fecha_inicio_obj = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
@@ -90,7 +90,7 @@ def filtrar_resultados(sede=None, fecha_inicio=None, fecha_fin=None, riesgo=None
 
         if hosts_detalle:
             resultados.append({
-                'sede': escaneo.sede,
+                'sede': escaneo.sede.nombre,
                 'fecha_escaneo': escaneo.fecha_escaneo.strftime('%Y-%m-%d'),
                 'hosts_detalle': hosts_detalle
             })
@@ -99,8 +99,8 @@ def filtrar_resultados(sede=None, fecha_inicio=None, fecha_fin=None, riesgo=None
 
 def obtener_sedes():
     """Obtiene la lista única de sedes de los resultados"""
-    from models import Escaneo
-    return sorted(list(set(r.sede for r in Escaneo.query.all())))
+    from models import Sede
+    return sorted([sede.nombre for sede in Sede.query.filter_by(activa=True).all()])
 
 @app.route('/')
 def index():
@@ -114,7 +114,7 @@ def analizar():
         return redirect(url_for('index'))
 
     archivo = request.files['archivo']
-    sede = request.form.get('sede', '')
+    sede_id = request.form.get('sede', '')
     fecha_escaneo = request.form.get('fecha_escaneo', datetime.now().strftime('%Y-%m-%d'))
 
     if archivo.filename == '':
@@ -145,7 +145,7 @@ def analizar():
         from models import Escaneo, Host, Vulnerabilidad
 
         escaneo = Escaneo(
-            sede=sede,
+            sede_id=sede_id,
             fecha_escaneo=datetime.strptime(fecha_escaneo, '%Y-%m-%d').date()
         )
         db.session.add(escaneo)
@@ -241,11 +241,11 @@ def vulnerabilidades():
     estado = request.args.get('estado')  # Nuevo parámetro para filtrar por estado
 
     from models import Escaneo, Host, Vulnerabilidad
-    query = Vulnerabilidad.query.join(Host).join(Escaneo)
+    query = Vulnerabilidad.query.join(Host).join(Escaneo).join(Sede)
 
     # Aplicar filtros existentes
     if sede:
-        query = query.filter(Escaneo.sede == sede)
+        query = query.filter(Sede.nombre == sede)
     if fecha_inicio:
         query = query.filter(Escaneo.fecha_escaneo >= datetime.strptime(fecha_inicio, '%Y-%m-%d').date())
     if fecha_fin:
@@ -435,6 +435,7 @@ def fechas_por_sede(sede):
 
     return jsonify([fecha[0].strftime('%Y-%m-%d') for fecha in fechas])
 
+
 @app.route('/dashboard')
 def dashboard():
     """Vista del dashboard principal"""
@@ -446,11 +447,11 @@ def dashboard():
     from models import Escaneo, Host, Vulnerabilidad
 
     # Query base
-    query = Vulnerabilidad.query.join(Host).join(Escaneo)
+    query = Vulnerabilidad.query.join(Host).join(Escaneo).join(Sede)
 
     # Aplicar filtros
     if sede:
-        query = query.filter(Escaneo.sede == sede)
+        query = query.filter(Sede.nombre == sede)
     if fecha_inicio:
         query = query.filter(Escaneo.fecha_escaneo >= datetime.strptime(fecha_inicio, '%Y-%m-%d').date())
     if fecha_fin:
@@ -495,8 +496,58 @@ def dashboard():
 
 @app.route('/configuracion')
 def configuracion():
-    """Vista de configuración que incluye la carga de archivos"""
-    return render_template('configuracion.html', today=datetime.now().strftime('%Y-%m-%d'))
+    """Vista de configuración que incluye la gestión de sedes"""
+    from models import Sede
+    sedes = Sede.query.order_by(Sede.nombre).all()
+    sedes_activas = [s for s in sedes if s.activa]
+    return render_template('configuracion.html', 
+                         today=datetime.now().strftime('%Y-%m-%d'),
+                         sedes=sedes,
+                         sedes_activas=sedes_activas)
+
+@app.route('/crear_sede', methods=['POST'])
+def crear_sede():
+    """Crear una nueva sede"""
+    from models import Sede
+    try:
+        nombre = request.form.get('nombre')
+        descripcion = request.form.get('descripcion')
+
+        if not nombre:
+            flash('El nombre de la sede es requerido', 'error')
+            return redirect(url_for('configuracion'))
+
+        sede = Sede(
+            nombre=nombre,
+            descripcion=descripcion
+        )
+        db.session.add(sede)
+        db.session.commit()
+
+        flash('Sede creada exitosamente', 'success')
+    except Exception as e:
+        logger.error(f"Error al crear sede: {str(e)}", exc_info=True)
+        flash('Error al crear la sede', 'error')
+
+    return redirect(url_for('configuracion'))
+
+@app.route('/toggle_sede/<int:sede_id>', methods=['POST'])
+def toggle_sede(sede_id):
+    """Activar/desactivar una sede"""
+    from models import Sede
+    try:
+        sede = Sede.query.get_or_404(sede_id)
+        sede.activa = not sede.activa
+        db.session.commit()
+
+        estado = "activada" if sede.activa else "desactivada"
+        flash(f'Sede {estado} exitosamente', 'success')
+    except Exception as e:
+        logger.error(f"Error al toggle sede: {str(e)}", exc_info=True)
+        flash('Error al actualizar el estado de la sede', 'error')
+
+    return redirect(url_for('configuracion'))
+
 
 @app.route('/tendencias')
 def obtener_tendencias():
@@ -507,7 +558,7 @@ def obtener_tendencias():
 
     logger.debug(f"Filtros recibidos - sede: {sede}, fecha_inicio: {fecha_inicio}, fecha_fin: {fecha_fin}")
 
-    from models import Escaneo, Host, Vulnerabilidad
+    from models import Escaneo, Host, Vulnerabilidad, Sede
 
     # Construir la consulta SQL base
     sql_base = """
@@ -518,13 +569,14 @@ def obtener_tendencias():
         FROM escaneos e
         JOIN hosts h ON h.escaneo_id = e.id
         JOIN vulnerabilidades v ON v.host_id = h.id
+        JOIN sedes s ON e.sede_id = s.id
         WHERE 1=1
     """
     params = {}
 
     # Agregar condiciones según los filtros
     if sede and sede != 'Todas las sedes':
-        sql_base += " AND e.sede = :sede"
+        sql_base += " AND s.nombre = :sede"
         params['sede'] = sede
     if fecha_inicio:
         sql_base += " AND e.fecha_escaneo >= :fecha_inicio"
