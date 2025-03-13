@@ -58,13 +58,13 @@
         </div>
 
         <!-- Carga de Archivos -->
-        <div class="col-lg-12 mt-4">
+        <div class="col-lg-6 mb-4">
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-transparent border-0">
                     <h5 class="mb-0">Cargar Archivo de Vulnerabilidades</h5>
                 </div>
                 <div class="card-body">
-                    <form id="uploadForm" action="{{ url_for('subir_reporte') }}" method="post" enctype="multipart/form-data">
+                    <form action="{{ url_for('subir_reporte') }}" method="post" enctype="multipart/form-data" id="uploadForm">
                         <div class="mb-4">
                             <h6 class="text-muted mb-3">Instrucciones:</h6>
                             <ul class="text-muted mb-4">
@@ -90,12 +90,17 @@
                                    value="{{ today }}" required>
                         </div>
 
-                        <div class="mb-4">
+                        <div class="mb-3">
                             <label for="archivo" class="form-label">Seleccionar Archivo</label>
                             <input type="file" class="form-control" id="archivo" name="archivo" accept=".txt" required>
                         </div>
 
-                        <button type="submit" id="submitBtn" class="btn btn-primary">
+                        <div class="progress mb-3 d-none" id="progressContainer">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 role="progressbar" style="width: 0%" id="uploadProgress"></div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
                             <i class="bi bi-upload"></i> Subir y Analizar
                         </button>
                     </form>
@@ -126,32 +131,24 @@ function toggleSede(sedeId, nombreSede) {
         });
     }
 }
-</script>
-{% endblock %}
 
-{% block scripts %}
-<script>
+// Manejar la subida del archivo
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('uploadForm');
     const progressContainer = document.getElementById('progressContainer');
     const progressBar = document.getElementById('uploadProgress');
-    const uploadStatus = document.getElementById('uploadStatus');
     const submitBtn = document.getElementById('submitBtn');
 
     form.onsubmit = function(e) {
         e.preventDefault();
 
-        // Validar el formulario
         if (!form.checkValidity()) {
             form.reportValidity();
             return false;
         }
 
-        // Mostrar barra de progreso y deshabilitar botón
         progressContainer.classList.remove('d-none');
         submitBtn.disabled = true;
-        progressBar.style.width = '0%';
-        uploadStatus.textContent = 'Iniciando carga...';
 
         const formData = new FormData(form);
         const xhr = new XMLHttpRequest();
@@ -160,44 +157,28 @@ document.addEventListener('DOMContentLoaded', function() {
             if (e.lengthComputable) {
                 const percentComplete = (e.loaded / e.total) * 100;
                 progressBar.style.width = percentComplete + '%';
-                progressBar.setAttribute('aria-valuenow', percentComplete);
-                uploadStatus.textContent = `Cargando... ${Math.round(percentComplete)}%`;
             }
         };
 
         xhr.onload = function() {
             if (xhr.status === 200) {
-                progressBar.classList.remove('progress-bar-animated');
-                progressBar.classList.add('bg-success');
-                uploadStatus.textContent = 'Carga completada exitosamente';
-
-                // Redirigir después de mostrar el mensaje de éxito
-                setTimeout(() => {
-                    window.location.href = xhr.responseURL || '/dashboard';
-                }, 1500);
+                window.location.href = '/configuracion';
             } else {
-                progressBar.classList.add('bg-danger');
-                uploadStatus.textContent = 'Error al cargar el archivo';
+                alert('Error al subir el archivo');
                 submitBtn.disabled = false;
+                progressContainer.classList.add('d-none');
             }
         };
 
         xhr.onerror = function() {
-            progressBar.classList.add('bg-danger');
-            uploadStatus.textContent = 'Error de conexión';
+            alert('Error de conexión');
             submitBtn.disabled = false;
+            progressContainer.classList.add('d-none');
         };
 
         xhr.open('POST', form.action, true);
         xhr.send(formData);
     };
 });
-
-function confirmarEliminacion(sede, fecha, escaneoId) {
-    document.getElementById('scanInfo').textContent = `de ${sede} del ${fecha}`;
-    document.getElementById('deleteForm').action = `/eliminar_escaneo/${escaneoId}`;
-    var modal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
-    modal.show();
-}
 </script>
 {% endblock %}

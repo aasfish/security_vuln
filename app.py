@@ -803,20 +803,20 @@ def eliminar_sede(sede_id):
 @app.route('/subir_reporte', methods=['POST'])
 def subir_reporte():
     """Maneja la subida de un nuevo reporte de vulnerabilidades"""
-    if 'archivo' not in request.files:
-        flash('No se seleccionó ningún archivo', 'error')
-        return redirect(url_for('configuracion'))
-
-    archivo = request.files['archivo']
-    if archivo.filename == '':
-        flash('No se seleccionó ningún archivo', 'error')
-        return redirect(url_for('configuracion'))
-
-    if not allowed_file(archivo.filename):
-        flash('Tipo de archivo no permitido. Solo se permiten archivos .txt', 'error')
-        return redirect(url_for('configuracion'))
-
     try:
+        if 'archivo' not in request.files:
+            flash('No se seleccionó ningún archivo', 'error')
+            return redirect(url_for('configuracion'))
+
+        archivo = request.files['archivo']
+        if archivo.filename == '':
+            flash('No se seleccionó ningún archivo', 'error')
+            return redirect(url_for('configuracion'))
+
+        if not allowed_file(archivo.filename):
+            flash('Tipo de archivo no permitido. Solo se permiten archivos .txt', 'error')
+            return redirect(url_for('configuracion'))
+
         # Obtener datos del formulario
         sede_id = request.form.get('sede_id')
         fecha_escaneo = request.form.get('fecha_escaneo')
@@ -824,6 +824,9 @@ def subir_reporte():
         if not sede_id or not fecha_escaneo:
             flash('La sede y la fecha de escaneo son requeridas', 'error')
             return redirect(url_for('configuracion'))
+
+        logger.debug(f"Iniciando procesamiento de archivo: {archivo.filename}")
+        logger.debug(f"Sede ID: {sede_id}, Fecha escaneo: {fecha_escaneo}")
 
         # Guardar el archivo
         filename = secure_filename(archivo.filename)
@@ -833,8 +836,12 @@ def subir_reporte():
         # Procesar el archivo
         resultados = analizar_vulnerabilidades(filepath)
         if not resultados:
+            logger.warning("No se encontraron vulnerabilidades en el archivo")
             flash('No se encontraron vulnerabilidades en el archivo', 'warning')
+            os.remove(filepath)
             return redirect(url_for('configuracion'))
+
+        logger.debug(f"Vulnerabilidades encontradas: {len(resultados.get('hosts_detalle', {}))}")
 
         # Crear el escaneo y sus relaciones
         fecha_escaneo_obj = datetime.strptime(fecha_escaneo, '%Y-%m-%d').date()
@@ -848,39 +855,41 @@ def subir_reporte():
         for ip, host_data in resultados['hosts_detalle'].items():
             nuevo_host = Host(
                 ip=ip,
-                nombre_host=host_data['nombre_host'],
+                nombre_host=host_data.get('nombre_host', ''),
                 escaneo=nuevo_escaneo
             )
             db.session.add(nuevo_host)
 
-            for vuln_data in host_data['vulnerabilidades']:
+            for vuln_data in host_data.get('vulnerabilidades', []):
                 nueva_vuln = Vulnerabilidad(
-                    oid=vuln_data['oid'],
-                    nvt=vuln_data['nvt'],
-                    nivel_amenaza=vuln_data['nivel_amenaza'],
-                    cvss=vuln_data['cvss'],
-                    puerto=vuln_data['puerto'],
-                    resumen=vuln_data['resumen'],
-                    impacto=vuln_data['impacto'],
-                    solucion=vuln_data['solucion'],
-                    metodo_deteccion=vuln_data['metodo_deteccion'],
-                    referencias=vuln_data['referencias'],
-                    host=nuevo_host
+                    host=nuevo_host,
+                    oid=vuln_data.get('oid', ''),
+                    nvt=vuln_data.get('nvt', ''),
+                    nivel_amenaza=vuln_data.get('nivel_amenaza', ''),
+                    cvss=vuln_data.get('cvss', ''),
+                    puerto=vuln_data.get('puerto', ''),
+                    resumen=vuln_data.get('resumen', ''),
+                    impacto=vuln_data.get('impacto', ''),
+                    solucion=vuln_data.get('solucion', ''),
+                    metodo_deteccion=vuln_data.get('metodo_deteccion', ''),
+                    referencias=vuln_data.get('referencias', []),
+                    estado='ACTIVA'
                 )
                 db.session.add(nueva_vuln)
 
         db.session.commit()
+        logger.info("Reporte procesado exitosamente")
         flash('Reporte procesado exitosamente', 'success')
 
         # Eliminar el archivo temporal
         os.remove(filepath)
+        return redirect(url_for('configuracion'))
 
     except Exception as e:
         logger.error(f"Error al procesar el reporte: {str(e)}", exc_info=True)
         db.session.rollback()
-        flash('Error al procesar el reporte', 'error')
-
-    return redirect(url_for('configuracion'))
+        flash('Error al procesar el reporte: ' + str(e), 'error')
+        return redirect(url_for('configuracion'))
 
 @app.route('/toggle_sede/<int:sede_id>', methods=['POST'])
 def toggle_sede(sede_id):
