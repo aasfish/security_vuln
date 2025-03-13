@@ -6,7 +6,7 @@ from typing import List, Dict
 class VulnerabilidadSimple:
     puerto_servicio: str
     nivel_amenaza: str
-    descripcion: str
+    descripcion: str = ""
 
 @dataclass
 class HostAnalisis:
@@ -31,7 +31,7 @@ def analizar_vulnerabilidades(filepath: str) -> Dict:
                 ip = host_match.group(1)
                 host_content = host_match.group(2)
 
-                # Extraer nombre del host si existe
+                # Extraer nombre del host
                 nombre_host = ""
                 host_name_match = re.search(rf'{ip}\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+(.*?)$', contenido, re.MULTILINE)
                 if host_name_match:
@@ -39,17 +39,18 @@ def analizar_vulnerabilidades(filepath: str) -> Dict:
 
                 vulnerabilidades = []
 
-                # Buscar sección de puertos
-                port_section = re.search(r'Port Summary.*?\n(.*?)(?=\n\n)', host_content, re.DOTALL)
+                # Buscar sección de puertos y servicios
+                port_section = re.search(r'Port Summary.*?\n--+\n\nService \(Port\)\s+Threat Level\n(.*?)(?=\n\n)', host_content, re.DOTALL)
                 if port_section:
-                    port_lines = port_section.group(1).split('\n')
+                    port_lines = port_section.group(1).strip().split('\n')
                     for line in port_lines:
-                        if '/' in line and 'Service (Port)' not in line:
+                        if line.strip():
+                            # Dividir la línea en puerto/servicio y nivel de amenaza
                             parts = line.strip().split()
                             if len(parts) >= 2:
                                 puerto_servicio = parts[0]
                                 nivel_amenaza = parts[-1]
-                                descripcion = ' '.join(parts[1:-1]) if len(parts) > 2 else "No especificada"
+                                descripcion = ' '.join(parts[1:-1]) if len(parts) > 2 else ""
 
                                 vulnerabilidades.append(VulnerabilidadSimple(
                                     puerto_servicio=puerto_servicio,
@@ -57,11 +58,12 @@ def analizar_vulnerabilidades(filepath: str) -> Dict:
                                     descripcion=descripcion
                                 ))
 
-                hosts_detalle[ip] = HostAnalisis(
-                    ip=ip,
-                    nombre_host=nombre_host,
-                    vulnerabilidades=vulnerabilidades
-                )
+                if vulnerabilidades:
+                    hosts_detalle[ip] = HostAnalisis(
+                        ip=ip,
+                        nombre_host=nombre_host,
+                        vulnerabilidades=vulnerabilidades
+                    )
 
             return {
                 'hosts_detalle': {
