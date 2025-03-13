@@ -348,20 +348,35 @@ def comparacion():
             primer_total = 0
             segundo_total = 0
 
-            for row in result:
-                sede = row[0]
-                fecha_escaneo = row[1]
-                nivel_amenaza = row[2]
-                total = row[3]
+            # Almacenar los resultados para procesarlos
+            resultados_sql = list(result)
+            logger.debug(f"Resultados SQL obtenidos: {resultados_sql}")
 
-                logger.debug(f"Procesando resultado: sede={sede}, fecha={fecha_escaneo}, nivel={nivel_amenaza}, total={total}")
-
-                if sede == sede1 and fecha_escaneo == fecha1_obj:
+            # Si es el mismo escaneo, usar los mismos datos para ambos
+            if sede1 == sede2 and fecha1_obj == fecha2_obj:
+                for row in resultados_sql:
+                    nivel_amenaza = row[2]
+                    total = row[3]
                     primer_conteo[nivel_amenaza] = total
-                    primer_total += total
-                elif sede == sede2 and fecha_escaneo == fecha2_obj:
                     segundo_conteo[nivel_amenaza] = total
+                    primer_total += total
                     segundo_total += total
+            else:
+                # Procesar normalmente para escaneos diferentes
+                for row in resultados_sql:
+                    sede = row[0]
+                    fecha_escaneo = row[1]
+                    nivel_amenaza = row[2]
+                    total = row[3]
+
+                    logger.debug(f"Procesando resultado: sede={sede}, fecha={fecha_escaneo}, nivel={nivel_amenaza}, total={total}")
+
+                    if sede == sede1 and fecha_escaneo == fecha1_obj:
+                        primer_conteo[nivel_amenaza] = total
+                        primer_total += total
+                    elif sede == sede2 and fecha_escaneo == fecha2_obj:
+                        segundo_conteo[nivel_amenaza] = total
+                        segundo_total += total
 
             logger.debug(f"Conteos procesados - Primer: {primer_conteo}, Segundo: {segundo_conteo}")
             logger.debug(f"Totales procesados - Primer escaneo: {primer_total}, Segundo escaneo: {segundo_total}")
