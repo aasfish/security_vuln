@@ -65,7 +65,7 @@
                     <h5 class="mb-0">Cargar Archivo de Vulnerabilidades</h5>
                 </div>
                 <div class="card-body">
-                    <form action="{{ url_for('analizar') }}" method="post" enctype="multipart/form-data">
+                    <form id="uploadForm" action="{{ url_for('analizar') }}" method="post" enctype="multipart/form-data">
                         <div class="mb-4">
                             <h6 class="text-muted mb-3">Instrucciones:</h6>
                             <ul class="text-muted mb-4">
@@ -96,7 +96,16 @@
                             <input type="file" class="form-control" id="archivo" name="archivo" accept=".txt" required>
                         </div>
 
-                        <button type="submit" class="btn btn-primary">
+                        <!-- Barra de Progreso (inicialmente oculta) -->
+                        <div id="progressContainer" class="mb-4 d-none">
+                            <div class="progress" style="height: 20px;">
+                                <div id="uploadProgress" class="progress-bar progress-bar-striped progress-bar-animated" 
+                                     role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <small id="uploadStatus" class="text-muted mt-2 d-block"></small>
+                        </div>
+
+                        <button type="submit" id="submitBtn" class="btn btn-primary">
                             <i class="bi bi-upload"></i> Subir y Analizar
                         </button>
                     </form>
@@ -105,4 +114,70 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('uploadForm');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = document.getElementById('uploadProgress');
+    const uploadStatus = document.getElementById('uploadStatus');
+    const submitBtn = document.getElementById('submitBtn');
+
+    form.onsubmit = function(e) {
+        e.preventDefault();
+
+        // Validar el formulario
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return false;
+        }
+
+        // Mostrar barra de progreso y deshabilitar botón
+        progressContainer.classList.remove('d-none');
+        submitBtn.disabled = true;
+        progressBar.style.width = '0%';
+        uploadStatus.textContent = 'Iniciando carga...';
+
+        const formData = new FormData(form);
+        const xhr = new XMLHttpRequest();
+
+        xhr.upload.onprogress = function(e) {
+            if (e.lengthComputable) {
+                const percentComplete = (e.loaded / e.total) * 100;
+                progressBar.style.width = percentComplete + '%';
+                progressBar.setAttribute('aria-valuenow', percentComplete);
+                uploadStatus.textContent = `Cargando... ${Math.round(percentComplete)}%`;
+            }
+        };
+
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                progressBar.classList.remove('progress-bar-animated');
+                progressBar.classList.add('bg-success');
+                uploadStatus.textContent = 'Carga completada exitosamente';
+
+                // Redirigir después de mostrar el mensaje de éxito
+                setTimeout(() => {
+                    window.location.href = xhr.responseURL || '/dashboard';
+                }, 1500);
+            } else {
+                progressBar.classList.add('bg-danger');
+                uploadStatus.textContent = 'Error al cargar el archivo';
+                submitBtn.disabled = false;
+            }
+        };
+
+        xhr.onerror = function() {
+            progressBar.classList.add('bg-danger');
+            uploadStatus.textContent = 'Error de conexión';
+            submitBtn.disabled = false;
+        };
+
+        xhr.open('POST', form.action, true);
+        xhr.send(formData);
+    };
+});
+</script>
 {% endblock %}
