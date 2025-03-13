@@ -16,7 +16,7 @@
             {% for ip, host in resultado.hosts_detalle.items() %}
             <div class="card mb-3">
                 <div class="card-header" role="button" data-bs-toggle="collapse" 
-                     data-bs-target="#host-{{ loop.index }}-{{ outer_loop.index }}" 
+                     data-bs-target="#host-{{ loop.index }}-{{ loop.parent.loop.index }}" 
                      aria-expanded="false">
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">
@@ -28,7 +28,7 @@
                         <span class="badge bg-primary">{{ host.vulnerabilidades|length }} vulnerabilidades</span>
                     </div>
                 </div>
-                <div class="collapse" id="host-{{ loop.index }}-{{ outer_loop.index }}">
+                <div class="collapse" id="host-{{ loop.index }}-{{ loop.parent.loop.index }}">
                     <div class="card-body">
                         {% for vuln in host.vulnerabilidades %}
                         <div class="card mb-3">
