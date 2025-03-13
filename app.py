@@ -565,12 +565,11 @@ def generar_informe(tipo, formato):
 
         # Obtener datos filtrados
         resultados = filtrar_resultados(sede, fecha_inicio, fecha_fin, riesgo)
+        logger.debug(f"Resultados obtenidos: {len(resultados)} registros")
 
         if not resultados:
             flash('No hay datos disponibles para generar el informe. Por favor, seleccione otros filtros.', 'warning')
             return redirect(url_for('informes'))
-
-        logger.debug(f"Resultados obtenidos: {len(resultados)} registros")
 
         # Preparar datos para el informe
         datos_informe = {
@@ -586,35 +585,34 @@ def generar_informe(tipo, formato):
         logger.debug(f"Datos preparados: {len(datos_informe['hosts_detalle'])} hosts")
 
         # Generar el informe según el tipo y formato
-        if tipo == 'ejecutivo':
-            try:
+        try:
+            if tipo == 'ejecutivo':
                 from informes import generar_informe_ejecutivo
-                output = generar_informe_ejecutivo(datos_informe, formato)
+                logger.debug("Iniciando generación de informe ejecutivo")
+                output = generar_informe_ejecutivo(datos_informe, tipo=formato)
                 logger.debug("Informe ejecutivo generado exitosamente")
-            except Exception as e:
-                logger.error(f"Error al generar informe ejecutivo: {str(e)}", exc_info=True)
-                raise
-        else:  # técnico
-            try:
+            else:  # técnico
                 from informes import generar_informe_tecnico
-                output = generar_informe_tecnico(datos_informe, formato)
+                logger.debug("Iniciando generación de informe técnico")
+                output = generar_informe_tecnico(datos_informe, tipo=formato)
                 logger.debug("Informe técnico generado exitosamente")
-            except Exception as e:
-                logger.error(f"Error al generar informe técnico: {str(e)}", exc_info=True)
-                raise
 
-        if not output:
-            logger.error("La función de generación de informes retornó None")
-            flash('Error al generar el informe. No se pudo crear el archivo.', 'error')
-            return redirect(url_for('informes'))
+            if not output:
+                logger.error("La función de generación de informes retornó None")
+                flash('Error al generar el informe. No se pudo crear el archivo.', 'error')
+                return redirect(url_for('informes'))
 
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        return send_file(
-            output,
-            mimetype='application/pdf' if formato == 'pdf' else 'text/csv',
-            as_attachment=True,
-            download_name=f'informe_{tipo}_{timestamp}.{formato}'
-        )
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            return send_file(
+                output,
+                mimetype='application/pdf' if formato == 'pdf' else 'text/csv',
+                as_attachment=True,
+                download_name=f'informe_{tipo}_{timestamp}.{formato}'
+            )
+
+        except Exception as e:
+            logger.error(f"Error durante la generación del informe: {str(e)}", exc_info=True)
+            raise
 
     except ImportError as e:
         logger.error(f"Error al importar módulo de informes: {str(e)}", exc_info=True)
