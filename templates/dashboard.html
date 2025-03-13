@@ -140,9 +140,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Gráfico de Criticidad
         const criticidadCtx = document.getElementById('criticidadChart').getContext('2d');
-        if (criticidadChart) {
-            criticidadChart.destroy();
-        }
         criticidadChart = new Chart(criticidadCtx, {
             type: 'bar',
             data: {
@@ -197,9 +194,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Gráfico de Estado
         const estadoCtx = document.getElementById('estadoChart').getContext('2d');
-        if (estadoChart) {
-            estadoChart.destroy();
-        }
         estadoChart = new Chart(estadoCtx, {
             type: 'doughnut',
             data: {
@@ -237,8 +231,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             pointStyle: 'circle',
                             font: {
                                 size: 12
-                            },
-                            color: '#6c757d'
+                            }
                         }
                     }
                 },
@@ -249,78 +242,94 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Función para actualizar el gráfico de tendencias
     async function actualizarTendencias() {
+        const tendenciasCtx = document.getElementById('tendenciasChart');
+        if (!tendenciasCtx) {
+            console.error('No se encontró el elemento canvas para el gráfico de tendencias');
+            return;
+        }
+
         // Obtener los valores actuales de los filtros
         const sede = document.querySelector('select[name="sede"]').value;
         const fechaInicio = document.querySelector('input[name="fecha_inicio"]').value;
         const fechaFin = document.querySelector('input[name="fecha_fin"]').value;
 
-        // Construir la URL con los parámetros de filtro
-        const params = new URLSearchParams({
-            sede: sede || '',
-            fecha_inicio: fechaInicio || '',
-            fecha_fin: fechaFin || ''
-        });
-
         try {
+            const params = new URLSearchParams({
+                sede: sede || '',
+                fecha_inicio: fechaInicio || '',
+                fecha_fin: fechaFin || ''
+            });
+
             const response = await fetch(`/tendencias?${params.toString()}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             const data = await response.json();
 
-            const fechas = data.map(item => item.fecha);
-            const datasets = [
-                {
-                    label: 'Críticas',
-                    data: data.map(item => item.Critical),
-                    borderColor: 'rgba(220, 53, 69, 1)',
-                    backgroundColor: 'rgba(220, 53, 69, 0.1)',
-                    tension: 0.4
-                },
-                {
-                    label: 'Altas',
-                    data: data.map(item => item.High),
-                    borderColor: 'rgba(255, 193, 7, 1)',
-                    backgroundColor: 'rgba(255, 193, 7, 0.1)',
-                    tension: 0.4
-                },
-                {
-                    label: 'Medias',
-                    data: data.map(item => item.Medium),
-                    borderColor: 'rgba(255, 159, 64, 1)',
-                    backgroundColor: 'rgba(255, 159, 64, 0.1)',
-                    tension: 0.4
-                },
-                {
-                    label: 'Bajas',
-                    data: data.map(item => item.Low),
-                    borderColor: 'rgba(40, 167, 69, 1)',
-                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                    tension: 0.4
-                }
-            ];
-
-            const tendenciasCtx = document.getElementById('tendenciasChart').getContext('2d');
             if (tendenciasChart) {
                 tendenciasChart.destroy();
             }
-            tendenciasChart = new Chart(tendenciasCtx, {
+
+            tendenciasChart = new Chart(tendenciasCtx.getContext('2d'), {
                 type: 'line',
                 data: {
-                    labels: fechas,
-                    datasets: datasets
+                    labels: data.map(item => item.fecha),
+                    datasets: [
+                        {
+                            label: 'Críticas',
+                            data: data.map(item => item.Critical),
+                            borderColor: 'rgba(220, 53, 69, 1)',
+                            backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Altas',
+                            data: data.map(item => item.High),
+                            borderColor: 'rgba(255, 193, 7, 1)',
+                            backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Medias',
+                            data: data.map(item => item.Medium),
+                            borderColor: 'rgba(255, 159, 64, 1)',
+                            backgroundColor: 'rgba(255, 159, 64, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Bajas',
+                            data: data.map(item => item.Low),
+                            borderColor: 'rgba(40, 167, 69, 1)',
+                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
                     plugins: {
                         legend: {
                             position: 'top',
                             labels: {
-                                color: '#6c757d',
                                 usePointStyle: true,
                                 padding: 20,
                                 font: {
                                     size: 12
                                 }
                             }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
                         }
                     },
                     scales: {
@@ -328,24 +337,18 @@ document.addEventListener('DOMContentLoaded', function() {
                             beginAtZero: true,
                             grid: {
                                 color: 'rgba(255, 255, 255, 0.1)'
-                            },
-                            ticks: {
-                                color: '#6c757d'
                             }
                         },
                         x: {
                             grid: {
                                 display: false
-                            },
-                            ticks: {
-                                color: '#6c757d'
                             }
                         }
                     }
                 }
             });
         } catch (error) {
-            console.error('Error al cargar tendencias:', error);
+            console.error('Error al cargar las tendencias:', error);
         }
     }
 
@@ -353,19 +356,10 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeCharts();
     actualizarTendencias();
 
-    // Agregar eventos para actualizar las tendencias cuando cambien los filtros
-    document.querySelector('select[name="sede"]').addEventListener('change', async () => {
-        initializeCharts();
-        await actualizarTendencias();
-    });
-    document.querySelector('input[name="fecha_inicio"]').addEventListener('change', async () => {
-        initializeCharts();
-        await actualizarTendencias();
-    });
-    document.querySelector('input[name="fecha_fin"]').addEventListener('change', async () => {
-        initializeCharts();
-        await actualizarTendencias();
-    });
+    // Agregar eventos para actualizar cuando cambien los filtros
+    document.querySelector('select[name="sede"]').addEventListener('change', actualizarTendencias);
+    document.querySelector('input[name="fecha_inicio"]').addEventListener('change', actualizarTendencias);
+    document.querySelector('input[name="fecha_fin"]').addEventListener('change', actualizarTendencias);
 });
 </script>
 {% endblock %}
