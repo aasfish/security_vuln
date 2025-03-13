@@ -321,45 +321,42 @@ def comparacion():
             primer_fecha = datetime.strptime(primer_escaneo, '%Y-%m-%d').date()
             segunda_fecha = datetime.strptime(segundo_escaneo, '%Y-%m-%d').date()
 
-            # Obtener datos del primer escaneo
-            primer_datos = Vulnerabilidad.query\
-                .join(Host)\
-                .join(Escaneo)\
-                .filter(Escaneo.sede == sede, Escaneo.fecha_escaneo == primer_fecha)\
-                .all()
-            logger.debug(f"Vulnerabilidades encontradas en primer escaneo: {len(primer_datos)}")
+            # Consulta SQL directa para obtener los conteos
+            sql = """
+            SELECT e.fecha_escaneo, v.nivel_amenaza, COUNT(*) as total
+            FROM escaneos e
+            JOIN hosts h ON h.escaneo_id = e.id
+            JOIN vulnerabilidades v ON v.host_id = h.id
+            WHERE e.sede = :sede 
+            AND e.fecha_escaneo IN (:fecha1, :fecha2)
+            GROUP BY e.fecha_escaneo, v.nivel_amenaza
+            """
 
-            # Obtener datos del segundo escaneo
-            segundo_datos = Vulnerabilidad.query\
-                .join(Host)\
-                .join(Escaneo)\
-                .filter(Escaneo.sede == sede, Escaneo.fecha_escaneo == segunda_fecha)\
-                .all()
-            logger.debug(f"Vulnerabilidades encontradas en segundo escaneo: {len(segundo_datos)}")
+            result = db.session.execute(sql, {
+                'sede': sede,
+                'fecha1': primer_fecha,
+                'fecha2': segunda_fecha
+            })
 
-            # Normalizar los conteos (convertir a porcentajes)
-            primer_conteo = {
-                'Critical': len([v for v in primer_datos if v.nivel_amenaza == 'Critical']),
-                'High': len([v for v in primer_datos if v.nivel_amenaza == 'High']),
-                'Medium': len([v for v in primer_datos if v.nivel_amenaza == 'Medium']),
-                'Low': len([v for v in primer_datos if v.nivel_amenaza == 'Low'])
-            }
-            segundo_conteo = {
-                'Critical': len([v for v in segundo_datos if v.nivel_amenaza == 'Critical']),
-                'High': len([v for v in segundo_datos if v.nivel_amenaza == 'High']),
-                'Medium': len([v for v in segundo_datos if v.nivel_amenaza == 'Medium']),
-                'Low': len([v for v in segundo_datos if v.nivel_amenaza == 'Low'])
-            }
+            # Procesar resultados
+            primer_conteo = {'Critical': 0, 'High': 0, 'Medium': 0, 'Low': 0}
+            segundo_conteo = {'Critical': 0, 'High': 0, 'Medium': 0, 'Low': 0}
+
+            for row in result:
+                if row[0] == primer_fecha:
+                    primer_conteo[row[1]] = row[2]
+                else:
+                    segundo_conteo[row[1]] = row[2]
 
             # Calcular totales
             primer_total = sum(primer_conteo.values())
             segundo_total = sum(segundo_conteo.values())
 
-            # Convertir a porcentajes si hay datos
+            # Convertir a porcentajes
             if primer_total > 0:
-                primer_conteo = {k: v/primer_total for k, v in primer_conteo.items()}
+                primer_conteo = {k: round(v/primer_total, 3) for k, v in primer_conteo.items()}
             if segundo_total > 0:
-                segundo_conteo = {k: v/segundo_total for k, v in segundo_conteo.items()}
+                segundo_conteo = {k: round(v/segundo_total, 3) for k, v in segundo_conteo.items()}
 
             # Calcular variación
             variacion = segundo_total - primer_total
