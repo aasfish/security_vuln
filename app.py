@@ -15,9 +15,6 @@ ALLOWED_EXTENSIONS = {'txt'}
 UPLOAD_FOLDER = '/tmp'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# Almacenamiento en memoria de resultados
-resultados_analisis = []
-
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -53,11 +50,12 @@ def analizar():
         # Analizar el archivo
         resultado = analizar_vulnerabilidades(filepath)
 
-        # Almacenar resultado
-        resultados_analisis.append(resultado)
-
         # Eliminar archivo temporal
         os.remove(filepath)
+
+        if not resultado or 'hosts_detalle' not in resultado:
+            flash('No se encontraron vulnerabilidades para analizar en el archivo', 'warning')
+            return redirect(url_for('index'))
 
         return render_template('resultados.html', 
                              resultado=resultado,
