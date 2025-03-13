@@ -89,7 +89,7 @@
     <div class="row g-3">
         <!-- Criticidad de Vulnerabilidades -->
         <div class="col-md-6">
-            <div class="card h-100 shadow-sm border-0 bg-gradient">
+            <div class="card h-100 shadow-sm">
                 <div class="card-body p-4">
                     <h5 class="card-title h6 mb-3 text-muted">Criticidad de Vulnerabilidades</h5>
                     <div style="height: 300px">
@@ -101,7 +101,7 @@
 
         <!-- Estado de Vulnerabilidades -->
         <div class="col-md-6">
-            <div class="card h-100 shadow-sm border-0 bg-gradient">
+            <div class="card h-100 shadow-sm">
                 <div class="card-body p-4">
                     <h5 class="card-title h6 mb-3 text-muted">Estado de Vulnerabilidades</h5>
                     <div style="height: 300px">
@@ -115,29 +115,14 @@
 {% endblock %}
 
 {% block scripts %}
-<style>
-    /* Estilos específicos para la tarjeta de riesgo */
-    .risk-score-card {
-        background: linear-gradient(45deg, #1a1d20, #2d3035) !important;
-    }
-    [data-bs-theme="light"] .risk-score-card {
-        background: linear-gradient(45deg, #2d3035, #1a1d20) !important;
-    }
-    .risk-score-card .text-white,
-    .risk-score-card .text-white-50 {
-        color: #ffffff !important;
-    }
-</style>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     let criticidadChart, estadoChart;
 
-    function initializeCharts(theme) {
-        const isDark = theme === 'dark';
-
+    function initializeCharts() {
         // Configuración común para los gráficos
-        Chart.defaults.color = isDark ? '#6c757d' : '#495057';
-        Chart.defaults.borderColor = isDark ? '#2c3338' : '#dee2e6';
+        Chart.defaults.color = '#6c757d';
+        Chart.defaults.borderColor = '#2c3338';
 
         // Gráfico de Criticidad
         const criticidadCtx = document.getElementById('criticidadChart').getContext('2d');
@@ -176,7 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     y: {
                         beginAtZero: true,
                         grid: {
-                            color: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                            color: 'rgba(255, 255, 255, 0.1)'
                         }
                     },
                     x: {
@@ -233,7 +218,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             font: {
                                 size: 12
                             },
-                            color: isDark ? '#6c757d' : '#495057'
+                            color: '#6c757d'
                         }
                     }
                 },
@@ -242,15 +227,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Función para actualizar los temas de los gráficos
-    window.updateChartsTheme = function(theme) {
-        if (criticidadChart) criticidadChart.destroy();
-        if (estadoChart) estadoChart.destroy();
-        initializeCharts(theme);
-    };
-
-    // Inicializar los gráficos con el tema actual
-    initializeCharts(document.documentElement.getAttribute('data-bs-theme'));
+    // Inicializar los gráficos
+    initializeCharts();
 });
 </script>
 {% endblock %}
