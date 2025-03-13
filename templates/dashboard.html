@@ -241,9 +241,23 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         // Nuevo código para el gráfico de tendencias
-        fetch('/tendencias')
-            .then(response => response.json())
-            .then(data => {
+        async function actualizarTendencias() {
+            // Obtener los valores actuales de los filtros
+            const sede = document.querySelector('select[name="sede"]').value;
+            const fechaInicio = document.querySelector('input[name="fecha_inicio"]').value;
+            const fechaFin = document.querySelector('input[name="fecha_fin"]').value;
+
+            // Construir la URL con los parámetros de filtro
+            const params = new URLSearchParams({
+                sede: sede || '',
+                fecha_inicio: fechaInicio || '',
+                fecha_fin: fechaFin || ''
+            });
+
+            try {
+                const response = await fetch(`/tendencias?${params.toString()}`);
+                const data = await response.json();
+
                 const fechas = data.map(item => item.fecha);
                 const datasets = [
                     {
@@ -275,6 +289,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         tension: 0.4
                     }
                 ];
+
+                if (tendenciasChart) {
+                    tendenciasChart.destroy();
+                }
 
                 const tendenciasCtx = document.getElementById('tendenciasChart').getContext('2d');
                 tendenciasChart = new Chart(tendenciasCtx, {
@@ -320,11 +338,19 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     }
                 });
-            });
-    }
+            } catch (error) {
+                console.error('Error al cargar tendencias:', error);
+            }
+        }
 
-    // Inicializar los gráficos
-    initializeCharts();
-});
+        // Agregar eventos para actualizar las tendencias cuando cambien los filtros
+        document.querySelector('select[name="sede"]').addEventListener('change', actualizarTendencias);
+        document.querySelector('input[name="fecha_inicio"]').addEventListener('change', actualizarTendencias);
+        document.querySelector('input[name="fecha_fin"]').addEventListener('change', actualizarTendencias);
+
+        // Inicializar los gráficos
+        initializeCharts();
+        actualizarTendencias();
+    });
 </script>
 {% endblock %}

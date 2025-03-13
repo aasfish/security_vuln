@@ -501,26 +501,63 @@ def configuracion():
 @app.route('/tendencias')
 def obtener_tendencias():
     """Endpoint para obtener datos de tendencias de vulnerabilidades"""
+    sede = request.args.get('sede')
+    fecha_inicio = request.args.get('fecha_inicio')
+    fecha_fin = request.args.get('fecha_fin')
+
+    logger.debug(f"Filtros recibidos - sede: {sede}, fecha_inicio: {fecha_inicio}, fecha_fin: {fecha_fin}")
+
     from models import Escaneo, Host, Vulnerabilidad
 
-    # Obtener todas las fechas de escaneo ordenadas
-    escaneos = Escaneo.query.order_by(Escaneo.fecha_escaneo).all()
+    # Construir la consulta SQL base
+    sql_base = """
+        SELECT 
+            e.fecha_escaneo,
+            v.nivel_amenaza,
+            COUNT(*) as total_vulnerabilidades
+        FROM escaneos e
+        JOIN hosts h ON h.escaneo_id = e.id
+        JOIN vulnerabilidades v ON v.host_id = h.id
+        WHERE 1=1
+    """
+    params = {}
 
-    tendencias = []
-    for escaneo in escaneos:
-        vulnerabilidades = Vulnerabilidad.query\
-            .join(Host)\
-            .filter(Host.escaneo_id == escaneo.id)\
-            .all()
+    # Agregar condiciones según los filtros
+    if sede and sede != 'Todas las sedes':
+        sql_base += " AND e.sede = :sede"
+        params['sede'] = sede
+    if fecha_inicio:
+        sql_base += " AND e.fecha_escaneo >= :fecha_inicio"
+        params['fecha_inicio'] = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+    if fecha_fin:
+        sql_base += " AND e.fecha_escaneo <= :fecha_fin"
+        params['fecha_fin'] = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
 
-        # Contar vulnerabilidades por nivel
-        stats = {
-            'fecha': escaneo.fecha_escaneo.strftime('%Y-%m-%d'),
-            'Critical': len([v for v in vulnerabilidades if v.nivel_amenaza == 'Critical']),
-            'High': len([v for v in vulnerabilidades if v.nivel_amenaza == 'High']),
-            'Medium': len([v for v in vulnerabilidades if v.nivel_amenaza == 'Medium']),
-            'Low': len([v for v in vulnerabilidades if v.nivel_amenaza == 'Low'])
-        }
-        tendencias.append(stats)
+    # Agregar agrupación y ordenamiento
+    sql_base += " GROUP BY e.fecha_escaneo, v.nivel_amenaza ORDER BY e.fecha_escaneo, v.nivel_amenaza"
 
-    return jsonify(tendencias)
+    logger.debug(f"SQL Query: {sql_base}")
+    logger.debug(f"Params: {params}")
+
+    # Ejecutar consulta
+    result = db.session.execute(text(sql_base), params)
+
+    # Procesar resultados
+    tendencias = {}
+    for row in result:
+        fecha = row[0].strftime('%Y-%m-%d')
+        nivel = row[1]
+        total = row[2]
+
+        if fecha not in tendencias:
+            tendencias[fecha] = {
+                'fecha': fecha,
+                'Critical': 0,
+                'High': 0,
+                'Medium': 0,
+                'Low': 0
+            }
+        tendencias[fecha][nivel] = total
+
+    logger.debug(f"Tendencias calculadas: {tendencias}")
+    return jsonify(list(tendencias.values()))
