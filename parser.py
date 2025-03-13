@@ -80,16 +80,19 @@ def analizar_vulnerabilidades(filepath: str) -> Dict:
 
                 # Extraer nombre del host si existe
                 nombre_host = ""
-                host_name_match = re.search(rf'Host Information: {ip}\s+\((.*?)\)', contenido, re.MULTILINE)
+                # Primero intentar encontrar el nombre en el formato de información del host
+                host_name_match = re.search(rf'Host Information: {ip}\s+\((.*?)\)', contenido)
                 if host_name_match:
                     nombre_host = host_name_match.group(1).strip()
-                elif re.search(rf'{ip}\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+(.*?)$', contenido, re.MULTILINE):
-                    # Buscar en el formato alternativo
-                    nombre_host = re.search(rf'{ip}\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+(.*?)$', contenido, re.MULTILINE).group(1).strip()
+                else:
+                    # Si no se encuentra en el formato anterior, buscar en el resumen general
+                    host_line_match = re.search(rf'{ip}\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+([\w\-\.]+)', contenido)
+                    if host_line_match and not host_line_match.group(1).replace('.', '').isdigit():
+                        nombre_host = host_line_match.group(1).strip()
 
-                # Limpiar el nombre del host de caracteres no deseados
-                nombre_host = re.sub(r'[^\w\s\-\.]', '', nombre_host)
-                if not nombre_host or nombre_host.isspace():
+                # Limpiar el nombre del host
+                nombre_host = re.sub(r'[^\w\-\.]', '', nombre_host)
+                if not nombre_host or nombre_host.isspace() or nombre_host.replace('.', '').isdigit():
                     nombre_host = ""
 
                 # Extraer vulnerabilidades
