@@ -340,3 +340,8 @@ def dashboard():
                          sede_seleccionada=sede,
                          fecha_inicio=fecha_inicio,
                          fecha_fin=fecha_fin)
+
+@app.route('/configuracion')
+def configuracion():
+    """Vista de configuración que incluye la carga de archivos"""
+    return render_template('configuracion.html', today=datetime.now().strftime('%Y-%m-%d'))
