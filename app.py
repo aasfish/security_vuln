@@ -284,11 +284,12 @@ def comparativa():
 @app.route('/comparacion')
 def comparacion():
     """Vista de comparación de escaneos"""
-    sede = request.args.get('sede')
-    primer_escaneo = request.args.get('primer_escaneo')
-    segundo_escaneo = request.args.get('segundo_escaneo')
+    sede1 = request.args.get('sede1')
+    sede2 = request.args.get('sede2')
+    fecha1 = request.args.get('fecha1')
+    fecha2 = request.args.get('fecha2')
 
-    logger.debug(f"Parámetros recibidos: sede={sede}, primer_escaneo={primer_escaneo}, segundo_escaneo={segundo_escaneo}")
+    logger.debug(f"Parámetros recibidos: sede1={sede1}, fecha1={fecha1}, sede2={sede2}, fecha2={fecha2}")
 
     from models import Escaneo, Host, Vulnerabilidad
 
@@ -296,56 +297,60 @@ def comparacion():
     sedes = obtener_sedes()
     logger.debug(f"Sedes disponibles: {sedes}")
 
-    # Si no hay sede seleccionada y hay sedes disponibles, usar la primera
-    if not sede and sedes:
-        sede = sedes[0]
-        logger.debug(f"Usando sede por defecto: {sede}")
+    # Si no hay sedes seleccionadas y hay sedes disponibles, usar la primera
+    if not sede1 and sedes:
+        sede1 = sedes[0]
+    if not sede2 and sedes:
+        sede2 = sedes[0]
 
-    # Obtener los escaneos de la sede seleccionada
-    query = Escaneo.query.order_by(Escaneo.fecha_escaneo.desc())
-    if sede:
-        query = query.filter(Escaneo.sede == sede)
-    escaneos = query.all()
-    logger.debug(f"Número de escaneos encontrados: {len(escaneos)}")
+    # Obtener los escaneos de cada sede
+    escaneos1 = Escaneo.query.filter_by(sede=sede1).order_by(Escaneo.fecha_escaneo.desc()).all() if sede1 else []
+    escaneos2 = Escaneo.query.filter_by(sede=sede2).order_by(Escaneo.fecha_escaneo.desc()).all() if sede2 else []
 
-    # Si hay escaneos disponibles pero no hay selección, usar los dos más recientes
-    if escaneos and not primer_escaneo and len(escaneos) > 0:
-        primer_escaneo = escaneos[0].fecha_escaneo.strftime('%Y-%m-%d')
-        logger.debug(f"Usando primer escaneo por defecto: {primer_escaneo}")
-    if len(escaneos) > 1 and not segundo_escaneo:
-        segundo_escaneo = escaneos[1].fecha_escaneo.strftime('%Y-%m-%d')
-        logger.debug(f"Usando segundo escaneo por defecto: {segundo_escaneo}")
+    # Si no hay fechas seleccionadas, usar las más recientes
+    if not fecha1 and escaneos1:
+        fecha1 = escaneos1[0].fecha_escaneo.strftime('%Y-%m-%d')
+    if not fecha2 and escaneos2:
+        fecha2 = escaneos2[0].fecha_escaneo.strftime('%Y-%m-%d')
 
     resultados = None
-    if primer_escaneo and segundo_escaneo:
+    if fecha1 and fecha2 and sede1 and sede2:
         try:
-            primer_fecha = datetime.strptime(primer_escaneo, '%Y-%m-%d').date()
-            segunda_fecha = datetime.strptime(segundo_escaneo, '%Y-%m-%d').date()
+            fecha1_obj = datetime.strptime(fecha1, '%Y-%m-%d').date()
+            fecha2_obj = datetime.strptime(fecha2, '%Y-%m-%d').date()
 
-            # Consulta SQL directa para obtener los conteos
+            # Consulta SQL para obtener los conteos normalizados
             sql_query = text("""
-            WITH base_counts AS (
-                SELECT e.fecha_escaneo, v.nivel_amenaza, COUNT(*) as total,
-                       SUM(COUNT(*)) OVER (PARTITION BY e.fecha_escaneo) as fecha_total
+            WITH sede_counts AS (
+                SELECT 
+                    e.sede,
+                    e.fecha_escaneo,
+                    v.nivel_amenaza,
+                    COUNT(*) as total,
+                    SUM(COUNT(*)) OVER (PARTITION BY e.sede, e.fecha_escaneo) as sede_total
                 FROM escaneos e
                 JOIN hosts h ON h.escaneo_id = e.id
                 JOIN vulnerabilidades v ON v.host_id = h.id
-                WHERE e.sede = :sede 
-                AND e.fecha_escaneo IN (:fecha1, :fecha2)
-                GROUP BY e.fecha_escaneo, v.nivel_amenaza
+                WHERE (e.sede = :sede1 AND e.fecha_escaneo = :fecha1)
+                   OR (e.sede = :sede2 AND e.fecha_escaneo = :fecha2)
+                GROUP BY e.sede, e.fecha_escaneo, v.nivel_amenaza
             )
-            SELECT fecha_escaneo, nivel_amenaza, 
-                   ROUND(CAST(total AS FLOAT) / NULLIF(fecha_total, 0), 3) as proporcion,
-                   total as total_raw,
-                   fecha_total
-            FROM base_counts
+            SELECT 
+                sede,
+                fecha_escaneo,
+                nivel_amenaza,
+                ROUND(CAST(total AS FLOAT) / NULLIF(sede_total, 0), 3) as proporcion,
+                total as total_raw,
+                sede_total
+            FROM sede_counts
             ORDER BY fecha_escaneo, nivel_amenaza;
             """)
 
             result = db.session.execute(sql_query, {
-                'sede': sede,
-                'fecha1': primer_fecha,
-                'fecha2': segunda_fecha
+                'sede1': sede1,
+                'fecha1': fecha1_obj,
+                'sede2': sede2,
+                'fecha2': fecha2_obj
             })
 
             # Procesar resultados
@@ -355,21 +360,22 @@ def comparacion():
             segundo_total = 0
 
             for row in result:
-                fecha_escaneo = row[0]
-                nivel_amenaza = row[1]
-                proporcion = float(row[2]) if row[2] is not None else 0
-                total_raw = row[3]
-                fecha_total = row[4]
+                sede = row[0]
+                fecha_escaneo = row[1]
+                nivel_amenaza = row[2]
+                proporcion = float(row[3]) if row[3] is not None else 0
+                total_raw = row[4]
+                sede_total = row[5]
 
-                logger.debug(f"Procesando resultado: fecha={fecha_escaneo}, nivel={nivel_amenaza}, "
-                           f"proporcion={proporcion}, total={total_raw}, fecha_total={fecha_total}")
+                logger.debug(f"Procesando resultado: sede={sede}, fecha={fecha_escaneo}, nivel={nivel_amenaza}, "
+                           f"proporcion={proporcion}, total={total_raw}, sede_total={sede_total}")
 
-                if fecha_escaneo == primer_fecha:
+                if sede == sede1 and fecha_escaneo == fecha1_obj:
                     primer_conteo[nivel_amenaza] = proporcion
-                    primer_total = fecha_total
-                elif fecha_escaneo == segunda_fecha:
+                    primer_total = sede_total
+                elif sede == sede2 and fecha_escaneo == fecha2_obj:
                     segundo_conteo[nivel_amenaza] = proporcion
-                    segundo_total = fecha_total
+                    segundo_total = sede_total
 
             logger.debug(f"Totales procesados - Primer escaneo: {primer_total}, Segundo escaneo: {segundo_total}")
             logger.debug(f"Conteos procesados - Primer: {primer_conteo}, Segundo: {segundo_conteo}")
@@ -380,12 +386,12 @@ def comparacion():
 
             resultados = {
                 'primer_escaneo': {
-                    'fecha': primer_escaneo,
+                    'fecha': fecha1,
                     'datos': primer_conteo,
                     'total': primer_total
                 },
                 'segundo_escaneo': {
-                    'fecha': segundo_escaneo,
+                    'fecha': fecha2,
                     'datos': segundo_conteo,
                     'total': segundo_total
                 },
@@ -400,10 +406,12 @@ def comparacion():
 
     return render_template('comparacion.html',
                          sedes=sedes,
-                         sede_seleccionada=sede,
-                         escaneos=escaneos,
-                         primer_escaneo=primer_escaneo,
-                         segundo_escaneo=segundo_escaneo,
+                         sede1_seleccionada=sede1,
+                         sede2_seleccionada=sede2,
+                         escaneos1=escaneos1,
+                         escaneos2=escaneos2,
+                         fecha1=fecha1,
+                         fecha2=fecha2,
                          resultados=resultados)
 
 @app.route('/static/<path:filename>')

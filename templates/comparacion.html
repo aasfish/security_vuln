@@ -7,45 +7,74 @@
     <div class="card mb-4">
         <div class="card-body">
             <form class="row g-3" method="get">
-                <div class="col-md-4">
-                    <label class="form-label">
-                        <i class="bi bi-building me-2"></i>
-                        Sede
-                    </label>
-                    <select class="form-select" name="sede" onchange="this.form.submit()">
-                        {% for s in sedes %}
-                        <option value="{{ s }}" {% if s == sede_seleccionada %}selected{% endif %}>{{ s }}</option>
-                        {% endfor %}
-                    </select>
+                <!-- Primera sede -->
+                <div class="col-md-6">
+                    <div class="border-end pe-3">
+                        <h6 class="mb-3">Primer Escaneo</h6>
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-building me-2"></i>
+                                Sede
+                            </label>
+                            <select class="form-select" name="sede1" id="sede1" onchange="cargarFechas(1)">
+                                {% for s in sedes %}
+                                <option value="{{ s }}" {% if s == sede1_seleccionada %}selected{% endif %}>{{ s }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-calendar me-2"></i>
+                                Fecha
+                            </label>
+                            <select class="form-select" name="fecha1" id="fecha1">
+                                {% for e in escaneos1 %}
+                                <option value="{{ e.fecha_escaneo.strftime('%Y-%m-%d') }}" {% if e.fecha_escaneo.strftime('%Y-%m-%d') == fecha1 %}selected{% endif %}>
+                                    {{ e.fecha_escaneo.strftime('%Y-%m-%d') }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
                 </div>
-                {% if sede_seleccionada %}
-                <div class="col-md-4">
-                    <label class="form-label">
-                        <i class="bi bi-calendar me-2"></i>
-                        Primer Escaneo
-                    </label>
-                    <select class="form-select" name="primer_escaneo" onchange="this.form.submit()">
-                        {% for e in escaneos %}
-                        <option value="{{ e.fecha_escaneo.strftime('%Y-%m-%d') }}" {% if e.fecha_escaneo.strftime('%Y-%m-%d') == primer_escaneo %}selected{% endif %}>
-                            {{ e.fecha_escaneo.strftime('%Y-%m-%d') }}
-                        </option>
-                        {% endfor %}
-                    </select>
+
+                <!-- Segunda sede -->
+                <div class="col-md-6">
+                    <div class="ps-3">
+                        <h6 class="mb-3">Segundo Escaneo</h6>
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-building me-2"></i>
+                                Sede
+                            </label>
+                            <select class="form-select" name="sede2" id="sede2" onchange="cargarFechas(2)">
+                                {% for s in sedes %}
+                                <option value="{{ s }}" {% if s == sede2_seleccionada %}selected{% endif %}>{{ s }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-calendar me-2"></i>
+                                Fecha
+                            </label>
+                            <select class="form-select" name="fecha2" id="fecha2">
+                                {% for e in escaneos2 %}
+                                <option value="{{ e.fecha_escaneo.strftime('%Y-%m-%d') }}" {% if e.fecha_escaneo.strftime('%Y-%m-%d') == fecha2 %}selected{% endif %}>
+                                    {{ e.fecha_escaneo.strftime('%Y-%m-%d') }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">
-                        <i class="bi bi-calendar me-2"></i>
-                        Segundo Escaneo
-                    </label>
-                    <select class="form-select" name="segundo_escaneo" onchange="this.form.submit()">
-                        {% for e in escaneos %}
-                        <option value="{{ e.fecha_escaneo.strftime('%Y-%m-%d') }}" {% if e.fecha_escaneo.strftime('%Y-%m-%d') == segundo_escaneo %}selected{% endif %}>
-                            {{ e.fecha_escaneo.strftime('%Y-%m-%d') }}
-                        </option>
-                        {% endfor %}
-                    </select>
+
+                <div class="col-12 text-center">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search me-2"></i>
+                        Comparar
+                    </button>
                 </div>
-                {% endif %}
             </form>
         </div>
     </div>
@@ -69,11 +98,11 @@
             <h5 class="card-title h6 mb-4">Resumen de Cambios</h5>
             <div class="row">
                 <div class="col-md-4 text-center">
-                    <p class="text-muted mb-1">Total Anterior</p>
+                    <p class="text-muted mb-1">Total {{ sede1_seleccionada }}</p>
                     <h3 class="mb-0">{{ resultados.primer_escaneo.total }}</h3>
                 </div>
                 <div class="col-md-4 text-center">
-                    <p class="text-muted mb-1">Total Actual</p>
+                    <p class="text-muted mb-1">Total {{ sede2_seleccionada }}</p>
                     <h3 class="mb-0">{{ resultados.segundo_escaneo.total }}</h3>
                 </div>
                 <div class="col-md-4 text-center">
@@ -91,8 +120,28 @@
 {% endblock %}
 
 {% block scripts %}
-{% if resultados %}
 <script>
+async function cargarFechas(num) {
+    const sede = document.getElementById(`sede${num}`).value;
+    const fechaSelect = document.getElementById(`fecha${num}`);
+
+    try {
+        const response = await fetch(`/fechas_por_sede/${sede}`);
+        const fechas = await response.json();
+
+        fechaSelect.innerHTML = '';
+        fechas.forEach(fecha => {
+            const option = document.createElement('option');
+            option.value = fecha;
+            option.textContent = fecha;
+            fechaSelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error al cargar fechas:', error);
+    }
+}
+
+{% if resultados %}
 document.addEventListener('DOMContentLoaded', function() {
     const ctx = document.getElementById('comparacionChart').getContext('2d');
     const labels = ['Critical', 'High', 'Medium', 'Low'];
@@ -118,7 +167,7 @@ document.addEventListener('DOMContentLoaded', function() {
             labels: labels,
             datasets: [
                 {
-                    label: '{{ sede_seleccionada }} ({{ resultados.primer_escaneo.fecha }})',
+                    label: '{{ sede1_seleccionada }} ({{ resultados.primer_escaneo.fecha }})',
                     data: primerDatos,
                     backgroundColor: 'rgba(103, 119, 239, 0.8)',
                     borderColor: 'rgba(103, 119, 239, 1)',
@@ -127,7 +176,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     maxBarThickness: 35
                 },
                 {
-                    label: '{{ sede_seleccionada }} ({{ resultados.segundo_escaneo.fecha }})',
+                    label: '{{ sede2_seleccionada }} ({{ resultados.segundo_escaneo.fecha }})',
                     data: segundoDatos,
                     backgroundColor: 'rgba(145, 215, 172, 0.8)',
                     borderColor: 'rgba(145, 215, 172, 1)',
@@ -179,6 +228,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
-</script>
 {% endif %}
+</script>
 {% endblock %}
