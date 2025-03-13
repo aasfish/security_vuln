@@ -1,0 +1,93 @@
+I Summary
+=========
+
+This document reports on the results of an automatic security scan.
+The report first summarises the results found.
+Then, for each host, the report describes every issue found.
+Please consider the advice given in each description, in order to rectify
+the issue.
+
+All dates are displayed using the timezone "Coordinated Universal Time",
+which is abbreviated "UTC".
+
+Vendor security updates are not trusted.
+
+Overrides are on.  When a result has an override, this report uses the
+threat of the override.
+
+Notes are included in the report.Information on overrides is included in the report.
+
+This report might not show details of all issues that were found.
+It only lists hosts that produced issues.
+Issues with the threat level "Log" are not shown.
+Issues with the threat level "Debug" are not shown.
+Issues with the threat level "False Positive" are not shown.
+Only results with a minimum QoD of 70 are shown.
+
+This report contains all 92 results selected by the
+filtering described above.  Before filtering there were 1535 results.
+
+Scan started: Tue Mar 4 18:01:39 2025 UTC
+Scan ended:   Tue Mar 4 23:03:37 2025 UTC
+Task:         CENTRAL_2
+
+Host Summary
+************
+
+Host            High  Medium  Low  Log  False Positive
+192.168.2.95       2       3    0    0               0    sr01blocktest04.vestiditos
+192.168.2.107      1       0    0    0               0    ws01adu01.mimo.corp
+192.168.2.17       1       0    0    0               0
+192.168.2.33       1       0    0    0               0
+192.168.2.187      1       1    1    0               0    ws01seg03.vestiditos
+192.168.2.101      0       1    0    0               0    ws01adm56.vestiditos
+192.168.2.108      0       1    0    0               0    ws01hig01.vestiditos
+192.168.2.112      0       1    0    0               0    vsr01ost01.vestiditos
+192.168.2.115      0       2    1    0               0
+192.168.2.122      0       2    1    0               0    ws01exp03.vestiditos
+192.168.2.127      0       1    0    0               0    ws01con11.vestiditos
+192.168.2.134      0       1    1    0               0    ws01cob01.mimo.corp
+192.168.2.15       0       1    0    0               0    ws01rem62.vestiditos
+192.168.2.152      0       1    0    0               0    ws01rrhh05.vestiditos
+192.168.2.157      0       1    1    0               0    ws01fac06.mimo.corp
+192.168.2.159      0       1    0    0               0    ws01adm01.vestiditos
+192.168.2.16       0       2    1    0               0
+192.168.2.164      0       1    1    0               0    ws01cob02.mimo.corp
+192.168.2.170      0       1    0    0               0    sr01dcn01.mimo.corp
+192.168.2.171      0       1    0    0               0    ws01rem32.vestiditos
+192.168.2.173      0       1    0    0               0    vsr01bkpfac01.vestiditos
+192.168.2.174      0       1    0    0               0    sr03vir01.vestiditos
+192.168.2.183      0       1    0    0               0    ws01rrhh04.vestiditos
+192.168.2.185      0       1    0    0               0    ws01cal01.vestiditos
+192.168.2.2        0       1    0    0               0    ws01pcal01.mimo.corp
+192.168.2.207      0       1    0    0               0    ws01adm29.vestiditos
+192.168.2.21       0       2    1    0               0
+192.168.2.210      0       1    0    0               0    ws01est13.vestiditos
+192.168.2.211      0       2    1    0               0    ws01exp08.vestiditos
+192.168.2.22       0       1    1    0               0    ws01admv12.mimo.corp
+192.168.2.226      0       1    0    0               0    ws01adm10.vestiditos
+192.168.2.232      0       1    0    0               0
+192.168.2.239      0       1    1    0               0    ws01fac07.vestiditos
+192.168.2.245      0       1    0    0               0    ws01adm57.vestiditos
+192.168.2.25       0       2    1    0               0    ws01admv21.vestiditos
+192.168.2.251      0       1    1    0               0    ws19pc01.vestiditos
+192.168.2.26       0       1    1    0               0    ws01seg07.vestiditos
+192.168.2.27       0       1    1    0               0    ws01cob03.mimo.corp
+192.168.2.30       0       2    1    0               0    ws01rem08.vestiditos
+192.168.2.31       0       2    1    0               0    ws01rem10.vestiditos
+192.168.2.36       0       4    1    0               0    ws01rrhh03.vestiditos
+192.168.2.41       0       2    2    0               0    ws01sis26.vestiditos
+192.168.2.43       0       1    0    0               0    nb01sistest.vestiditos
+192.168.2.55       0       1    0    0               0    ws01est12.vestiditos
+192.168.2.6        0       1    0    0               0    sr01chicha02.vestiditos
+192.168.2.83       0       1    1    0               0    ws01adm04.vestiditos
+192.168.2.89       0       1    0    0               0    ws01rrhh07.vestiditos
+192.168.2.132      0       0    1    0               0    ws01cont01.vestiditos
+192.168.2.136      0       0    1    0               0
+192.168.2.209      0       0    1    0               0
+192.168.2.233      0       0    1    0               0    ws01pickc01.mimo.corp
+192.168.2.39       0       0    1    0               0    ws01vtam04.mimo.corp
+192.168.2.60       0       0    1    0               0    ws01admv13.mimo.corp
+192.168.2.96       0       0    1    0               0    ws01admv14.mimo.corp
+Total: 54          6      58   28    0               0
+

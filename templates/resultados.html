@@ -5,65 +5,117 @@
     <div class="col-12 mb-4">
         <h3>Resultados del Análisis</h3>
         <p>Archivo analizado: {{ nombre_archivo }}</p>
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Información del Escaneo</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li><strong>Fecha Inicio:</strong> {{ resultado.resumen.fecha_inicio }}</li>
+                    <li><strong>Fecha Fin:</strong> {{ resultado.resumen.fecha_fin }}</li>
+                    <li><strong>Tarea:</strong> {{ resultado.resumen.nombre_tarea }}</li>
+                    <li><strong>Total Hosts:</strong> {{ resultado.resumen.total_hosts }}</li>
+                </ul>
+            </div>
+        </div>
     </div>
-    
+
     <div class="col-md-6 mb-4">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">Estadísticas</h5>
+                <h5 class="mb-0">Estadísticas Generales</h5>
             </div>
             <div class="card-body">
                 <canvas id="vulnerabilidadesChart"></canvas>
             </div>
         </div>
     </div>
-    
+
     <div class="col-md-6 mb-4">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">Distribución por Riesgo</h5>
+                <h5 class="mb-0">Distribución por Nivel de Amenaza</h5>
             </div>
             <div class="card-body">
                 <canvas id="riesgosChart"></canvas>
             </div>
         </div>
     </div>
-    
-    <div class="col-12">
+
+    {% for ip, host in resultado.hosts_detalle.items() %}
+    <div class="col-12 mb-4">
         <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Vulnerabilidades Detectadas</h5>
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Host: {{ ip }}</h5>
+                {% if host.nombre_host %}
+                <small>{{ host.nombre_host }}</small>
+                {% endif %}
             </div>
             <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table">
+                <p><strong>Fecha de Escaneo:</strong> {{ host.fecha_escaneo }}</p>
+
+                <h6 class="mb-3">Puertos Afectados</h6>
+                <div class="table-responsive mb-4">
+                    <table class="table table-sm">
                         <thead>
                             <tr>
-                                <th>Tipo</th>
-                                <th>Descripción</th>
-                                <th>Nivel de Riesgo</th>
-                                <th>Fecha Detección</th>
+                                <th>Puerto</th>
+                                <th>Nivel de Amenaza</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for vuln in resultado.vulnerabilidades %}
+                            {% for puerto, nivel in host.puertos_afectados.items() %}
                             <tr>
-                                <td>{{ vuln.tipo }}</td>
-                                <td>{{ vuln.descripcion }}</td>
+                                <td>{{ puerto }}</td>
                                 <td>
-                                    <span class="badge bg-{{ 'danger' if vuln.nivel_riesgo == 'Alto' else 'warning' if vuln.nivel_riesgo == 'Medio' else 'info' }}">
-                                        {{ vuln.nivel_riesgo }}
+                                    <span class="badge bg-{{ 'danger' if nivel == 'High' else 'warning' if nivel == 'Medium' else 'info' }}">
+                                        {{ nivel }}
                                     </span>
                                 </td>
-                                <td>{{ vuln.fecha_deteccion }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
+
+                <h6 class="mb-3">Vulnerabilidades Detectadas</h6>
+                {% for vuln in host.vulnerabilidades %}
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">{{ vuln.nvt }}</h6>
+                            <span class="badge bg-{{ 'danger' if 'High' in vuln.nivel_amenaza else 'warning' if 'Medium' in vuln.nivel_amenaza else 'info' }}">
+                                {{ vuln.nivel_amenaza }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Puerto:</strong> {{ vuln.puerto }}</p>
+                        {% if vuln.producto_detectado %}
+                        <p><strong>Producto Detectado:</strong> {{ vuln.producto_detectado }}</p>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <h6>Resumen</h6>
+                            <p class="mb-0">{{ vuln.resumen }}</p>
+                        </div>
+
+                        <div class="mb-3">
+                            <h6>Impacto</h6>
+                            <p class="mb-0">{{ vuln.impacto }}</p>
+                        </div>
+
+                        <div>
+                            <h6>Solución</h6>
+                            <p class="mb-0">{{ vuln.solucion }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
         </div>
     </div>
+    {% endfor %}
 </div>
 
 <div class="mt-4">
@@ -74,8 +126,80 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
 <script>
-    const vulnerabilidadesData = {{ resultado.estadisticas.por_tipo | tojson }};
-    const riesgosData = {{ resultado.estadisticas.por_riesgo | tojson }};
-    crearGraficos(vulnerabilidadesData, riesgosData);
+    const vulnerabilidadesData = {{ resultado.resumen.total_vulnerabilidades | tojson }};
+
+    // Gráfico de vulnerabilidades totales
+    const vulnCtx = document.getElementById('vulnerabilidadesChart').getContext('2d');
+    new Chart(vulnCtx, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(vulnerabilidadesData),
+            datasets: [{
+                label: 'Total de Vulnerabilidades',
+                data: Object.values(vulnerabilidadesData),
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.5)',
+                    'rgba(54, 162, 235, 0.5)',
+                    'rgba(255, 206, 86, 0.5)',
+                    'rgba(75, 192, 192, 0.5)',
+                    'rgba(153, 102, 255, 0.5)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+
+    // Distribución por nivel de amenaza
+    const riesgosCtx = document.getElementById('riesgosChart').getContext('2d');
+    new Chart(riesgosCtx, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(vulnerabilidadesData),
+            datasets: [{
+                data: Object.values(vulnerabilidadesData),
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.8)',
+                    'rgba(255, 206, 86, 0.8)',
+                    'rgba(75, 192, 192, 0.8)',
+                    'rgba(153, 102, 255, 0.8)',
+                    'rgba(54, 162, 235, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(54, 162, 235, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
 </script>
 {% endblock %}

@@ -1,0 +1,132 @@
+II Results per Host
+===================
+
+Host 192.168.2.95
+*****************
+
+Scanning of this host started at: Tue Mar 4 19:15:22 2025 UTC
+Number of results: 5
+
+Port Summary for Host 192.168.2.95
+----------------------------------
+
+Service (Port)          Threat Level
+135/tcp                 Medium
+135/tcp                 Medium
+135/tcp                 Medium
+445/tcp                 High
+135/tcp                 Medium
+135/tcp                 Medium
+135/tcp                 Medium
+3389/tcp                Medium
+general/tcp             Low
+135/tcp                 Medium
+general/tcp             High
+135/tcp                 Medium
+general/tcp             Low
+135/tcp                 Medium
+general/udp             High
+135/tcp                 Medium
+general/tcp             Low
+general/tcp             Low
+135/tcp                 Medium
+135/tcp                 Medium
+135/tcp                 Medium
+general/tcp             Low
+80/tcp                  High
+22/tcp                  Medium
+135/tcp                 Medium
+8443/tcp                Medium
+443/tcp                 Medium
+22/tcp                  Medium
+general/tcp             Low
+8443/tcp                Medium
+135/tcp                 Medium
+135/tcp                 Medium
+135/tcp                 Medium
+135/tcp                 Medium
+general/tcp             Low
+general/tcp             Low
+443/tcp                 Medium
+443/tcp                 Medium
+general/tcp             Low
+443/tcp                 Medium
+general/tcp             Low
+general/tcp             Low
+443/tcp                 Medium
+443/tcp                 Medium
+443/tcp                 Medium
+135/tcp                 Medium
+135/tcp                 Medium
+general/tcp             Low
+135/tcp                 Medium
+135/tcp                 Medium
+8443/tcp                Medium
+135/tcp                 Medium
+135/tcp                 Medium
+general/tcp             Low
+135/tcp                 Medium
+8443/tcp                Medium
+135/tcp                 Medium
+135/tcp                 Medium
+general/tcp             Low
+general/tcp             Low
+general/tcp             Low
+general/tcp             Low
+general/tcp             Low
+general/tcp             Low
+general/tcp             Low
+5900/tcp                Medium
+443/tcp                 Medium
+135/tcp                 Medium
+8443/tcp                Medium
+general/tcp             Low
+135/tcp                 Medium
+135/tcp                 Medium
+135/tcp                 Medium
+135/tcp                 Medium
+general/tcp             Low
+135/tcp                 Medium
+general/tcp             Low
+general/tcp             Low
+general/tcp             Low
+135/tcp                 Medium
+general/tcp             Low
+135/tcp                 Medium
+general/icmp            High
+135/tcp                 Medium
+general/tcp             Low
+
+Security Issues for Host 192.168.2.95
+-------------------------------------
+
+Issue
+-----
+NVT:    PHP End Of Life Detection (Windows)
+OID:    1.3.6.1.4.1.25623.1.0.105888
+Threat: High (CVSS: 10.0)
+Port:   80/tcp
+
+Product detection result: cpe:/a:php:php:7.2.31
+Detected by: PHP Version Detection (Remote) (OID: 1.3.6.1.4.1.25623.1.0.800109)
+
+Summary:
+The PHP version on the remote host has reached the end of life and should
+  not be used anymore.
+
+Vulnerability Detection Result:
+The "PHP" version on the remote host has reached the end of life.
+CPE:               cpe:/a:php:php:7.2.31
+Installed version: 7.2.31
+EOL version:       7.2
+EOL date:          2020-11-30
+
+Impact:
+An end of life version of PHP is not receiving any security updates from the ven!
+dor. Unfixed security vulnerabilities
+  might be leveraged by an attacker to compromise the security of this host.
+
+Solution:
+Solution type: VendorFix
+Update the PHP version on the remote host to a still supported version.
+
