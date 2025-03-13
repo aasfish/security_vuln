@@ -199,50 +199,74 @@ def hosts():
 
     try:
         resultados_filtrados = filtrar_resultados(sede, fecha_inicio, fecha_fin, riesgo)
-        logger.debug(f"Resultados filtrados para hosts: {len(resultados_filtrados)} registros")
+        logger.debug(f"Resultados filtrados para hosts: {len(resultados_filtrados) if resultados_filtrados else 0} registros")
 
         return render_template('hosts.html', 
                             resultados=resultados_filtrados,
                             sedes=obtener_sedes(),
                             sede_seleccionada=sede,
                             fecha_inicio=fecha_inicio,
-                            fecha_fin=fecha_fin)
+                            fecha_fin=fecha_fin,
+                            riesgo=riesgo)
     except Exception as e:
         logger.error(f"Error en la vista de hosts: {str(e)}", exc_info=True)
         flash('Error al cargar la página de hosts', 'error')
-        return redirect(url_for('dashboard'))
+        return render_template('hosts.html', 
+                            resultados=[],
+                            sedes=obtener_sedes(),
+                            sede_seleccionada=sede,
+                            fecha_inicio=fecha_inicio,
+                            fecha_fin=fecha_fin,
+                            riesgo=riesgo)
 
 @app.route('/vulnerabilidades')
 def vulnerabilidades():
-    sede = request.args.get('sede')
-    fecha_inicio = request.args.get('fecha_inicio')
-    fecha_fin = request.args.get('fecha_fin')
-    riesgo = request.args.get('riesgo')
-    estado = request.args.get('estado')  # Nuevo parámetro para filtrar por estado
+    try:
+        sede = request.args.get('sede')
+        fecha_inicio = request.args.get('fecha_inicio')
+        fecha_fin = request.args.get('fecha_fin')
+        riesgo = request.args.get('riesgo')
+        estado = request.args.get('estado')
 
-    query = Vulnerabilidad.query.join(Host).join(Escaneo).join(Sede)
+        logger.debug(f"Filtros recibidos - sede: {sede}, fecha_inicio: {fecha_inicio}, fecha_fin: {fecha_fin}, riesgo: {riesgo}, estado: {estado}")
 
-    # Aplicar filtros existentes
-    if sede:
-        query = query.filter(Sede.nombre == sede)
-    if fecha_inicio:
-        query = query.filter(Escaneo.fecha_escaneo >= datetime.strptime(fecha_inicio, '%Y-%m-%d').date())
-    if fecha_fin:
-        query = query.filter(Escaneo.fecha_escaneo <= datetime.strptime(fecha_fin, '%Y-%m-%d').date())
-    if riesgo:
-        query = query.filter(Vulnerabilidad.nivel_amenaza == riesgo)
-    if estado:
-        query = query.filter(Vulnerabilidad.estado == estado)
+        query = Vulnerabilidad.query.join(Host).join(Escaneo).join(Sede)
 
-    vulnerabilidades = query.all()
+        # Aplicar filtros
+        if sede and sede != 'Todas las sedes':
+            query = query.filter(Sede.nombre == sede)
+        if fecha_inicio:
+            query = query.filter(Escaneo.fecha_escaneo >= datetime.strptime(fecha_inicio, '%Y-%m-%d').date())
+        if fecha_fin:
+            query = query.filter(Escaneo.fecha_escaneo <= datetime.strptime(fecha_fin, '%Y-%m-%d').date())
+        if riesgo and riesgo != 'all':
+            query = query.filter(Vulnerabilidad.nivel_amenaza == riesgo)
+        if estado and estado != 'all':
+            query = query.filter(Vulnerabilidad.estado == estado)
 
-    return render_template('vulnerabilidades.html', 
-                         resultados=vulnerabilidades,
-                         sedes=obtener_sedes(),
-                         sede_seleccionada=sede,
-                         fecha_inicio=fecha_inicio,
-                         fecha_fin=fecha_fin,
-                         estado=estado)
+        vulnerabilidades = query.all()
+        logger.debug(f"Total de vulnerabilidades encontradas: {len(vulnerabilidades)}")
+
+        return render_template('vulnerabilidades.html', 
+                            resultados=vulnerabilidades,
+                            sedes=obtener_sedes(),
+                            sede_seleccionada=sede,
+                            fecha_inicio=fecha_inicio,
+                            fecha_fin=fecha_fin,
+                            riesgo=riesgo,
+                            estado=estado)
+
+    except Exception as e:
+        logger.error(f"Error en la vista de vulnerabilidades: {str(e)}", exc_info=True)
+        flash('Error al cargar la página de vulnerabilidades', 'error')
+        return render_template('vulnerabilidades.html',
+                            resultados=[],
+                            sedes=obtener_sedes(),
+                            sede_seleccionada=sede if 'sede' in locals() else None,
+                            fecha_inicio=fecha_inicio if 'fecha_inicio' in locals() else None,
+                            fecha_fin=fecha_fin if 'fecha_fin' in locals() else None,
+                            riesgo=riesgo if 'riesgo' in locals() else None,
+                            estado=estado if 'estado' in locals() else None)
 
 @app.route('/comparacion')
 def comparacion():
@@ -622,6 +646,7 @@ def generar_informe(tipo, formato):
         logger.error(f"Error al generar informe: {str(e)}", exc_info=True)
         flash('Error al generar el informe. Por favor, inténtelo de nuevo.', 'error')
         return redirect(url_for('informes'))
+
 
 
 if __name__ == '__main__':
