@@ -19,15 +19,51 @@
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover mb-0">
+                <table class="table table-hover mb-0" id="hostsTable">
                     <thead>
                         <tr>
-                            <th style="width: 25%">Host</th>
-                            <th class="text-center" style="width: 15%">Críticas</th>
-                            <th class="text-center" style="width: 15%">Altas</th>
-                            <th class="text-center" style="width: 15%">Medias</th>
-                            <th class="text-center" style="width: 15%">Bajas</th>
-                            <th class="text-center" style="width: 15%">Total</th>
+                            <th style="width: 25%">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span>Host</span>
+                                    <input type="text" class="form-control form-control-sm column-filter" 
+                                           placeholder="Filtrar..." style="width: 100px">
+                                </div>
+                            </th>
+                            <th class="text-center" style="width: 15%">
+                                <div class="d-flex align-items-center justify-content-center gap-2">
+                                    <span>Críticas</span>
+                                    <input type="number" class="form-control form-control-sm column-filter" 
+                                           placeholder="Min" style="width: 60px">
+                                </div>
+                            </th>
+                            <th class="text-center" style="width: 15%">
+                                <div class="d-flex align-items-center justify-content-center gap-2">
+                                    <span>Altas</span>
+                                    <input type="number" class="form-control form-control-sm column-filter" 
+                                           placeholder="Min" style="width: 60px">
+                                </div>
+                            </th>
+                            <th class="text-center" style="width: 15%">
+                                <div class="d-flex align-items-center justify-content-center gap-2">
+                                    <span>Medias</span>
+                                    <input type="number" class="form-control form-control-sm column-filter" 
+                                           placeholder="Min" style="width: 60px">
+                                </div>
+                            </th>
+                            <th class="text-center" style="width: 15%">
+                                <div class="d-flex align-items-center justify-content-center gap-2">
+                                    <span>Bajas</span>
+                                    <input type="number" class="form-control form-control-sm column-filter" 
+                                           placeholder="Min" style="width: 60px">
+                                </div>
+                            </th>
+                            <th class="text-center" style="width: 15%">
+                                <div class="d-flex align-items-center justify-content-center gap-2">
+                                    <span>Total</span>
+                                    <input type="number" class="form-control form-control-sm column-filter" 
+                                           placeholder="Min" style="width: 60px">
+                                </div>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -74,4 +110,54 @@
 {% endblock %}
 
 {% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const filters = document.querySelectorAll('.column-filter');
+
+    filters.forEach((filter, index) => {
+        filter.addEventListener('input', function() {
+            filterTable(index, this.value);
+        });
+    });
+
+    function filterTable(columnIndex, value) {
+        const table = document.getElementById('hostsTable');
+        const rows = table.getElementsByTagName('tr');
+
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            const cell = row.getElementsByTagName('td')[columnIndex];
+            if (cell) {
+                let textValue = '';
+                if (columnIndex === 0) {
+                    // Para la columna Host, buscar en IP y nombre_host
+                    textValue = cell.textContent || cell.innerText;
+                } else {
+                    // Para columnas numéricas, obtener el número del badge
+                    const badge = cell.querySelector('.badge');
+                    textValue = badge ? badge.textContent || badge.innerText : '';
+                }
+
+                if (columnIndex === 0) {
+                    // Filtro de texto para la columna Host
+                    if (textValue.toLowerCase().includes(value.toLowerCase())) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                } else {
+                    // Filtro numérico para las demás columnas
+                    const numValue = parseInt(textValue);
+                    const filterValue = parseInt(value) || 0;
+                    if (numValue >= filterValue) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            }
+        }
+    }
+});
+</script>
 {% endblock %}
