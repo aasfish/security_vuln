@@ -73,7 +73,9 @@
             <div class="card h-100">
                 <div class="card-body">
                     <h5 class="card-title mb-4">Criticidad de Vulnerabilidades</h5>
-                    <canvas id="criticidadChart" height="300"></canvas>
+                    <div style="height: 300px">
+                        <canvas id="criticidadChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -83,7 +85,9 @@
             <div class="card h-100">
                 <div class="card-body">
                     <h5 class="card-title mb-4">Estado de Vulnerabilidades</h5>
-                    <canvas id="estadoChart" height="300"></canvas>
+                    <div style="height: 300px">
+                        <canvas id="estadoChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -91,8 +95,6 @@
 </div>
 
 <!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script>
 // Gráfico de Criticidad
 const criticidadCtx = document.getElementById('criticidadChart').getContext('2d');
