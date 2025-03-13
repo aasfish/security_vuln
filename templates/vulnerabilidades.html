@@ -2,9 +2,12 @@
 
 {% block content %}
 <div class="container-fluid px-4">
-    <h1 class="display-6 mb-4">VULNERABILIDADES</h1>
-
-    {% include 'components/filtros.html' %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h4 mb-0">Vulnerabilidades</h1>
+        <div class="d-flex gap-2">
+            {% include 'components/filtros.html' %}
+        </div>
+    </div>
 
     <div class="card">
         <div class="card-body">
@@ -15,37 +18,39 @@
                     </span>
                     <input type="text" class="form-control border-start-0" placeholder="Buscar en todas las columnas...">
                 </div>
-                <div class="dropdown">
-                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                        {% if request.args.get('riesgo') %}
-                            {{ request.args.get('riesgo') }}
-                        {% else %}
-                            Todos los riesgos
-                        {% endif %}
-                        <i class="bi bi-chevron-down ms-2"></i>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="?riesgo=all">Todos los riesgos</a></li>
-                        <li><a class="dropdown-item" href="?riesgo=High">Alto</a></li>
-                        <li><a class="dropdown-item" href="?riesgo=Medium">Medio</a></li>
-                        <li><a class="dropdown-item" href="?riesgo=Low">Bajo</a></li>
-                    </ul>
-                </div>
-                <div class="dropdown">
-                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                        {% if request.args.get('estado') %}
-                            {{ request.args.get('estado') }}
-                        {% else %}
-                            Todos los estados
-                        {% endif %}
-                        <i class="bi bi-chevron-down ms-2"></i>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="{{ url_for('vulnerabilidades', sede=sede_seleccionada, fecha_inicio=fecha_inicio) }}">Todos los estados</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('vulnerabilidades', estado='ACTIVA', sede=sede_seleccionada, fecha_inicio=fecha_inicio) }}">VIGENTE</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('vulnerabilidades', estado='MITIGADA', sede=sede_seleccionada, fecha_inicio=fecha_inicio) }}">MITIGADA</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('vulnerabilidades', estado='ASUMIDA', sede=sede_seleccionada, fecha_inicio=fecha_inicio) }}">ASUMIDA</a></li>
-                    </ul>
+                <div class="d-flex gap-2">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            {% if request.args.get('riesgo') %}
+                                {{ request.args.get('riesgo') }}
+                            {% else %}
+                                Todos los riesgos
+                            {% endif %}
+                            <i class="bi bi-chevron-down ms-2"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="?riesgo=all">Todos los riesgos</a></li>
+                            <li><a class="dropdown-item" href="?riesgo=High">Alto</a></li>
+                            <li><a class="dropdown-item" href="?riesgo=Medium">Medio</a></li>
+                            <li><a class="dropdown-item" href="?riesgo=Low">Bajo</a></li>
+                        </ul>
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            {% if request.args.get('estado') %}
+                                {{ request.args.get('estado') }}
+                            {% else %}
+                                Todos los estados
+                            {% endif %}
+                            <i class="bi bi-chevron-down ms-2"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('vulnerabilidades', sede=sede_seleccionada, fecha_inicio=fecha_inicio) }}">Todos los estados</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('vulnerabilidades', estado='ACTIVA', sede=sede_seleccionada, fecha_inicio=fecha_inicio) }}">VIGENTE</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('vulnerabilidades', estado='MITIGADA', sede=sede_seleccionada, fecha_inicio=fecha_inicio) }}">MITIGADA</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('vulnerabilidades', estado='ASUMIDA', sede=sede_seleccionada, fecha_inicio=fecha_inicio) }}">ASUMIDA</a></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
 
@@ -63,73 +68,69 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for resultado in resultados %}
-                            {% for ip, host in resultado.hosts_detalle.items() %}
-                                {% for vuln in host.vulnerabilidades %}
-                                <tr>
-                                    <td>{{ ip }}</td>
-                                    <td>{{ vuln.nvt }}</td>
-                                    <td>
-                                        <span class="badge bg-{{ 'danger' if vuln.nivel_amenaza == 'High' else 'warning' if vuln.nivel_amenaza == 'Medium' else 'info' }}">
-                                            {{ vuln.nivel_amenaza }}
-                                        </span>
-                                    </td>
-                                    <td>{{ resultado.fecha_escaneo }}</td>
-                                    <td>{{ vuln.cvss }}</td>
-                                    <td>
-                                        <div class="dropdown">
-                                            <button class="btn btn-sm badge bg-{{ 'success' if vuln.estado == 'MITIGADA' else 'primary' if vuln.estado == 'ASUMIDA' else 'warning' }} dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                                {{ vuln.estado|default('ACTIVA') }}
-                                            </button>
-                                            <ul class="dropdown-menu">
-                                                <li><a class="dropdown-item" href="#" onclick="cambiarEstado('{{ ip }}', '{{ vuln.oid }}', 'ACTIVA')">ACTIVA</a></li>
-                                                <li><a class="dropdown-item" href="#" onclick="cambiarEstado('{{ ip }}', '{{ vuln.oid }}', 'ASUMIDA')">ASUMIDA</a></li>
-                                                <li><a class="dropdown-item" href="#" onclick="cambiarEstado('{{ ip }}', '{{ vuln.oid }}', 'MITIGADA')">MITIGADA</a></li>
-                                            </ul>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <button class="btn btn-sm btn-link text-muted" type="button" data-bs-toggle="collapse" data-bs-target="#vuln-{{ loop.index }}">
-                                            <i class="bi bi-three-dots-vertical"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                <tr class="collapse" id="vuln-{{ loop.index }}">
-                                    <td colspan="7">
-                                        <div class="card card-body bg-dark border-0 p-4">
-                                            <div class="mb-4">
-                                                <h6 class="text-purple mb-3">Resumen</h6>
-                                                <p class="mb-0 text-white">{{ vuln.resumen }}</p>
-                                            </div>
-                                            <div class="mb-4">
-                                                <h6 class="text-danger mb-3">Impacto</h6>
-                                                <p class="mb-0 text-white">{{ vuln.impacto }}</p>
-                                            </div>
-                                            <div class="mb-4">
-                                                <h6 class="text-success mb-3">Solución</h6>
-                                                <p class="mb-0 text-white">{{ vuln.solucion }}</p>
-                                            </div>
-                                            {% if vuln.metodo_deteccion %}
-                                            <div class="mb-4">
-                                                <h6 class="text-info mb-3">Método de Detección</h6>
-                                                <p class="mb-0 text-white">{{ vuln.metodo_deteccion }}</p>
-                                            </div>
-                                            {% endif %}
-                                            {% if vuln.referencias %}
-                                            <div>
-                                                <h6 class="text-warning mb-3">Referencias</h6>
-                                                <ul class="list-unstyled mb-0">
-                                                    {% for ref in vuln.referencias %}
-                                                    <li class="text-white">{{ ref }}</li>
-                                                    {% endfor %}
-                                                </ul>
-                                            </div>
-                                            {% endif %}
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            {% endfor %}
+                        {% for vuln in resultados %}
+                        <tr>
+                            <td>{{ vuln.host.ip }}</td>
+                            <td>{{ vuln.nvt }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'danger' if vuln.nivel_amenaza == 'High' else 'warning' if vuln.nivel_amenaza == 'Medium' else 'info' }}">
+                                    {{ vuln.nivel_amenaza }}
+                                </span>
+                            </td>
+                            <td>{{ vuln.host.escaneo.fecha_escaneo }}</td>
+                            <td>{{ vuln.cvss }}</td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm badge bg-{{ 'success' if vuln.estado == 'MITIGADA' else 'primary' if vuln.estado == 'ASUMIDA' else 'warning' }} dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        {{ vuln.estado|default('ACTIVA') }}
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="#" onclick="cambiarEstado('{{ vuln.host.ip }}', '{{ vuln.oid }}', 'ACTIVA')">ACTIVA</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="cambiarEstado('{{ vuln.host.ip }}', '{{ vuln.oid }}', 'ASUMIDA')">ASUMIDA</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="cambiarEstado('{{ vuln.host.ip }}', '{{ vuln.oid }}', 'MITIGADA')">MITIGADA</a></li>
+                                    </ul>
+                                </div>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-link text-muted" type="button" data-bs-toggle="collapse" data-bs-target="#vuln-{{ loop.index }}">
+                                    <i class="bi bi-three-dots-vertical"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr class="collapse" id="vuln-{{ loop.index }}">
+                            <td colspan="7">
+                                <div class="card card-body bg-dark border-0 p-4">
+                                    <div class="mb-4">
+                                        <h6 class="text-purple mb-3">Resumen</h6>
+                                        <p class="mb-0 text-white">{{ vuln.resumen }}</p>
+                                    </div>
+                                    <div class="mb-4">
+                                        <h6 class="text-danger mb-3">Impacto</h6>
+                                        <p class="mb-0 text-white">{{ vuln.impacto }}</p>
+                                    </div>
+                                    <div class="mb-4">
+                                        <h6 class="text-success mb-3">Solución</h6>
+                                        <p class="mb-0 text-white">{{ vuln.solucion }}</p>
+                                    </div>
+                                    {% if vuln.metodo_deteccion %}
+                                    <div class="mb-4">
+                                        <h6 class="text-info mb-3">Método de Detección</h6>
+                                        <p class="mb-0 text-white">{{ vuln.metodo_deteccion }}</p>
+                                    </div>
+                                    {% endif %}
+                                    {% if vuln.referencias %}
+                                    <div>
+                                        <h6 class="text-warning mb-3">Referencias</h6>
+                                        <ul class="list-unstyled mb-0">
+                                            {% for ref in vuln.referencias %}
+                                            <li class="text-white">{{ ref }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
                         {% endfor %}
                     </tbody>
                 </table>
