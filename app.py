@@ -299,15 +299,20 @@ def hosts():
     fecha_fin = request.args.get('fecha_fin')
     riesgo = request.args.get('riesgo')
 
-    resultados_filtrados = filtrar_resultados(sede, fecha_inicio, fecha_fin, riesgo)
+    try:
+        resultados_filtrados = filtrar_resultados(sede, fecha_inicio, fecha_fin, riesgo)
+        logger.debug(f"Resultados filtrados para hosts: {len(resultados_filtrados)} registros")
 
-    return render_template('hosts.html', 
-                         resultados=resultados_filtrados,
-                         sedes=obtener_sedes(),
-                         sede_seleccionada=sede,
-                         fecha_inicio=fecha_inicio,
-                         fecha_fin=fecha_fin)
-
+        return render_template('hosts.html', 
+                            resultados=resultados_filtrados,
+                            sedes=obtener_sedes(),
+                            sede_seleccionada=sede,
+                            fecha_inicio=fecha_inicio,
+                            fecha_fin=fecha_fin)
+    except Exception as e:
+        logger.error(f"Error en la vista de hosts: {str(e)}", exc_info=True)
+        flash('Error al cargar la página de hosts', 'error')
+        return redirect(url_for('dashboard'))
 
 @app.route('/vulnerabilidades')
 def vulnerabilidades():
@@ -360,36 +365,48 @@ def comparativa():
 @app.route('/comparacion')
 def comparacion():
     """Vista de comparación de escaneos"""
-    sede1 = request.args.get('sede1')
-    sede2 = request.args.get('sede2')
-    fecha1 = request.args.get('fecha1')
-    fecha2 = request.args.get('fecha2')
+    try:
+        sede1 = request.args.get('sede1')
+        sede2 = request.args.get('sede2')
+        fecha1 = request.args.get('fecha1')
+        fecha2 = request.args.get('fecha2')
 
-    logger.debug(f"Parámetros recibidos: sede1={sede1}, fecha1={fecha1}, sede2={sede2}, fecha2={fecha2}")
+        logger.debug(f"Parámetros recibidos: sede1={sede1}, fecha1={fecha1}, sede2={sede2}, fecha2={fecha2}")
 
-    # Obtener todas las sedes disponibles
-    sedes = obtener_sedes()
-    logger.debug(f"Sedes disponibles: {sedes}")
+        # Obtener todas las sedes disponibles
+        sedes = obtener_sedes()
+        logger.debug(f"Sedes disponibles: {sedes}")
 
-    # Si no hay sedes seleccionadas y hay sedes disponibles, usar la primera
-    if not sede1 and sedes:
-        sede1 = sedes[0]
-    if not sede2 and sedes:
-        sede2 = sedes[0]
+        # Si no hay sedes seleccionadas y hay sedes disponibles, usar la primera
+        if not sede1 and sedes:
+            sede1 = sedes[0]
+        if not sede2 and sedes:
+            sede2 = sedes[0]
 
-    # Obtener los escaneos de cada sede
-    escaneos1 = Escaneo.query.filter_by(sede_id=sede1).order_by(Escaneo.fecha_escaneo.desc()).all() if sede1 else []
-    escaneos2 = Escaneo.query.filter_by(sede_id=sede2).order_by(Escaneo.fecha_escaneo.desc()).all() if sede2 else []
+        # Obtener los escaneos de cada sede
+        escaneos1 = []
+        escaneos2 = []
 
-    # Si no hay fechas seleccionadas, usar las más recientes
-    if not fecha1 and escaneos1:
-        fecha1 = escaneos1[0].fecha_escaneo.strftime('%Y-%m-%d')
-    if not fecha2 and escaneos2:
-        fecha2 = escaneos2[0].fecha_escaneo.strftime('%Y-%m-%d')
+        if sede1:
+            sede1_obj = Sede.query.filter_by(nombre=sede1).first()
+            if sede1_obj:
+                escaneos1 = Escaneo.query.filter_by(sede_id=sede1_obj.id)\
+                    .order_by(Escaneo.fecha_escaneo.desc()).all()
 
-    resultados = None
-    if fecha1 and fecha2 and sede1 and sede2:
-        try:
+        if sede2:
+            sede2_obj = Sede.query.filter_by(nombre=sede2).first()
+            if sede2_obj:
+                escaneos2 = Escaneo.query.filter_by(sede_id=sede2_obj.id)\
+                    .order_by(Escaneo.fecha_escaneo.desc()).all()
+
+        # Si no hay fechas seleccionadas, usar las más recientes
+        if not fecha1 and escaneos1:
+            fecha1 = escaneos1[0].fecha_escaneo.strftime('%Y-%m-%d')
+        if not fecha2 and escaneos2:
+            fecha2 = escaneos2[0].fecha_escaneo.strftime('%Y-%m-%d')
+
+        resultados = None
+        if fecha1 and fecha2 and sede1 and sede2:
             fecha1_obj = datetime.strptime(fecha1, '%Y-%m-%d').date()
             fecha2_obj = datetime.strptime(fecha2, '%Y-%m-%d').date()
 
@@ -444,17 +461,12 @@ def comparacion():
                     nivel_amenaza = row[2]
                     total = row[3]
 
-                    logger.debug(f"Procesando resultado: sede={sede}, fecha={fecha_escaneo}, nivel={nivel_amenaza}, total={total}")
-
                     if sede == sede1 and fecha_escaneo == fecha1_obj:
                         primer_conteo[nivel_amenaza] = total
                         primer_total += total
                     elif sede == sede2 and fecha_escaneo == fecha2_obj:
                         segundo_conteo[nivel_amenaza] = total
                         segundo_total += total
-
-            logger.debug(f"Conteos procesados - Primer: {primer_conteo}, Segundo: {segundo_conteo}")
-            logger.debug(f"Totales procesados - Primer escaneo: {primer_total}, Segundo escaneo: {segundo_total}")
 
             # Calcular variación
             variacion = segundo_total - primer_total
@@ -476,19 +488,21 @@ def comparacion():
                     'porcentaje': porcentaje_variacion
                 }
             }
-            logger.debug(f"Resultados calculados: {resultados}")
-        except Exception as e:
-            logger.error(f"Error al procesar los datos de comparación: {str(e)}", exc_info=True)
 
-    return render_template('comparacion.html',
-                         sedes=sedes,
-                         sede1_seleccionada=sede1,
-                         sede2_seleccionada=sede2,
-                         escaneos1=escaneos1,
-                         escaneos2=escaneos2,
-                         fecha1=fecha1,
-                         fecha2=fecha2,
-                         resultados=resultados)
+        return render_template('comparacion.html',
+                            sedes=sedes,
+                            sede1_seleccionada=sede1,
+                            sede2_seleccionada=sede2,
+                            escaneos1=escaneos1,
+                            escaneos2=escaneos2,
+                            fecha1=fecha1,
+                            fecha2=fecha2,
+                            resultados=resultados)
+
+    except Exception as e:
+        logger.error(f"Error en la vista de comparación: {str(e)}", exc_info=True)
+        flash('Error al cargar la página de comparación', 'error')
+        return redirect(url_for('dashboard'))
 
 @app.route('/static/<path:filename>')
 def serve_static(filename):
@@ -557,6 +571,7 @@ def obtener_tendencias():
 
     logger.debug(f"Tendencias calculadas: {tendencias}")
     return jsonify(list(tendencias.values()))
+
 
 
 @app.route('/actualizar_estado', methods=['POST'])
