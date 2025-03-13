@@ -140,11 +140,13 @@ document.addEventListener('DOMContentLoaded', function() {
             scales: {
                 y: {
                     beginAtZero: true,
+                    max: 1.0,
+                    ticks: {
+                        stepSize: 0.1,
+                        color: '#6c757d'
+                    },
                     grid: {
                         color: 'rgba(255, 255, 255, 0.1)'
-                    },
-                    ticks: {
-                        color: '#6c757d'
                     }
                 },
                 x: {
@@ -164,10 +166,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         padding: 20,
                         font: {
                             size: 12
-                        }
+                        },
+                        usePointStyle: true
                     }
                 }
-            }
+            },
+            barPercentage: 0.8,
+            categoryPercentage: 0.9
         }
     });
 });
