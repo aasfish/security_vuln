@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="display-6 mb-4">Dashboard de Seguridad</h1>
+
+    {% include 'components/filtros.html' %}
+
+    <div class="row g-4 mb-4">
+        <!-- Puntuación de Riesgo -->
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <h5 class="mb-0">Puntuación de Riesgo</h5>
+                        <i class="bi bi-exclamation-triangle ms-2 text-warning"></i>
+                    </div>
+                    <h2 class="display-3 mb-0">{{ "%.1f"|format(riesgo_promedio) }}/10</h2>
+                    <div class="progress mt-3" style="height: 8px;">
+                        <div class="progress-bar bg-warning" role="progressbar" 
+                             style="width: {{ (riesgo_promedio/10)*100 }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vulnerabilidades Totales -->
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <h5 class="mb-0">Vulnerabilidades Totales</h5>
+                        <i class="bi bi-shield-exclamation ms-2 text-primary"></i>
+                    </div>
+                    <h2 class="display-3 mb-0">{{ total_vulnerabilidades }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estado de Vulnerabilidades -->
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <h5 class="mb-0">Estado de Vulnerabilidades</h5>
+                        <i class="bi bi-graph-up ms-2 text-success"></i>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="text-center">
+                            <i class="bi bi-check-circle text-success fs-3"></i>
+                            <h3 class="mb-0">{{ estados.fix }}</h3>
+                            <small class="text-muted">FIX</small>
+                        </div>
+                        <div class="text-center">
+                            <i class="bi bi-exclamation-circle text-warning fs-3"></i>
+                            <h3 class="mb-0">{{ estados.asumida }}</h3>
+                            <small class="text-muted">ASUMIDA</small>
+                        </div>
+                        <div class="text-center">
+                            <i class="bi bi-x-circle text-danger fs-3"></i>
+                            <h3 class="mb-0">{{ estados.vigente }}</h3>
+                            <small class="text-muted">VIGENTE</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Criticidad de Vulnerabilidades -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">Criticidad de Vulnerabilidades</h5>
+                    <canvas id="criticidadChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estado de Vulnerabilidades -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">Estado de Vulnerabilidades</h5>
+                    <canvas id="estadoChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// Gráfico de Criticidad
+const criticidadCtx = document.getElementById('criticidadChart').getContext('2d');
+new Chart(criticidadCtx, {
+    type: 'bar',
+    data: {
+        labels: ['Critical', 'High', 'Medium', 'Low'],
+        datasets: [{
+            label: '# de Vulnerabilidades',
+            data: {{ criticidad|tojson }},
+            backgroundColor: [
+                '#dc3545',
+                '#fd7e14',
+                '#ffc107',
+                '#198754'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 70
+                }
+            }
+        }
+    }
+});
+
+// Gráfico de Estado
+const estadoCtx = document.getElementById('estadoChart').getContext('2d');
+new Chart(estadoCtx, {
+    type: 'pie',
+    data: {
+        labels: ['FIX', 'ASUMIDA', 'VIGENTE'],
+        datasets: [{
+            data: [{{ estados.fix }}, {{ estados.asumida }}, {{ estados.vigente }}],
+            backgroundColor: [
+                '#198754',
+                '#ffc107',
+                '#dc3545'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'right'
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

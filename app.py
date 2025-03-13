@@ -274,3 +274,57 @@ def fechas_por_sede(sede):
         .order_by(Escaneo.fecha_escaneo.desc())\
         .all()
     return jsonify([fecha[0].strftime('%Y-%m-%d') for fecha in fechas])
+
+@app.route('/dashboard')
+def dashboard():
+    """Vista del dashboard principal"""
+    sede = request.args.get('sede')
+    fecha_inicio = request.args.get('fecha_inicio')
+    fecha_fin = request.args.get('fecha_fin')
+    riesgo = request.args.get('riesgo')
+
+    from models import Escaneo, Host, Vulnerabilidad
+
+    # Query base
+    query = Vulnerabilidad.query.join(Host).join(Escaneo)
+
+    # Aplicar filtros
+    if sede:
+        query = query.filter(Escaneo.sede == sede)
+    if fecha_inicio:
+        query = query.filter(Escaneo.fecha_escaneo >= datetime.strptime(fecha_inicio, '%Y-%m-%d').date())
+    if fecha_fin:
+        query = query.filter(Escaneo.fecha_escaneo <= datetime.strptime(fecha_fin, '%Y-%m-%d').date())
+
+    # Obtener todas las vulnerabilidades que cumplen los filtros
+    vulnerabilidades = query.all()
+    total_vulnerabilidades = len(vulnerabilidades)
+
+    # Calcular riesgo promedio (CVSS)
+    riesgo_total = sum(float(v.cvss) for v in vulnerabilidades if v.cvss.replace('.','').isdigit())
+    riesgo_promedio = round(riesgo_total / total_vulnerabilidades, 1) if total_vulnerabilidades > 0 else 0
+
+    # Contar estados
+    estados = {
+        'fix': sum(1 for v in vulnerabilidades if v.estado == 'FIX'),
+        'asumida': sum(1 for v in vulnerabilidades if v.estado == 'ASUMIDA'),
+        'vigente': sum(1 for v in vulnerabilidades if v.estado == 'VIGENTE')
+    }
+
+    # Contar por criticidad
+    criticidad = [
+        sum(1 for v in vulnerabilidades if v.nivel_amenaza == 'Critical'),
+        sum(1 for v in vulnerabilidades if v.nivel_amenaza == 'High'),
+        sum(1 for v in vulnerabilidades if v.nivel_amenaza == 'Medium'),
+        sum(1 for v in vulnerabilidades if v.nivel_amenaza == 'Low')
+    ]
+
+    return render_template('dashboard.html',
+                         riesgo_promedio=riesgo_promedio,
+                         total_vulnerabilidades=total_vulnerabilidades,
+                         estados=estados,
+                         criticidad=criticidad,
+                         sedes=obtener_sedes(),
+                         sede_seleccionada=sede,
+                         fecha_inicio=fecha_inicio,
+                         fecha_fin=fecha_fin)
