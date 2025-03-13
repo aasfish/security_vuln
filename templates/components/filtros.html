@@ -17,7 +17,7 @@
     <div class="dropdown">
         <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
             <i class="bi bi-calendar3"></i>
-            {{ fecha_inicio if fecha_inicio else '2025' }}
+            {{ fecha_inicio if fecha_inicio else 'Todas las fechas' }}
         </button>
         <ul class="dropdown-menu shadow-sm p-3" style="min-width: 300px">
             <div class="list-group" id="fechas-disponibles">
@@ -31,6 +31,17 @@
 document.addEventListener('DOMContentLoaded', function() {
     const sedeSeleccionada = '{{ sede_seleccionada if sede_seleccionada else "Todas las sedes" }}';
     actualizarFechasDisponibles(sedeSeleccionada);
+
+    // Agregar event listeners para los enlaces de sede
+    document.querySelectorAll('.dropdown-item').forEach(link => {
+        link.addEventListener('click', function(e) {
+            if (this.textContent === 'Todas las sedes') {
+                actualizarFechasDisponibles('Todas las sedes');
+            } else {
+                actualizarFechasDisponibles(this.textContent.trim());
+            }
+        });
+    });
 });
 
 function actualizarFechasDisponibles(sede) {
@@ -40,6 +51,26 @@ function actualizarFechasDisponibles(sede) {
             const fechasContainer = document.getElementById('fechas-disponibles');
             fechasContainer.innerHTML = '';
 
+            // Agregar opción "Todas las fechas"
+            const todasFechasLink = document.createElement('a');
+            const params = new URLSearchParams(window.location.search);
+
+            if (sede !== 'Todas las sedes') {
+                params.set('sede', sede);
+            } else {
+                params.delete('sede');
+            }
+            params.delete('fecha_inicio');
+
+            todasFechasLink.href = `${window.location.pathname}?${params.toString()}`;
+            todasFechasLink.className = 'list-group-item list-group-item-action';
+            if (!window.location.search.includes('fecha_inicio')) {
+                todasFechasLink.classList.add('active');
+            }
+            todasFechasLink.textContent = 'Todas las fechas';
+            fechasContainer.appendChild(todasFechasLink);
+
+            // Agregar fechas específicas
             fechas.forEach(fecha => {
                 const fechaLink = document.createElement('a');
                 const params = new URLSearchParams(window.location.search);
