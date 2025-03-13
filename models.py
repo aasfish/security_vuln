@@ -1,5 +1,5 @@
 from datetime import datetime
-from app import db
+from database import db
 
 class Sede(db.Model):
     __tablename__ = 'sedes'
@@ -17,7 +17,7 @@ class Escaneo(db.Model):
     __tablename__ = 'escaneos'
 
     id = db.Column(db.Integer, primary_key=True)
-    sede_id = db.Column(db.Integer, db.ForeignKey('sedes.id'), nullable=False) # Added Foreign Key to Sede
+    sede_id = db.Column(db.Integer, db.ForeignKey('sedes.id'), nullable=False)
     fecha_escaneo = db.Column(db.Date, nullable=False)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
     hosts = db.relationship('Host', backref='escaneo', lazy=True, cascade='all, delete-orphan')
