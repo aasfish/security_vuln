@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Vulnerabilidades Detectadas</h2>
+
+    {% for resultado in resultados %}
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <div>
+                <h5 class="mb-0">Sede: {{ resultado.sede }}</h5>
+                <small>Fecha de escaneo: {{ resultado.fecha_escaneo }}</small>
+            </div>
+        </div>
+        <div class="card-body">
+            {% for ip, host in resultado.hosts_detalle.items() %}
+            <div class="card mb-3">
+                <div class="card-header" role="button" data-bs-toggle="collapse" 
+                     data-bs-target="#host-{{ loop.index }}-{{ outer_loop.index }}" 
+                     aria-expanded="false">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            Host: {{ ip }}
+                            {% if host.nombre_host %}
+                            <small class="text-muted">({{ host.nombre_host }})</small>
+                            {% endif %}
+                        </h5>
+                        <span class="badge bg-primary">{{ host.vulnerabilidades|length }} vulnerabilidades</span>
+                    </div>
+                </div>
+                <div class="collapse" id="host-{{ loop.index }}-{{ outer_loop.index }}">
+                    <div class="card-body">
+                        {% for vuln in host.vulnerabilidades %}
+                        <div class="card mb-3">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">{{ vuln.nvt }}</h6>
+                                <div>
+                                    <span class="badge bg-{{ 'danger' if vuln.nivel_amenaza == 'High' else 'warning' if vuln.nivel_amenaza == 'Medium' else 'info' }}">
+                                        {{ vuln.nivel_amenaza }} (CVSS: {{ vuln.cvss }})
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <p><strong>Puerto:</strong> {{ vuln.puerto }}</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>OID:</strong> {{ vuln.oid }}</p>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <h6 class="text-primary">Resumen</h6>
+                                    <p class="mb-0">{{ vuln.resumen }}</p>
+                                </div>
+
+                                <div class="mb-3">
+                                    <h6 class="text-danger">Impacto</h6>
+                                    <p class="mb-0">{{ vuln.impacto }}</p>
+                                </div>
+
+                                <div class="mb-3">
+                                    <h6 class="text-success">Solución</h6>
+                                    <p class="mb-0">{{ vuln.solucion }}</p>
+                                </div>
+
+                                {% if vuln.metodo_deteccion %}
+                                <div class="mb-3">
+                                    <h6>Método de Detección</h6>
+                                    <p class="mb-0">{{ vuln.metodo_deteccion }}</p>
+                                </div>
+                                {% endif %}
+
+                                {% if vuln.referencias %}
+                                <div>
+                                    <h6>Referencias</h6>
+                                    <ul class="list-unstyled">
+                                        {% for ref in vuln.referencias %}
+                                        <li>{{ ref }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Activar todos los tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+});
+</script>
+{% endblock %}
