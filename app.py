@@ -263,3 +263,14 @@ def comparativa():
 @app.route('/static/<path:filename>')
 def serve_static(filename):
     return send_from_directory(app.static_folder, filename)
+
+@app.route('/fechas_por_sede/<sede>')
+def fechas_por_sede(sede):
+    """Obtiene las fechas disponibles para una sede específica"""
+    from models import Escaneo
+    fechas = db.session.query(Escaneo.fecha_escaneo)\
+        .filter(Escaneo.sede == sede)\
+        .distinct()\
+        .order_by(Escaneo.fecha_escaneo.desc())\
+        .all()
+    return jsonify([fecha[0].strftime('%Y-%m-%d') for fecha in fechas])
