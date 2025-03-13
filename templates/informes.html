@@ -41,10 +41,6 @@
                            class="btn btn-primary">
                             <i class="bi bi-file-earmark-pdf me-2"></i>PDF
                         </a>
-                        <a href="{{ url_for('generar_informe', tipo='ejecutivo', formato='csv') }}{{ '?' + request.query_string.decode() if request.query_string else '' }}" 
-                           class="btn btn-success">
-                            <i class="bi bi-file-earmark-spreadsheet me-2"></i>CSV
-                        </a>
                     </div>
                 </div>
             </div>

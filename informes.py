@@ -12,10 +12,7 @@ def generar_informe_ejecutivo(datos, tipo='pdf'):
     """
     Genera un informe ejecutivo con datos resumidos y gráficos
     """
-    if tipo == 'pdf':
-        return generar_pdf_ejecutivo(datos)
-    else:  # csv
-        return generar_csv_ejecutivo(datos)
+    return generar_pdf_ejecutivo(datos)
 
 def generar_grafico_distribucion(niveles):
     """Genera un gráfico de torta con la distribución de vulnerabilidades"""
@@ -32,7 +29,6 @@ def generar_grafico_distribucion(niveles):
         plt.pie(valores, labels=etiquetas, colors=colores_filtrados, autopct='%1.1f%%')
         plt.title('Distribución de Vulnerabilidades por Nivel')
     else:
-        # Si no hay datos, crear un gráfico vacío con un mensaje
         plt.text(0.5, 0.5, 'No hay vulnerabilidades para mostrar', 
                 horizontalalignment='center', verticalalignment='center')
 
@@ -164,29 +160,14 @@ def generar_pdf_ejecutivo(datos):
     buffer.seek(0)
     return buffer
 
-def generar_csv_ejecutivo(datos):
+def generar_informe_tecnico(datos, tipo='pdf'):
     """
-    Genera un CSV con formato ejecutivo
+    Genera un informe técnico detallado
     """
-    buffer = BytesIO()
-
-    # Preparar datos para el DataFrame
-    rows = []
-    for ip, host_data in datos['hosts_detalle'].items():
-        for vuln in host_data['vulnerabilidades']:
-            rows.append({
-                'IP': ip,
-                'Nombre Host': host_data['nombre_host'],
-                'Vulnerabilidad': vuln['nvt'],
-                'Nivel': vuln['nivel_amenaza'],
-                'CVSS': vuln['cvss'],
-                'Puerto': vuln['puerto']
-            })
-
-    df = pd.DataFrame(rows)
-    df.to_csv(buffer, index=False, encoding='utf-8')
-    buffer.seek(0)
-    return buffer
+    if tipo == 'pdf':
+        return generar_pdf_tecnico(datos)
+    else:  # csv
+        return generar_csv_tecnico(datos)
 
 def generar_pdf_tecnico(datos):
     """
@@ -196,10 +177,10 @@ def generar_pdf_tecnico(datos):
     doc = SimpleDocTemplate(buffer, pagesize=landscape(letter),
                           rightMargin=36, leftMargin=36,
                           topMargin=36, bottomMargin=36)
-    
+
     story = []
     styles = getSampleStyleSheet()
-    
+
     # Título
     title_style = ParagraphStyle(
         'CustomTitle',
@@ -209,15 +190,40 @@ def generar_pdf_tecnico(datos):
     )
     story.append(Paragraph("Informe Técnico Detallado", title_style))
     story.append(Spacer(1, 12))
-    
+
+    # Información del contexto
+    context_style = ParagraphStyle(
+        'Context',
+        parent=styles['Normal'],
+        fontSize=12,
+        spaceAfter=20
+    )
+
+    # Sede y fecha
+    sede_info = f"Sede: {datos.get('sede', 'Todas las sedes')}"
+    fecha_info = "Período: "
+    if datos.get('fecha_inicio') and datos.get('fecha_fin'):
+        fecha_info += f"Del {datos['fecha_inicio']} al {datos['fecha_fin']}"
+    elif datos.get('fecha_inicio'):
+        fecha_info += f"Desde {datos['fecha_inicio']}"
+    elif datos.get('fecha_fin'):
+        fecha_info += f"Hasta {datos['fecha_fin']}"
+    else:
+        fecha_info += "Todo el período"
+
+    story.append(Paragraph(sede_info, context_style))
+    story.append(Paragraph(fecha_info, context_style))
+    story.append(Paragraph(f"Fecha del informe: {datetime.now().strftime('%Y-%m-%d')}", context_style))
+    story.append(Spacer(1, 12))
+
     # Contenido detallado por host
-    for ip, host_data in datos.items():
+    for ip, host_data in datos['hosts_detalle'].items():
         # Información del host
         story.append(Paragraph(f"Host: {ip}", styles["Heading2"]))
-        if host_data['nombre_host']:
+        if host_data.get('nombre_host'):
             story.append(Paragraph(f"Nombre: {host_data['nombre_host']}", styles["Normal"]))
         story.append(Spacer(1, 12))
-        
+
         # Tabla de vulnerabilidades
         vuln_data = [['Vulnerabilidad', 'Nivel', 'CVSS', 'Puerto', 'Estado']]
         for vuln in host_data['vulnerabilidades']:
@@ -228,7 +234,7 @@ def generar_pdf_tecnico(datos):
                 vuln['puerto'],
                 vuln.get('estado', 'No especificado')
             ])
-        
+
         table = Table(vuln_data, repeatRows=1)
         table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
@@ -244,22 +250,22 @@ def generar_pdf_tecnico(datos):
             ('GRID', (0, 0), (-1, -1), 1, colors.black),
             ('WORDWRAP', (0, 0), (-1, -1), True)
         ]))
-        
+
         story.append(table)
         story.append(Spacer(1, 20))
-        
+
         # Detalles de cada vulnerabilidad
         for vuln in host_data['vulnerabilidades']:
             story.append(Paragraph(f"Detalle de Vulnerabilidad: {vuln['nvt']}", styles["Heading3"]))
-            story.append(Paragraph(f"Resumen: {vuln['resumen']}", styles["Normal"]))
-            story.append(Paragraph(f"Impacto: {vuln['impacto']}", styles["Normal"]))
-            story.append(Paragraph(f"Solución: {vuln['solucion']}", styles["Normal"]))
-            if vuln['referencias']:
+            story.append(Paragraph(f"Resumen: {vuln.get('resumen', 'No disponible')}", styles["Normal"]))
+            story.append(Paragraph(f"Impacto: {vuln.get('impacto', 'No disponible')}", styles["Normal"]))
+            story.append(Paragraph(f"Solución: {vuln.get('solucion', 'No disponible')}", styles["Normal"]))
+            if vuln.get('referencias'):
                 story.append(Paragraph("Referencias:", styles["Normal"]))
                 for ref in vuln['referencias']:
                     story.append(Paragraph(f"• {ref}", styles["Normal"]))
             story.append(Spacer(1, 12))
-    
+
     doc.build(story)
     buffer.seek(0)
     return buffer
@@ -269,27 +275,27 @@ def generar_csv_tecnico(datos):
     Genera un CSV con información técnica detallada
     """
     buffer = BytesIO()
-    
+
     # Preparar datos para el DataFrame
     rows = []
-    for ip, host_data in datos.items():
+    for ip, host_data in datos['hosts_detalle'].items():
         for vuln in host_data['vulnerabilidades']:
             rows.append({
                 'IP': ip,
-                'Nombre Host': host_data['nombre_host'],
+                'Nombre Host': host_data.get('nombre_host', ''),
                 'Vulnerabilidad': vuln['nvt'],
-                'OID': vuln['oid'],
+                'OID': vuln.get('oid', ''),
                 'Nivel': vuln['nivel_amenaza'],
                 'CVSS': vuln['cvss'],
                 'Puerto': vuln['puerto'],
-                'Resumen': vuln['resumen'],
-                'Impacto': vuln['impacto'],
-                'Solución': vuln['solucion'],
-                'Método Detección': vuln['metodo_deteccion'],
-                'Referencias': '; '.join(vuln['referencias']) if vuln['referencias'] else '',
+                'Resumen': vuln.get('resumen', ''),
+                'Impacto': vuln.get('impacto', ''),
+                'Solución': vuln.get('solucion', ''),
+                'Método Detección': vuln.get('metodo_deteccion', ''),
+                'Referencias': '; '.join(vuln.get('referencias', [])),
                 'Estado': vuln.get('estado', 'No especificado')
             })
-    
+
     df = pd.DataFrame(rows)
     df.to_csv(buffer, index=False, encoding='utf-8')
     buffer.seek(0)
