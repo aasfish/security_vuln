@@ -80,9 +80,17 @@ def analizar_vulnerabilidades(filepath: str) -> Dict:
 
                 # Extraer nombre del host si existe
                 nombre_host = ""
-                host_name_match = re.search(rf'{ip}\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+(.*?)$', contenido, re.MULTILINE)
+                host_name_match = re.search(rf'Host Information: {ip}\s+\((.*?)\)', contenido, re.MULTILINE)
                 if host_name_match:
                     nombre_host = host_name_match.group(1).strip()
+                elif re.search(rf'{ip}\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+(.*?)$', contenido, re.MULTILINE):
+                    # Buscar en el formato alternativo
+                    nombre_host = re.search(rf'{ip}\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+(.*?)$', contenido, re.MULTILINE).group(1).strip()
+
+                # Limpiar el nombre del host de caracteres no deseados
+                nombre_host = re.sub(r'[^\w\s\-\.]', '', nombre_host)
+                if not nombre_host or nombre_host.isspace():
+                    nombre_host = ""
 
                 # Extraer vulnerabilidades
                 vulnerabilidades = []
