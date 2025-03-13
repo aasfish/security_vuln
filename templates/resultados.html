@@ -14,30 +14,61 @@
             {% endif %}
         </div>
         <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Puerto/Servicio</th>
-                            <th>Nivel de Amenaza</th>
-                            <th>Descripción</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for vuln in host.vulnerabilidades %}
-                        <tr>
-                            <td>{{ vuln.puerto_servicio }}</td>
-                            <td>
-                                <span class="badge bg-{{ 'danger' if vuln.nivel_amenaza == 'High' else 'warning' if vuln.nivel_amenaza == 'Medium' else 'info' }}">
-                                    {{ vuln.nivel_amenaza }}
-                                </span>
-                            </td>
-                            <td>{{ vuln.descripcion }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            {% for vuln in host.vulnerabilidades %}
+            <div class="card mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">{{ vuln.nvt }}</h6>
+                    <div>
+                        <span class="badge bg-{{ 'danger' if vuln.nivel_amenaza == 'High' else 'warning' if vuln.nivel_amenaza == 'Medium' else 'info' }}">
+                            {{ vuln.nivel_amenaza }} (CVSS: {{ vuln.cvss }})
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p><strong>Puerto:</strong> {{ vuln.puerto }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>OID:</strong> {{ vuln.oid }}</p>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6 class="text-primary">Resumen</h6>
+                        <p class="mb-0">{{ vuln.resumen }}</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6 class="text-danger">Impacto</h6>
+                        <p class="mb-0">{{ vuln.impacto }}</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6 class="text-success">Solución</h6>
+                        <p class="mb-0">{{ vuln.solucion }}</p>
+                    </div>
+
+                    {% if vuln.metodo_deteccion %}
+                    <div class="mb-3">
+                        <h6>Método de Detección</h6>
+                        <p class="mb-0">{{ vuln.metodo_deteccion }}</p>
+                    </div>
+                    {% endif %}
+
+                    {% if vuln.referencias %}
+                    <div>
+                        <h6>Referencias</h6>
+                        <ul class="list-unstyled">
+                            {% for ref in vuln.referencias %}
+                            <li>{{ ref }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
             </div>
+            {% endfor %}
         </div>
     </div>
     {% endfor %}
