@@ -1,7 +1,7 @@
 import re
 import logging
-from dataclasses import dataclass
-from typing import List, Dict
+from dataclasses import dataclass, field
+from typing import List, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ class Vulnerabilidad:
     impacto: str
     solucion: str
     metodo_deteccion: str = ""
-    referencias: List[str] = None
+    referencias: List[str] = field(default_factory=list)
 
 @dataclass
 class HostAnalisis:
@@ -58,7 +58,7 @@ def extraer_vulnerabilidad(texto: str) -> Vulnerabilidad:
         referencias=referencias
     )
 
-def analizar_vulnerabilidades(filepath: str) -> Dict:
+def analizar_vulnerabilidades(filepath: str) -> Optional[Dict]:
     """
     Analiza un archivo de reporte de vulnerabilidades en formato TXT.
     Retorna un diccionario con la información detallada de vulnerabilidades por host.
@@ -80,12 +80,10 @@ def analizar_vulnerabilidades(filepath: str) -> Dict:
 
                 # Extraer nombre del host si existe
                 nombre_host = ""
-                # Primero intentar encontrar el nombre en el formato de información del host
                 host_name_match = re.search(rf'Host Information: {ip}\s+\((.*?)\)', contenido)
                 if host_name_match:
                     nombre_host = host_name_match.group(1).strip()
                 else:
-                    # Si no se encuentra en el formato anterior, buscar en el resumen general
                     host_line_match = re.search(rf'{ip}\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+([\w\-\.]+)', contenido)
                     if host_line_match and not host_line_match.group(1).replace('.', '').isdigit():
                         nombre_host = host_line_match.group(1).strip()
@@ -136,4 +134,4 @@ def analizar_vulnerabilidades(filepath: str) -> Dict:
 
     except Exception as e:
         logger.error(f"Error al analizar el archivo: {str(e)}", exc_info=True)
-        raise Exception(f"Error al analizar el archivo: {str(e)}")
+        return None
