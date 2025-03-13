@@ -1,31 +1,29 @@
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div class="d-flex gap-3">
-        <div class="dropdown">
-            <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
-                <i class="bi bi-geo-alt"></i>
-                {{ sede_seleccionada if sede_seleccionada else 'Todas las sedes' }}
-            </button>
-            <ul class="dropdown-menu">
-                <li><a class="dropdown-item {% if not sede_seleccionada %}active{% endif %}" 
-                      href="{{ url_for(request.endpoint, fecha_inicio=fecha_inicio) }}">Todas las sedes</a></li>
-                {% for sede in sedes %}
-                <li><a class="dropdown-item {% if sede == sede_seleccionada %}active{% endif %}" 
-                      href="{{ url_for(request.endpoint, sede=sede, fecha_inicio=fecha_inicio) }}">{{ sede }}</a></li>
-                {% endfor %}
-            </ul>
-        </div>
+<div class="d-flex gap-3">
+    <div class="dropdown">
+        <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2 shadow-sm" type="button" data-bs-toggle="dropdown">
+            <i class="bi bi-geo-alt-fill"></i>
+            {{ sede_seleccionada if sede_seleccionada else 'Todas las sedes' }}
+        </button>
+        <ul class="dropdown-menu shadow-sm">
+            <li><a class="dropdown-item {% if not sede_seleccionada %}active{% endif %}" 
+                  href="{{ url_for(request.endpoint, fecha_inicio=fecha_inicio) }}">Todas las sedes</a></li>
+            {% for sede in sedes %}
+            <li><a class="dropdown-item {% if sede == sede_seleccionada %}active{% endif %}" 
+                  href="{{ url_for(request.endpoint, sede=sede, fecha_inicio=fecha_inicio) }}">{{ sede }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
 
-        <div class="dropdown">
-            <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
-                <i class="bi bi-calendar3"></i>
-                {{ fecha_inicio if fecha_inicio else 'Seleccionar Fecha' }}
-            </button>
-            <ul class="dropdown-menu p-3" style="min-width: 300px">
-                <div class="list-group" id="fechas-disponibles">
-                    <!-- Las fechas se cargarán dinámicamente aquí -->
-                </div>
-            </ul>
-        </div>
+    <div class="dropdown">
+        <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2 shadow-sm" type="button" data-bs-toggle="dropdown">
+            <i class="bi bi-calendar3-fill"></i>
+            {{ fecha_inicio if fecha_inicio else 'Seleccionar Fecha' }}
+        </button>
+        <ul class="dropdown-menu shadow-sm p-3" style="min-width: 300px">
+            <div class="list-group" id="fechas-disponibles">
+                <!-- Las fechas se cargarán dinámicamente aquí -->
+            </div>
+        </ul>
     </div>
 </div>
 

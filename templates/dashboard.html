@@ -2,23 +2,27 @@
 
 {% block content %}
 <div class="container-fluid px-3">
-    <h1 class="h4 mb-3">Dashboard de Seguridad</h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h4 mb-0">Dashboard de Seguridad</h1>
+        <div class="d-flex gap-2">
+            {% include 'components/filtros.html' %}
+        </div>
+    </div>
 
-    {% include 'components/filtros.html' %}
-
-    <div class="row g-3 mb-3">
+    <div class="row g-3 mb-4">
         <!-- Puntuación de Riesgo -->
         <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="d-flex align-items-center mb-2">
-                        <h5 class="card-title h6 mb-0">Puntuación de Riesgo</h5>
-                        <i class="bi bi-exclamation-triangle ms-2 text-warning"></i>
+            <div class="card h-100 shadow-sm border-0 bg-dark bg-gradient">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <h5 class="card-title h6 mb-0 text-white-50">Puntuación de Riesgo</h5>
+                        <i class="bi bi-exclamation-triangle-fill ms-2 text-warning"></i>
                     </div>
-                    <h2 class="display-6 mb-0">{{ "%.1f"|format(riesgo_promedio) }}/10</h2>
-                    <div class="progress mt-2" style="height: 6px;">
+                    <h2 class="display-6 mb-3 text-white">{{ "%.1f"|format(riesgo_promedio) }}/10</h2>
+                    <div class="progress" style="height: 8px;">
                         <div class="progress-bar bg-warning" role="progressbar" 
-                             style="width: {{ (riesgo_promedio/10)*100 }}%"></div>
+                             style="width: {{ (riesgo_promedio/10)*100 }}%; transition: width 1s ease-in-out;">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -26,38 +30,53 @@
 
         <!-- Vulnerabilidades Totales -->
         <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="d-flex align-items-center mb-2">
-                        <h5 class="card-title h6 mb-0">Vulnerabilidades Totales</h5>
-                        <i class="bi bi-shield-exclamation ms-2 text-primary"></i>
+            <div class="card h-100 shadow-sm border-0 bg-gradient">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <h5 class="card-title h6 mb-0 text-muted">Vulnerabilidades Totales</h5>
+                        <i class="bi bi-shield-exclamation-fill ms-2 text-primary"></i>
                     </div>
-                    <h2 class="display-6 mb-0">{{ total_vulnerabilidades }}</h2>
+                    <div class="d-flex align-items-baseline">
+                        <h2 class="display-6 mb-0">{{ total_vulnerabilidades }}</h2>
+                        <span class="ms-2 text-muted">vulnerabilidades</span>
+                    </div>
+                    <div class="mt-3">
+                        <div class="d-flex justify-content-between text-muted small">
+                            <span>Total detectadas</span>
+                            <span class="fw-bold">{{ total_vulnerabilidades }}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Estado de Vulnerabilidades -->
         <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="d-flex align-items-center mb-2">
-                        <h5 class="card-title h6 mb-0">Estado de Vulnerabilidades</h5>
-                        <i class="bi bi-graph-up ms-2 text-success"></i>
+            <div class="card h-100 shadow-sm border-0 bg-gradient">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <h5 class="card-title h6 mb-0 text-muted">Estado de Vulnerabilidades</h5>
+                        <i class="bi bi-graph-up-arrow ms-2 text-success"></i>
                     </div>
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="text-center">
-                            <i class="bi bi-check-circle text-success"></i>
+                            <div class="rounded-circle bg-success bg-opacity-10 p-3 mb-2">
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                            </div>
                             <h3 class="h5 mb-0">{{ estados.fix }}</h3>
                             <small class="text-muted">FIX</small>
                         </div>
                         <div class="text-center">
-                            <i class="bi bi-exclamation-circle text-warning"></i>
+                            <div class="rounded-circle bg-warning bg-opacity-10 p-3 mb-2">
+                                <i class="bi bi-exclamation-circle-fill text-warning"></i>
+                            </div>
                             <h3 class="h5 mb-0">{{ estados.asumida }}</h3>
                             <small class="text-muted">ASUMIDA</small>
                         </div>
                         <div class="text-center">
-                            <i class="bi bi-x-circle text-danger"></i>
+                            <div class="rounded-circle bg-danger bg-opacity-10 p-3 mb-2">
+                                <i class="bi bi-x-circle-fill text-danger"></i>
+                            </div>
                             <h3 class="h5 mb-0">{{ estados.vigente }}</h3>
                             <small class="text-muted">VIGENTE</small>
                         </div>
@@ -70,10 +89,10 @@
     <div class="row g-3">
         <!-- Criticidad de Vulnerabilidades -->
         <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title h6 mb-3">Criticidad de Vulnerabilidades</h5>
-                    <div style="height: 250px">
+            <div class="card h-100 shadow-sm border-0 bg-gradient">
+                <div class="card-body p-4">
+                    <h5 class="card-title h6 mb-3 text-muted">Criticidad de Vulnerabilidades</h5>
+                    <div style="height: 300px">
                         <canvas id="criticidadChart"></canvas>
                     </div>
                 </div>
@@ -82,10 +101,10 @@
 
         <!-- Estado de Vulnerabilidades -->
         <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title h6 mb-3">Estado de Vulnerabilidades</h5>
-                    <div style="height: 250px">
+            <div class="card h-100 shadow-sm border-0 bg-gradient">
+                <div class="card-body p-4">
+                    <h5 class="card-title h6 mb-3 text-muted">Estado de Vulnerabilidades</h5>
+                    <div style="height: 300px">
                         <canvas id="estadoChart"></canvas>
                     </div>
                 </div>
@@ -96,61 +115,111 @@
 
 <!-- Chart.js -->
 <script>
-// Gráfico de Criticidad
-const criticidadCtx = document.getElementById('criticidadChart').getContext('2d');
-new Chart(criticidadCtx, {
-    type: 'bar',
-    data: {
-        labels: ['Critical', 'High', 'Medium', 'Low'],
-        datasets: [{
-            label: '# de Vulnerabilidades',
-            data: {{ criticidad|tojson }},
-            backgroundColor: [
-                '#dc3545',
-                '#fd7e14',
-                '#ffc107',
-                '#198754'
-            ]
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: {
-                    stepSize: 70
+document.addEventListener('DOMContentLoaded', function() {
+    // Configuración común para los gráficos
+    Chart.defaults.color = '#6c757d';
+    Chart.defaults.borderColor = '#2c3338';
+
+    // Gráfico de Criticidad
+    const criticidadCtx = document.getElementById('criticidadChart').getContext('2d');
+    new Chart(criticidadCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Critical', 'High', 'Medium', 'Low'],
+            datasets: [{
+                label: '# de Vulnerabilidades',
+                data: {{ criticidad|tojson }},
+                backgroundColor: [
+                    'rgba(220, 53, 69, 0.8)',   // Rojo para Critical
+                    'rgba(255, 193, 7, 0.8)',   // Amarillo para High
+                    'rgba(255, 159, 64, 0.8)',  // Naranja para Medium
+                    'rgba(40, 167, 69, 0.8)'    // Verde para Low
+                ],
+                borderColor: [
+                    'rgba(220, 53, 69, 1)',
+                    'rgba(255, 193, 7, 1)',
+                    'rgba(255, 159, 64, 1)',
+                    'rgba(40, 167, 69, 1)'
+                ],
+                borderWidth: 1,
+                borderRadius: 6,
+                maxBarThickness: 50
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 1000,
+                easing: 'easeInOutQuart'
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
                 }
             }
         }
-    }
-});
+    });
 
-// Gráfico de Estado
-const estadoCtx = document.getElementById('estadoChart').getContext('2d');
-new Chart(estadoCtx, {
-    type: 'pie',
-    data: {
-        labels: ['FIX', 'ASUMIDA', 'VIGENTE'],
-        datasets: [{
-            data: [{{ estados.fix }}, {{ estados.asumida }}, {{ estados.vigente }}],
-            backgroundColor: [
-                '#198754',
-                '#ffc107',
-                '#dc3545'
-            ]
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                position: 'right'
-            }
+    // Gráfico de Estado
+    const estadoCtx = document.getElementById('estadoChart').getContext('2d');
+    new Chart(estadoCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['FIX', 'ASUMIDA', 'VIGENTE'],
+            datasets: [{
+                data: [{{ estados.fix }}, {{ estados.asumida }}, {{ estados.vigente }}],
+                backgroundColor: [
+                    'rgba(40, 167, 69, 0.8)',  // Verde para FIX
+                    'rgba(255, 193, 7, 0.8)',  // Amarillo para ASUMIDA
+                    'rgba(220, 53, 69, 0.8)'   // Rojo para VIGENTE
+                ],
+                borderColor: [
+                    'rgba(40, 167, 69, 1)',
+                    'rgba(255, 193, 7, 1)',
+                    'rgba(220, 53, 69, 1)'
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                animateRotate: true,
+                animateScale: true,
+                duration: 1000,
+                easing: 'easeInOutQuart'
+            },
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        font: {
+                            size: 12
+                        }
+                    }
+                }
+            },
+            cutout: '75%'
         }
-    }
+    });
 });
 </script>
 {% endblock %}
