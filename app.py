@@ -882,5 +882,19 @@ def subir_reporte():
 
     return redirect(url_for('configuracion'))
 
+@app.route('/toggle_sede/<int:sede_id>', methods=['POST'])
+def toggle_sede(sede_id):
+    """Activa o desactiva una sede"""
+    try:
+        sede = Sede.query.get_or_404(sede_id)
+        sede.activa = not sede.activa
+        db.session.commit()
+        flash(f'Sede {sede.nombre} {"activada" if sede.activa else "desactivada"} exitosamente', 'success')
+    except Exception as e:
+        logger.error(f"Error al cambiar estado de sede: {str(e)}", exc_info=True)
+        db.session.rollback()
+        flash('Error al cambiar el estado de la sede', 'error')
+    return redirect(url_for('configuracion'))
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
