@@ -1,6 +1,3 @@
-import os
-import logging
-from datetime import datetime
 from flask import Flask, render_template, request, flash, redirect, url_for, send_from_directory, jsonify, send_file
 from sqlalchemy import text
 from werkzeug.utils import secure_filename
@@ -8,7 +5,9 @@ from parser import analizar_vulnerabilidades
 from database import db, init_db
 from models import Sede, Escaneo, Host, Vulnerabilidad
 from exportar import exportar_a_csv, exportar_a_pdf
-from informes import generar_informe_ejecutivo, generar_informe_tecnico
+import logging
+import os
+from datetime import datetime
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -84,7 +83,7 @@ def filtrar_resultados(sede=None, fecha_inicio=None, fecha_fin=None, riesgo=None
             resultados.append({
                 'sede': escaneo.sede.nombre,
                 'fecha_escaneo': escaneo.fecha_escaneo.strftime('%Y-%m-%d'),
-                'escaneo_id': escaneo.id,  # Añadido el ID del escaneo
+                'escaneo_id': escaneo.id,
                 'hosts_detalle': hosts_detalle
             })
 
@@ -134,47 +133,6 @@ def configuracion():
                          sedes=sedes,
                          sedes_activas=sedes_activas,
                          escaneos_por_sede=escaneos_por_sede)
-
-@app.route('/crear_sede', methods=['POST'])
-def crear_sede():
-    """Crear una nueva sede"""
-    try:
-        nombre = request.form.get('nombre')
-        descripcion = request.form.get('descripcion')
-
-        if not nombre:
-            flash('El nombre de la sede es requerido', 'error')
-            return redirect(url_for('configuracion'))
-
-        sede = Sede(
-            nombre=nombre,
-            descripcion=descripcion
-        )
-        db.session.add(sede)
-        db.session.commit()
-
-        flash('Sede creada exitosamente', 'success')
-    except Exception as e:
-        logger.error(f"Error al crear sede: {str(e)}", exc_info=True)
-        flash('Error al crear la sede', 'error')
-
-    return redirect(url_for('configuracion'))
-
-@app.route('/toggle_sede/<int:sede_id>', methods=['POST'])
-def toggle_sede(sede_id):
-    """Activar/desactivar una sede"""
-    try:
-        sede = Sede.query.get_or_404(sede_id)
-        sede.activa = not sede.activa
-        db.session.commit()
-
-        estado = "activada" if sede.activa else "desactivada"
-        flash(f'Sede {estado} exitosamente', 'success')
-    except Exception as e:
-        logger.error(f"Error al toggle sede: {str(e)}", exc_info=True)
-        flash('Error al actualizar el estado de la sede', 'error')
-
-    return redirect(url_for('configuracion'))
 
 @app.route('/dashboard')
 def dashboard():
@@ -232,96 +190,6 @@ def dashboard():
                          fecha_inicio=fecha_inicio,
                          fecha_fin=fecha_fin)
 
-@app.route('/analizar', methods=['POST'])
-def analizar():
-    if 'archivo' not in request.files:
-        logger.error("No se encontró archivo en la solicitud")
-        flash('No se seleccionó ningún archivo', 'error')
-        return redirect(url_for('configuracion'))
-
-    archivo = request.files['archivo']
-    sede_id = request.form.get('sede')
-    fecha_escaneo = request.form.get('fecha_escaneo', datetime.now().strftime('%Y-%m-%d'))
-
-    if archivo.filename == '':
-        logger.error("Nombre de archivo vacío")
-        flash('No se seleccionó ningún archivo', 'error')
-        return redirect(url_for('configuracion'))
-
-    if not allowed_file(archivo.filename):
-        logger.error(f"Tipo de archivo no permitido: {archivo.filename}")
-        flash('Tipo de archivo no permitido. Solo se aceptan archivos .txt', 'error')
-        return redirect(url_for('configuracion'))
-
-    try:
-        filename = secure_filename(archivo.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        archivo.save(filepath)
-        logger.debug(f"Archivo guardado en: {filepath}")
-
-        resultado = analizar_vulnerabilidades(filepath)
-        os.remove(filepath)
-
-        if not resultado or 'hosts_detalle' not in resultado:
-            logger.warning("No se encontraron vulnerabilidades en el análisis")
-            flash('No se encontraron vulnerabilidades para analizar en el archivo', 'warning')
-            return redirect(url_for('configuracion'))
-
-        escaneo = Escaneo(
-            sede_id=sede_id,
-            fecha_escaneo=datetime.strptime(fecha_escaneo, '%Y-%m-%d').date()
-        )
-        db.session.add(escaneo)
-
-        for ip, host_data in resultado['hosts_detalle'].items():
-            host = Host(
-                ip=ip,
-                nombre_host=host_data['nombre_host'],
-                escaneo=escaneo
-            )
-            db.session.add(host)
-
-            for vuln_data in host_data['vulnerabilidades']:
-                vulnerabilidad = Vulnerabilidad(
-                    oid=vuln_data['oid'],
-                    nvt=vuln_data['nvt'],
-                    nivel_amenaza=vuln_data['nivel_amenaza'],
-                    cvss=vuln_data['cvss'],
-                    puerto=vuln_data['puerto'],
-                    resumen=vuln_data['resumen'],
-                    impacto=vuln_data['impacto'],
-                    solucion=vuln_data['solucion'],
-                    metodo_deteccion=vuln_data['metodo_deteccion'],
-                    referencias=vuln_data['referencias'],
-                    estado='ACTIVA',
-                    host=host
-                )
-                db.session.add(vulnerabilidad)
-
-        db.session.commit()
-        flash('Análisis completado exitosamente', 'success')
-        return redirect(url_for('dashboard'))
-
-    except Exception as e:
-        logger.error(f"Error al procesar el archivo: {str(e)}", exc_info=True)
-        flash('Error al procesar el archivo. Por favor, inténtelo de nuevo.', 'error')
-        return redirect(url_for('configuracion'))
-
-@app.route('/fechas_por_sede/<sede>')
-def fechas_por_sede(sede):
-    """Obtiene las fechas disponibles para una sede específica"""
-    query = Escaneo.query.join(Sede)
-
-    if sede != 'Todas las sedes':
-        query = query.filter(Sede.nombre == sede)
-
-    fechas = query.with_entities(Escaneo.fecha_escaneo)\
-        .distinct()\
-        .order_by(Escaneo.fecha_escaneo.desc())\
-        .all()
-
-    return jsonify([fecha[0].strftime('%Y-%m-%d') for fecha in fechas])
-
 @app.route('/hosts')
 def hosts():
     sede = request.args.get('sede')
@@ -375,22 +243,6 @@ def vulnerabilidades():
                          fecha_inicio=fecha_inicio,
                          fecha_fin=fecha_fin,
                          estado=estado)
-
-@app.route('/comparativa')
-def comparativa():
-    sede = request.args.get('sede')
-    fecha_inicio = request.args.get('fecha_inicio')
-    fecha_fin = request.args.get('fecha_fin')
-    riesgo = request.args.get('riesgo')
-
-    resultados_filtrados = filtrar_resultados(sede, fecha_inicio, fecha_fin, riesgo)
-
-    return render_template('comparativa.html', 
-                         resultados=resultados_filtrados,
-                         sedes=obtener_sedes(),
-                         sede_seleccionada=sede,
-                         fecha_inicio=fecha_inicio,
-                         fecha_fin=fecha_fin)
 
 @app.route('/comparacion')
 def comparacion():
@@ -538,7 +390,6 @@ def comparacion():
 def serve_static(filename):
     return send_from_directory(app.static_folder, filename)
 
-
 @app.route('/tendencias')
 def obtener_tendencias():
     """Endpoint para obtener datos de tendencias de vulnerabilidades"""
@@ -602,7 +453,6 @@ def obtener_tendencias():
     logger.debug(f"Tendencias calculadas: {tendencias}")
     return jsonify(list(tendencias.values()))
 
-
 @app.route('/actualizar_estado', methods=['POST'])
 def actualizar_estado():
     data = request.get_json()
@@ -632,55 +482,6 @@ def actualizar_estado():
     except Exception as e:
         logger.error(f"Error al actualizar estado: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/exportar/<tipo>/<formato>')
-def exportar(tipo, formato):
-    """
-    Exporta los datos en el formato especificado (csv o pdf)
-    tipo: 'hosts' o 'vulnerabilidades'
-    formato: 'csv' o 'pdf'
-    """
-    try:
-        sede = request.args.get('sede')
-        fecha_inicio = request.args.get('fecha_inicio')
-        fecha_fin = request.args.get('fecha_fin')
-        riesgo = request.args.get('riesgo')
-
-        if tipo == 'hosts':
-            resultados = filtrar_resultados(sede, fecha_inicio, fecha_fin, riesgo)
-        else:  # vulnerabilidades
-            query = Vulnerabilidad.query.join(Host).join(Escaneo).join(Sede)
-            if sede:
-                query = query.filter(Sede.nombre == sede)
-            if fecha_inicio:
-                query = query.filter(Escaneo.fecha_escaneo >= datetime.strptime(fecha_inicio, '%Y-%m-%d').date())
-            if fecha_fin:
-                query = query.filter(Escaneo.fecha_escaneo <= datetime.strptime(fecha_fin, '%Y-%m-%d').date())
-            if riesgo:
-                query = query.filter(Vulnerabilidad.nivel_amenaza == riesgo)
-            resultados = query.all()
-
-        if formato == 'csv':
-            output = exportar_a_csv(resultados, tipo)
-            mimetype = 'text/csv'
-            extension = 'csv'
-        else:  # pdf
-            output = exportar_a_pdf(resultados, tipo)
-            mimetype = 'application/pdf'
-            extension = 'pdf'
-
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        return send_file(
-            output,
-            mimetype=mimetype,
-            as_attachment=True,
-            download_name=f'reporte_{tipo}_{timestamp}.{extension}'
-        )
-
-    except Exception as e:
-        logger.error(f"Error en la exportación: {str(e)}", exc_info=True)
-        flash('Error al generar el reporte', 'error')
-        return redirect(url_for(tipo))
 
 @app.route('/eliminar_escaneo/<int:escaneo_id>', methods=['POST'])
 def eliminar_escaneo(escaneo_id):

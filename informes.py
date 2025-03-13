@@ -6,6 +6,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.pagesizes import letter, landscape
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
 from reportlab.lib.units import inch
+import matplotlib.pyplot as plt
 
 def generar_informe_ejecutivo(datos, tipo='pdf'):
     """
@@ -16,14 +17,23 @@ def generar_informe_ejecutivo(datos, tipo='pdf'):
     else:  # csv
         return generar_csv_ejecutivo(datos)
 
-def generar_informe_tecnico(datos, tipo='pdf'):
-    """
-    Genera un informe técnico detallado con toda la información
-    """
-    if tipo == 'pdf':
-        return generar_pdf_tecnico(datos)
-    else:  # csv
-        return generar_csv_tecnico(datos)
+def generar_grafico_distribucion(niveles):
+    """Genera un gráfico de torta con la distribución de vulnerabilidades"""
+    plt.figure(figsize=(6, 4))
+    colores = {'Critical': '#dc3545', 'High': '#fd7e14', 'Medium': '#ffc107', 'Low': '#0dcaf0'}
+    valores = list(niveles.values())
+    etiquetas = [f"{k} ({v})" for k, v in niveles.items() if v > 0]
+
+    plt.pie(valores, labels=etiquetas, colors=[colores[k] for k in niveles.keys()],
+            autopct='%1.1f%%' if sum(valores) > 0 else None)
+    plt.title('Distribución de Vulnerabilidades por Nivel')
+
+    # Guardar el gráfico en un buffer
+    img_buffer = BytesIO()
+    plt.savefig(img_buffer, format='png', bbox_inches='tight', dpi=300)
+    plt.close()
+    img_buffer.seek(0)
+    return img_buffer
 
 def generar_pdf_ejecutivo(datos):
     """
@@ -110,12 +120,36 @@ def generar_pdf_ejecutivo(datos):
     story.append(table)
     story.append(Spacer(1, 20))
 
+    # Añadir gráfico de distribución
+    if total_vulnerabilidades > 0:
+        img_buffer = generar_grafico_distribucion(niveles)
+        img = Image(img_buffer, width=400, height=300)
+        story.append(img)
+        story.append(Spacer(1, 20))
+
+    # Análisis de riesgo
+    story.append(Paragraph("Análisis de Riesgo", styles["Heading2"]))
+    if total_vulnerabilidades > 0:
+        riesgo_alto = niveles['Critical'] + niveles['High']
+        porcentaje_alto = (riesgo_alto / total_vulnerabilidades) * 100
+        analisis = f"El {porcentaje_alto:.1f}% de las vulnerabilidades encontradas son de riesgo alto o crítico. "
+        if porcentaje_alto > 30:
+            analisis += "Este es un nivel de riesgo ELEVADO que requiere atención inmediata."
+        elif porcentaje_alto > 10:
+            analisis += "Este es un nivel de riesgo MODERADO que debe ser atendido pronto."
+        else:
+            analisis += "Este es un nivel de riesgo BAJO, pero se recomienda mantener el monitoreo."
+        story.append(Paragraph(analisis, styles["Normal"]))
+    story.append(Spacer(1, 12))
+
     # Añadir sección de recomendaciones
     story.append(Paragraph("Recomendaciones Prioritarias", styles["Heading2"]))
     if niveles['Critical'] > 0:
-        story.append(Paragraph("• Atención inmediata requerida: Se han detectado vulnerabilidades críticas que necesitan ser mitigadas urgentemente.", styles["Normal"]))
+        story.append(Paragraph(f"• Atención inmediata requerida: Se han detectado {niveles['Critical']} vulnerabilidades críticas que necesitan ser mitigadas urgentemente.", styles["Normal"]))
     if niveles['High'] > 0:
-        story.append(Paragraph("• Plan de acción requerido: Las vulnerabilidades de alto riesgo deben ser abordadas en el corto plazo.", styles["Normal"]))
+        story.append(Paragraph(f"• Plan de acción requerido: {niveles['High']} vulnerabilidades de alto riesgo deben ser abordadas en el corto plazo.", styles["Normal"]))
+    if niveles['Medium'] > 0:
+        story.append(Paragraph(f"• Planificación necesaria: {niveles['Medium']} vulnerabilidades de riesgo medio requieren un plan de mitigación.", styles["Normal"]))
     story.append(Spacer(1, 12))
 
     doc.build(story)
@@ -127,10 +161,10 @@ def generar_csv_ejecutivo(datos):
     Genera un CSV con formato ejecutivo
     """
     buffer = BytesIO()
-    
+
     # Preparar datos para el DataFrame
     rows = []
-    for ip, host_data in datos.items():
+    for ip, host_data in datos['hosts_detalle'].items():
         for vuln in host_data['vulnerabilidades']:
             rows.append({
                 'IP': ip,
@@ -140,7 +174,7 @@ def generar_csv_ejecutivo(datos):
                 'CVSS': vuln['cvss'],
                 'Puerto': vuln['puerto']
             })
-    
+
     df = pd.DataFrame(rows)
     df.to_csv(buffer, index=False, encoding='utf-8')
     buffer.seek(0)
