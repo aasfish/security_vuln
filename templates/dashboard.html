@@ -12,7 +12,7 @@
     <div class="row g-3 mb-4">
         <!-- Puntuación de Riesgo -->
         <div class="col-md-4">
-            <div class="card h-100 shadow-sm border-0 bg-dark bg-gradient">
+            <div class="card h-100 shadow-sm risk-score-card">
                 <div class="card-body p-4">
                     <div class="d-flex align-items-center mb-3">
                         <h5 class="card-title h6 mb-0 text-white-50">Puntuación de Riesgo</h5>
@@ -30,7 +30,7 @@
 
         <!-- Vulnerabilidades Totales -->
         <div class="col-md-4">
-            <div class="card h-100 shadow-sm border-0 bg-gradient">
+            <div class="card h-100 shadow-sm">
                 <div class="card-body p-4">
                     <div class="d-flex align-items-center mb-3">
                         <h5 class="card-title h6 mb-0 text-muted">Vulnerabilidades Totales</h5>
@@ -52,7 +52,7 @@
 
         <!-- Estado de Vulnerabilidades -->
         <div class="col-md-4">
-            <div class="card h-100 shadow-sm border-0 bg-gradient">
+            <div class="card h-100 shadow-sm">
                 <div class="card-body p-4">
                     <div class="d-flex align-items-center mb-3">
                         <h5 class="card-title h6 mb-0 text-muted">Estado de Vulnerabilidades</h5>
@@ -112,10 +112,22 @@
         </div>
     </div>
 </div>
-
 {% endblock %}
 
 {% block scripts %}
+<style>
+    /* Estilos específicos para la tarjeta de riesgo */
+    .risk-score-card {
+        background: linear-gradient(45deg, #1a1d20, #2d3035) !important;
+    }
+    [data-bs-theme="light"] .risk-score-card {
+        background: linear-gradient(45deg, #2d3035, #1a1d20) !important;
+    }
+    .risk-score-card .text-white,
+    .risk-score-card .text-white-50 {
+        color: #ffffff !important;
+    }
+</style>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     let criticidadChart, estadoChart;
