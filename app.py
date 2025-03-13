@@ -324,13 +324,22 @@ def comparacion():
 
             # Consulta SQL directa para obtener los conteos
             sql_query = text("""
-            SELECT e.fecha_escaneo, v.nivel_amenaza, COUNT(*) as total
-            FROM escaneos e
-            JOIN hosts h ON h.escaneo_id = e.id
-            JOIN vulnerabilidades v ON v.host_id = h.id
-            WHERE e.sede = :sede 
-            AND e.fecha_escaneo IN (:fecha1, :fecha2)
-            GROUP BY e.fecha_escaneo, v.nivel_amenaza
+            WITH base_counts AS (
+                SELECT e.fecha_escaneo, v.nivel_amenaza, COUNT(*) as total,
+                       SUM(COUNT(*)) OVER (PARTITION BY e.fecha_escaneo) as fecha_total
+                FROM escaneos e
+                JOIN hosts h ON h.escaneo_id = e.id
+                JOIN vulnerabilidades v ON v.host_id = h.id
+                WHERE e.sede = :sede 
+                AND e.fecha_escaneo IN (:fecha1, :fecha2)
+                GROUP BY e.fecha_escaneo, v.nivel_amenaza
+            )
+            SELECT fecha_escaneo, nivel_amenaza, 
+                   ROUND(CAST(total AS FLOAT) / NULLIF(fecha_total, 0), 3) as proporcion,
+                   total as total_raw,
+                   fecha_total
+            FROM base_counts
+            ORDER BY fecha_escaneo, nivel_amenaza;
             """)
 
             result = db.session.execute(sql_query, {
@@ -342,32 +351,28 @@ def comparacion():
             # Procesar resultados
             primer_conteo = {'Critical': 0, 'High': 0, 'Medium': 0, 'Low': 0}
             segundo_conteo = {'Critical': 0, 'High': 0, 'Medium': 0, 'Low': 0}
+            primer_total = 0
+            segundo_total = 0
 
             for row in result:
                 fecha_escaneo = row[0]
                 nivel_amenaza = row[1]
-                total = row[2]
-                logger.debug(f"Procesando resultado: fecha={fecha_escaneo}, nivel={nivel_amenaza}, total={total}")
+                proporcion = float(row[2]) if row[2] is not None else 0
+                total_raw = row[3]
+                fecha_total = row[4]
+
+                logger.debug(f"Procesando resultado: fecha={fecha_escaneo}, nivel={nivel_amenaza}, "
+                           f"proporcion={proporcion}, total={total_raw}, fecha_total={fecha_total}")
 
                 if fecha_escaneo == primer_fecha:
-                    primer_conteo[nivel_amenaza] = total
-                else:
-                    segundo_conteo[nivel_amenaza] = total
+                    primer_conteo[nivel_amenaza] = proporcion
+                    primer_total = fecha_total
+                elif fecha_escaneo == segunda_fecha:
+                    segundo_conteo[nivel_amenaza] = proporcion
+                    segundo_total = fecha_total
 
-            # Calcular totales
-            primer_total = sum(primer_conteo.values())
-            segundo_total = sum(segundo_conteo.values())
-
-            logger.debug(f"Totales antes de normalización - Primer escaneo: {primer_total}, Segundo escaneo: {segundo_total}")
-            logger.debug(f"Conteos antes de normalización - Primer: {primer_conteo}, Segundo: {segundo_conteo}")
-
-            # Convertir a porcentajes
-            if primer_total > 0:
-                primer_conteo = {k: round(v/primer_total, 3) for k, v in primer_conteo.items()}
-            if segundo_total > 0:
-                segundo_conteo = {k: round(v/segundo_total, 3) for k, v in segundo_conteo.items()}
-
-            logger.debug(f"Conteos después de normalización - Primer: {primer_conteo}, Segundo: {segundo_conteo}")
+            logger.debug(f"Totales procesados - Primer escaneo: {primer_total}, Segundo escaneo: {segundo_total}")
+            logger.debug(f"Conteos procesados - Primer: {primer_conteo}, Segundo: {segundo_conteo}")
 
             # Calcular variación
             variacion = segundo_total - primer_total
