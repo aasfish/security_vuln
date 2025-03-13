@@ -648,6 +648,63 @@ def generar_informe(tipo, formato):
         return redirect(url_for('informes'))
 
 
+@app.route('/exportar/<tipo>/<formato>')
+def exportar(tipo, formato):
+    """
+    Maneja la exportación de datos en diferentes formatos
+    tipo: 'hosts' o 'vulnerabilidades'
+    formato: 'csv' o 'pdf'
+    """
+    try:
+        sede = request.args.get('sede')
+        fecha_inicio = request.args.get('fecha_inicio')
+        fecha_fin = request.args.get('fecha_fin')
+        riesgo = request.args.get('riesgo')
+
+        if tipo not in ['hosts', 'vulnerabilidades']:
+            flash('Tipo de exportación no válido', 'error')
+            return redirect(url_for('dashboard'))
+
+        if formato not in ['csv', 'pdf']:
+            flash('Formato de exportación no válido', 'error')
+            return redirect(url_for('dashboard'))
+
+        # Obtener datos filtrados
+        if tipo == 'hosts':
+            resultados = filtrar_resultados(sede, fecha_inicio, fecha_fin, riesgo)
+            if not resultados:
+                flash('No hay datos disponibles para exportar', 'warning')
+                return redirect(url_for('hosts'))
+
+            if formato == 'csv':
+                return exportar_a_csv(resultados, tipo='hosts')
+            else:  # pdf
+                return exportar_a_pdf(resultados, tipo='hosts')
+        else:  # vulnerabilidades
+            query = Vulnerabilidad.query.join(Host).join(Escaneo).join(Sede)
+            if sede and sede != 'Todas las sedes':
+                query = query.filter(Sede.nombre == sede)
+            if fecha_inicio:
+                query = query.filter(Escaneo.fecha_escaneo >= datetime.strptime(fecha_inicio, '%Y-%m-%d').date())
+            if fecha_fin:
+                query = query.filter(Escaneo.fecha_escaneo <= datetime.strptime(fecha_fin, '%Y-%m-%d').date())
+            if riesgo and riesgo != 'all':
+                query = query.filter(Vulnerabilidad.nivel_amenaza == riesgo)
+
+            vulnerabilidades = query.all()
+            if not vulnerabilidades:
+                flash('No hay datos disponibles para exportar', 'warning')
+                return redirect(url_for('vulnerabilidades'))
+
+            if formato == 'csv':
+                return exportar_a_csv(vulnerabilidades, tipo='vulnerabilidades')
+            else:  # pdf
+                return exportar_a_pdf(vulnerabilidades, tipo='vulnerabilidades')
+
+    except Exception as e:
+        logger.error(f"Error al exportar datos: {str(e)}", exc_info=True)
+        flash('Error al exportar los datos', 'error')
+        return redirect(url_for('dashboard'))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
