@@ -3,13 +3,14 @@
         <div class="dropdown">
             <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
                 <i class="bi bi-geo-alt"></i>
-                {{ sede_seleccionada if sede_seleccionada else 'CENTRAL' }}
+                {{ sede_seleccionada if sede_seleccionada else 'Todas las sedes' }}
             </button>
             <ul class="dropdown-menu">
+                <li><a class="dropdown-item {% if not sede_seleccionada %}active{% endif %}" 
+                      href="{{ url_for(request.endpoint, fecha_inicio=fecha_inicio) }}">Todas las sedes</a></li>
                 {% for sede in sedes %}
                 <li><a class="dropdown-item {% if sede == sede_seleccionada %}active{% endif %}" 
-                      href="#" 
-                      onclick="seleccionarSede('{{ sede }}')">{{ sede }}</a></li>
+                      href="{{ url_for(request.endpoint, sede=sede, fecha_inicio=fecha_inicio) }}">{{ sede }}</a></li>
                 {% endfor %}
             </ul>
         </div>
@@ -19,8 +20,8 @@
                 <i class="bi bi-calendar3"></i>
                 {{ fecha_inicio if fecha_inicio else 'Seleccionar Fecha' }}
             </button>
-            <ul class="dropdown-menu p-3" style="min-width: 300px" id="fechas-disponibles">
-                <div class="list-group">
+            <ul class="dropdown-menu p-3" style="min-width: 300px">
+                <div class="list-group" id="fechas-disponibles">
                     <!-- Las fechas se cargarán dinámicamente aquí -->
                 </div>
             </ul>
@@ -29,34 +30,48 @@
 </div>
 
 <script>
-function seleccionarSede(sede) {
-    // Obtener fechas disponibles para la sede seleccionada
-    fetch(`/fechas_por_sede/${sede}`)
+document.addEventListener('DOMContentLoaded', function() {
+    const sedeSeleccionada = '{{ sede_seleccionada if sede_seleccionada else "Todas las sedes" }}';
+    actualizarFechasDisponibles(sedeSeleccionada);
+
+    // Agregar event listeners para los enlaces de sede
+    document.querySelectorAll('.dropdown-item').forEach(link => {
+        link.addEventListener('click', function(e) {
+            if (this.textContent === 'Todas las sedes') {
+                actualizarFechasDisponibles('Todas las sedes');
+            } else {
+                actualizarFechasDisponibles(this.textContent.trim());
+            }
+        });
+    });
+});
+
+function actualizarFechasDisponibles(sede) {
+    fetch(`/fechas_por_sede/${encodeURIComponent(sede)}`)
         .then(response => response.json())
         .then(fechas => {
             const fechasContainer = document.getElementById('fechas-disponibles');
             fechasContainer.innerHTML = '';
 
-            const listGroup = document.createElement('div');
-            listGroup.className = 'list-group';
-
             fechas.forEach(fecha => {
                 const fechaLink = document.createElement('a');
-                fechaLink.href = `?sede=${sede}&fecha_inicio=${fecha}`;
-                fechaLink.className = 'list-group-item list-group-item-action';
-                fechaLink.textContent = fecha;
-                listGroup.appendChild(fechaLink);
-            });
+                const params = new URLSearchParams(window.location.search);
+                params.set('fecha_inicio', fecha);
 
-            fechasContainer.appendChild(listGroup);
+                if (sede !== 'Todas las sedes') {
+                    params.set('sede', sede);
+                } else {
+                    params.delete('sede');
+                }
+
+                fechaLink.href = `${window.location.pathname}?${params.toString()}`;
+                fechaLink.className = 'list-group-item list-group-item-action';
+                if (fecha === '{{ fecha_inicio }}') {
+                    fechaLink.classList.add('active');
+                }
+                fechaLink.textContent = fecha;
+                fechasContainer.appendChild(fechaLink);
+            });
         });
 }
-
-// Cargar fechas para la sede inicial si está seleccionada
-document.addEventListener('DOMContentLoaded', function() {
-    const sedeSeleccionada = '{{ sede_seleccionada }}';
-    if (sedeSeleccionada) {
-        seleccionarSede(sedeSeleccionada);
-    }
-});
 </script>

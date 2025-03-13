@@ -46,16 +46,19 @@ def filtrar_resultados(sede=None, fecha_inicio=None, fecha_fin=None, riesgo=None
 
     query = Escaneo.query
 
-    if sede:
+    if sede and sede != 'Todas las sedes':
         query = query.filter(Escaneo.sede == sede)
 
     if fecha_inicio:
-        query = query.filter(Escaneo.fecha_escaneo >= datetime.strptime(fecha_inicio, '%Y-%m-%d').date())
+        fecha_inicio_obj = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+        query = query.filter(Escaneo.fecha_escaneo >= fecha_inicio_obj)
 
     if fecha_fin:
-        query = query.filter(Escaneo.fecha_escaneo <= datetime.strptime(fecha_fin, '%Y-%m-%d').date())
+        fecha_fin_obj = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+        query = query.filter(Escaneo.fecha_escaneo <= fecha_fin_obj)
 
-    escaneos = query.all()
+    # Ordenar por fecha de escaneo descendente (más reciente primero)
+    escaneos = query.order_by(Escaneo.fecha_escaneo.desc()).all()
     resultados = []
 
     for escaneo in escaneos:
@@ -268,11 +271,16 @@ def serve_static(filename):
 def fechas_por_sede(sede):
     """Obtiene las fechas disponibles para una sede específica"""
     from models import Escaneo
-    fechas = db.session.query(Escaneo.fecha_escaneo)\
-        .filter(Escaneo.sede == sede)\
+    query = Escaneo.query
+
+    if sede != 'Todas las sedes':
+        query = query.filter(Escaneo.sede == sede)
+
+    fechas = query.with_entities(Escaneo.fecha_escaneo)\
         .distinct()\
         .order_by(Escaneo.fecha_escaneo.desc())\
         .all()
+
     return jsonify([fecha[0].strftime('%Y-%m-%d') for fecha in fechas])
 
 @app.route('/dashboard')
