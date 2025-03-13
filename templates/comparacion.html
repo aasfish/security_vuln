@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="h4 mb-4">Comparación de Escaneos</h1>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form class="row g-3" method="get">
+                <div class="col-md-4">
+                    <label class="form-label">Sede</label>
+                    <select class="form-select" name="sede" onchange="this.form.submit()">
+                        {% for s in sedes %}
+                        <option value="{{ s }}" {% if s == sede_seleccionada %}selected{% endif %}>{{ s }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% if sede_seleccionada %}
+                <div class="col-md-4">
+                    <label class="form-label">Primer Escaneo</label>
+                    <select class="form-select" name="primer_escaneo" onchange="this.form.submit()">
+                        {% for e in escaneos %}
+                        <option value="{{ e.fecha_escaneo.strftime('%Y-%m-%d') }}" {% if e.fecha_escaneo.strftime('%Y-%m-%d') == primer_escaneo %}selected{% endif %}>
+                            {{ e.fecha_escaneo.strftime('%Y-%m-%d') }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Segundo Escaneo</label>
+                    <select class="form-select" name="segundo_escaneo" onchange="this.form.submit()">
+                        {% for e in escaneos %}
+                        <option value="{{ e.fecha_escaneo.strftime('%Y-%m-%d') }}" {% if e.fecha_escaneo.strftime('%Y-%m-%d') == segundo_escaneo %}selected{% endif %}>
+                            {{ e.fecha_escaneo.strftime('%Y-%m-%d') }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    {% if resultados %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title h6 mb-4">Comparación de Vulnerabilidades por Nivel de Riesgo</h5>
+                    <div style="height: 400px">
+                        <canvas id="comparacionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title h6 mb-4">Resumen de Cambios</h5>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Total Anterior</th>
+                            <th>Total Actual</th>
+                            <th>Variación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>{{ resultados.primer_escaneo.total }}</td>
+                            <td>{{ resultados.segundo_escaneo.total }}</td>
+                            <td>
+                                <span class="{% if resultados.variacion.total > 0 %}text-danger{% elif resultados.variacion.total < 0 %}text-success{% else %}text-muted{% endif %}">
+                                    {% if resultados.variacion.total > 0 %}+{% endif %}{{ resultados.variacion.total }}
+                                    ({{ "%.1f"|format(resultados.variacion.porcentaje) }}%)
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if resultados %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('comparacionChart').getContext('2d');
+    const labels = ['Critical', 'High', 'Medium', 'Low'];
+    const primerDatos = [
+        {{ resultados.primer_escaneo.datos.Critical }},
+        {{ resultados.primer_escaneo.datos.High }},
+        {{ resultados.primer_escaneo.datos.Medium }},
+        {{ resultados.primer_escaneo.datos.Low }}
+    ];
+    const segundoDatos = [
+        {{ resultados.segundo_escaneo.datos.Critical }},
+        {{ resultados.segundo_escaneo.datos.High }},
+        {{ resultados.segundo_escaneo.datos.Medium }},
+        {{ resultados.segundo_escaneo.datos.Low }}
+    ];
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'CENTRAL ({{ resultados.primer_escaneo.fecha }})',
+                    data: primerDatos,
+                    backgroundColor: 'rgba(103, 119, 239, 0.8)',
+                    borderColor: 'rgba(103, 119, 239, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'CENTRAL ({{ resultados.segundo_escaneo.fecha }})',
+                    data: segundoDatos,
+                    backgroundColor: 'rgba(145, 215, 172, 0.8)',
+                    borderColor: 'rgba(145, 215, 172, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    },
+                    ticks: {
+                        color: '#6c757d'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: '#6c757d'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        color: '#6c757d',
+                        padding: 20,
+                        font: {
+                            size: 12
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

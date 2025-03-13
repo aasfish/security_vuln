@@ -280,6 +280,99 @@ def comparativa():
                          fecha_inicio=fecha_inicio,
                          fecha_fin=fecha_fin)
 
+@app.route('/comparacion')
+def comparacion():
+    """Vista de comparación de escaneos"""
+    sede = request.args.get('sede')
+    primer_escaneo = request.args.get('primer_escaneo')
+    segundo_escaneo = request.args.get('segundo_escaneo')
+
+    from models import Escaneo, Host, Vulnerabilidad
+
+    # Obtener todas las sedes disponibles
+    sedes = obtener_sedes()
+
+    # Si no hay sede seleccionada y hay sedes disponibles, usar la primera
+    if not sede and sedes:
+        sede = sedes[0]
+
+    # Obtener los escaneos de la sede seleccionada
+    query = Escaneo.query.order_by(Escaneo.fecha_escaneo.desc())
+    if sede:
+        query = query.filter(Escaneo.sede == sede)
+    escaneos = query.all()
+
+    # Si hay escaneos disponibles pero no hay selección, usar los dos más recientes
+    if escaneos and not primer_escaneo:
+        primer_escaneo = escaneos[0].fecha_escaneo.strftime('%Y-%m-%d')
+    if len(escaneos) > 1 and not segundo_escaneo:
+        segundo_escaneo = escaneos[1].fecha_escaneo.strftime('%Y-%m-%d')
+
+    resultados = None
+    if primer_escaneo and segundo_escaneo:
+        primer_fecha = datetime.strptime(primer_escaneo, '%Y-%m-%d').date()
+        segunda_fecha = datetime.strptime(segundo_escaneo, '%Y-%m-%d').date()
+
+        # Obtener datos del primer escaneo
+        primer_datos = Vulnerabilidad.query\
+            .join(Host)\
+            .join(Escaneo)\
+            .filter(Escaneo.sede == sede, Escaneo.fecha_escaneo == primer_fecha)\
+            .all()
+
+        # Obtener datos del segundo escaneo
+        segundo_datos = Vulnerabilidad.query\
+            .join(Host)\
+            .join(Escaneo)\
+            .filter(Escaneo.sede == sede, Escaneo.fecha_escaneo == segunda_fecha)\
+            .all()
+
+        # Contar vulnerabilidades por nivel para cada escaneo
+        primer_conteo = {
+            'Critical': len([v for v in primer_datos if v.nivel_amenaza == 'Critical']),
+            'High': len([v for v in primer_datos if v.nivel_amenaza == 'High']),
+            'Medium': len([v for v in primer_datos if v.nivel_amenaza == 'Medium']),
+            'Low': len([v for v in primer_datos if v.nivel_amenaza == 'Low'])
+        }
+        segundo_conteo = {
+            'Critical': len([v for v in segundo_datos if v.nivel_amenaza == 'Critical']),
+            'High': len([v for v in segundo_datos if v.nivel_amenaza == 'High']),
+            'Medium': len([v for v in segundo_datos if v.nivel_amenaza == 'Medium']),
+            'Low': len([v for v in segundo_datos if v.nivel_amenaza == 'Low'])
+        }
+
+        # Calcular totales y variación
+        primer_total = sum(primer_conteo.values())
+        segundo_total = sum(segundo_conteo.values())
+        variacion = segundo_total - primer_total
+        porcentaje_variacion = (variacion / primer_total * 100) if primer_total > 0 else 0
+
+        resultados = {
+            'primer_escaneo': {
+                'fecha': primer_escaneo,
+                'datos': primer_conteo,
+                'total': primer_total
+            },
+            'segundo_escaneo': {
+                'fecha': segundo_escaneo,
+                'datos': segundo_conteo,
+                'total': segundo_total
+            },
+            'variacion': {
+                'total': variacion,
+                'porcentaje': porcentaje_variacion
+            }
+        }
+
+    return render_template('comparacion.html',
+                         sedes=sedes,
+                         sede_seleccionada=sede,
+                         escaneos=escaneos,
+                         primer_escaneo=primer_escaneo,
+                         segundo_escaneo=segundo_escaneo,
+                         resultados=resultados)
+
+
 @app.route('/static/<path:filename>')
 def serve_static(filename):
     return send_from_directory(app.static_folder, filename)
