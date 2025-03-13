@@ -337,7 +337,7 @@ def comparacion():
                 .all()
             logger.debug(f"Vulnerabilidades encontradas en segundo escaneo: {len(segundo_datos)}")
 
-            # Contar vulnerabilidades por nivel para cada escaneo
+            # Normalizar los conteos (convertir a porcentajes)
             primer_conteo = {
                 'Critical': len([v for v in primer_datos if v.nivel_amenaza == 'Critical']),
                 'High': len([v for v in primer_datos if v.nivel_amenaza == 'High']),
@@ -351,9 +351,17 @@ def comparacion():
                 'Low': len([v for v in segundo_datos if v.nivel_amenaza == 'Low'])
             }
 
-            # Calcular totales y variación
+            # Calcular totales
             primer_total = sum(primer_conteo.values())
             segundo_total = sum(segundo_conteo.values())
+
+            # Convertir a porcentajes si hay datos
+            if primer_total > 0:
+                primer_conteo = {k: v/primer_total for k, v in primer_conteo.items()}
+            if segundo_total > 0:
+                segundo_conteo = {k: v/segundo_total for k, v in segundo_conteo.items()}
+
+            # Calcular variación
             variacion = segundo_total - primer_total
             porcentaje_variacion = (variacion / primer_total * 100) if primer_total > 0 else 0
 
