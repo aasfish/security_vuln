@@ -1,7 +1,7 @@
 import os
 import logging
 from datetime import datetime
-from flask import Flask, render_template, request, flash, redirect, url_for, send_from_directory
+from flask import Flask, render_template, request, flash, redirect, url_for, send_from_directory, jsonify
 from werkzeug.utils import secure_filename
 from parser import analizar_vulnerabilidades
 
@@ -22,13 +22,14 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Almacenamiento temporal de resultados (en producción usar una base de datos)
 resultados_analisis = []
+estados_vulnerabilidades = {}  # {(ip, oid): estado}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def filtrar_resultados(resultados, sede=None, fecha_inicio=None, fecha_fin=None):
+def filtrar_resultados(resultados, sede=None, fecha_inicio=None, fecha_fin=None, riesgo=None):
     """Filtra los resultados según los criterios especificados"""
-    if not any([sede, fecha_inicio, fecha_fin]):
+    if not any([sede, fecha_inicio, fecha_fin, riesgo]):
         return resultados
 
     filtrados = []
@@ -52,7 +53,22 @@ def filtrar_resultados(resultados, sede=None, fecha_inicio=None, fecha_fin=None)
             if fecha_escaneo > fecha_fin_dt:
                 continue
 
-        filtrados.append(resultado)
+        # Si hay filtro de riesgo, clonar y filtrar vulnerabilidades
+        if riesgo and riesgo != 'all':
+            resultado_filtrado = resultado.copy()
+            hosts_filtrados = {}
+
+            for ip, host in resultado['hosts_detalle'].items():
+                vulns_filtradas = [v for v in host['vulnerabilidades'] if v['nivel_amenaza'] == riesgo]
+                if vulns_filtradas:
+                    hosts_filtrados[ip] = host.copy()
+                    hosts_filtrados[ip]['vulnerabilidades'] = vulns_filtradas
+
+            if hosts_filtrados:
+                resultado_filtrado['hosts_detalle'] = hosts_filtrados
+                filtrados.append(resultado_filtrado)
+        else:
+            filtrados.append(resultado)
 
     return filtrados
 
@@ -117,6 +133,15 @@ def analizar():
         resultado['sede'] = sede
         resultado['fecha_escaneo'] = fecha_escaneo
 
+        # Actualizar estados existentes para las vulnerabilidades
+        for ip, host in resultado['hosts_detalle'].items():
+            for vuln in host['vulnerabilidades']:
+                key = (ip, vuln['oid'])
+                if key in estados_vulnerabilidades:
+                    vuln['estado'] = estados_vulnerabilidades[key]
+                else:
+                    vuln['estado'] = 'ACTIVA'
+
         # Almacenar resultado
         resultados_analisis.append(resultado)
 
@@ -128,13 +153,36 @@ def analizar():
         flash('Error al procesar el archivo. Por favor, inténtelo de nuevo.', 'error')
         return redirect(url_for('index'))
 
+@app.route('/actualizar_estado', methods=['POST'])
+def actualizar_estado():
+    data = request.get_json()
+    ip = data.get('ip')
+    oid = data.get('oid')
+    nuevo_estado = data.get('estado')
+
+    if not all([ip, oid, nuevo_estado]):
+        return jsonify({'success': False, 'error': 'Datos incompletos'}), 400
+
+    # Actualizar el estado en el almacenamiento temporal
+    estados_vulnerabilidades[(ip, oid)] = nuevo_estado
+
+    # Actualizar el estado en los resultados
+    for resultado in resultados_analisis:
+        if ip in resultado['hosts_detalle']:
+            for vuln in resultado['hosts_detalle'][ip]['vulnerabilidades']:
+                if vuln['oid'] == oid:
+                    vuln['estado'] = nuevo_estado
+
+    return jsonify({'success': True})
+
 @app.route('/hosts')
 def hosts():
     sede = request.args.get('sede')
     fecha_inicio = request.args.get('fecha_inicio')
     fecha_fin = request.args.get('fecha_fin')
+    riesgo = request.args.get('riesgo')
 
-    resultados_filtrados = filtrar_resultados(resultados_analisis, sede, fecha_inicio, fecha_fin)
+    resultados_filtrados = filtrar_resultados(resultados_analisis, sede, fecha_inicio, fecha_fin, riesgo)
 
     return render_template('hosts.html', 
                          resultados=resultados_filtrados,
@@ -148,8 +196,9 @@ def vulnerabilidades():
     sede = request.args.get('sede')
     fecha_inicio = request.args.get('fecha_inicio')
     fecha_fin = request.args.get('fecha_fin')
+    riesgo = request.args.get('riesgo')
 
-    resultados_filtrados = filtrar_resultados(resultados_analisis, sede, fecha_inicio, fecha_fin)
+    resultados_filtrados = filtrar_resultados(resultados_analisis, sede, fecha_inicio, fecha_fin, riesgo)
 
     return render_template('vulnerabilidades.html', 
                          resultados=resultados_filtrados,
@@ -163,8 +212,9 @@ def comparativa():
     sede = request.args.get('sede')
     fecha_inicio = request.args.get('fecha_inicio')
     fecha_fin = request.args.get('fecha_fin')
+    riesgo = request.args.get('riesgo')
 
-    resultados_filtrados = filtrar_resultados(resultados_analisis, sede, fecha_inicio, fecha_fin)
+    resultados_filtrados = filtrar_resultados(resultados_analisis, sede, fecha_inicio, fecha_fin, riesgo)
 
     return render_template('comparativa.html', 
                          resultados=resultados_filtrados,
