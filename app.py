@@ -758,9 +758,15 @@ def generar_informe(tipo, formato):
             return redirect(url_for('informes'))
 
         # Preparar datos para el informe
-        datos_informe = {}
+        datos_informe = {
+            'sede': sede,
+            'fecha_inicio': fecha_inicio,
+            'fecha_fin': fecha_fin,
+            'hosts_detalle': {}
+        }
+
         for resultado in resultados:
-            datos_informe.update(resultado['hosts_detalle'])
+            datos_informe['hosts_detalle'].update(resultado['hosts_detalle'])
 
         # Generar el informe según el tipo y formato
         if tipo == 'ejecutivo':

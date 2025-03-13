@@ -33,10 +33,10 @@ def generar_pdf_ejecutivo(datos):
     doc = SimpleDocTemplate(buffer, pagesize=letter, 
                           rightMargin=72, leftMargin=72,
                           topMargin=72, bottomMargin=72)
-    
+
     story = []
     styles = getSampleStyleSheet()
-    
+
     # Título
     title_style = ParagraphStyle(
         'CustomTitle',
@@ -46,29 +46,52 @@ def generar_pdf_ejecutivo(datos):
     )
     story.append(Paragraph("Informe Ejecutivo de Vulnerabilidades", title_style))
     story.append(Spacer(1, 12))
-    
-    # Fecha del informe
-    story.append(Paragraph(f"Fecha del informe: {datetime.now().strftime('%Y-%m-%d')}", styles["Normal"]))
+
+    # Información del contexto
+    context_style = ParagraphStyle(
+        'Context',
+        parent=styles['Normal'],
+        fontSize=12,
+        spaceAfter=20
+    )
+
+    # Sede y fecha
+    sede_info = f"Sede: {datos.get('sede', 'Todas las sedes')}"
+    fecha_info = "Período: "
+    if datos.get('fecha_inicio') and datos.get('fecha_fin'):
+        fecha_info += f"Del {datos['fecha_inicio']} al {datos['fecha_fin']}"
+    elif datos.get('fecha_inicio'):
+        fecha_info += f"Desde {datos['fecha_inicio']}"
+    elif datos.get('fecha_fin'):
+        fecha_info += f"Hasta {datos['fecha_fin']}"
+    else:
+        fecha_info += "Todo el período"
+
+    story.append(Paragraph(sede_info, context_style))
+    story.append(Paragraph(fecha_info, context_style))
+    story.append(Paragraph(f"Fecha del informe: {datetime.now().strftime('%Y-%m-%d')}", context_style))
     story.append(Spacer(1, 12))
-    
+
     # Resumen ejecutivo
     story.append(Paragraph("Resumen Ejecutivo", styles["Heading2"]))
-    total_vulnerabilidades = sum(len(host['vulnerabilidades']) for host in datos.values())
+    total_vulnerabilidades = sum(len(host['vulnerabilidades']) for host in datos['hosts_detalle'].values())
+    total_hosts = len(datos['hosts_detalle'])
+    story.append(Paragraph(f"Total de hosts analizados: {total_hosts}", styles["Normal"]))
     story.append(Paragraph(f"Total de vulnerabilidades identificadas: {total_vulnerabilidades}", styles["Normal"]))
     story.append(Spacer(1, 12))
-    
+
     # Tabla de resumen
     data = [['Nivel', 'Cantidad', '% del Total']]
     niveles = {'Critical': 0, 'High': 0, 'Medium': 0, 'Low': 0}
-    
-    for host_data in datos.values():
+
+    for host_data in datos['hosts_detalle'].values():
         for vuln in host_data['vulnerabilidades']:
             niveles[vuln['nivel_amenaza']] += 1
-    
+
     for nivel, cantidad in niveles.items():
         porcentaje = (cantidad / total_vulnerabilidades * 100) if total_vulnerabilidades > 0 else 0
         data.append([nivel, str(cantidad), f"{porcentaje:.1f}%"])
-    
+
     table = Table(data, colWidths=[2*inch, 1.5*inch, 1.5*inch])
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
@@ -83,12 +106,18 @@ def generar_pdf_ejecutivo(datos):
         ('FONTSIZE', (0, 1), (-1, -1), 12),
         ('GRID', (0, 0), (-1, -1), 1, colors.black)
     ]))
-    
+
     story.append(table)
     story.append(Spacer(1, 20))
-    
-    # Añadir más secciones según necesidad
-    
+
+    # Añadir sección de recomendaciones
+    story.append(Paragraph("Recomendaciones Prioritarias", styles["Heading2"]))
+    if niveles['Critical'] > 0:
+        story.append(Paragraph("• Atención inmediata requerida: Se han detectado vulnerabilidades críticas que necesitan ser mitigadas urgentemente.", styles["Normal"]))
+    if niveles['High'] > 0:
+        story.append(Paragraph("• Plan de acción requerido: Las vulnerabilidades de alto riesgo deben ser abordadas en el corto plazo.", styles["Normal"]))
+    story.append(Spacer(1, 12))
+
     doc.build(story)
     buffer.seek(0)
     return buffer
