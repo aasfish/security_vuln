@@ -1,22 +1,22 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container-fluid px-4">
-    <h1 class="display-6 mb-4">Dashboard de Seguridad</h1>
+<div class="container-fluid px-3">
+    <h1 class="h4 mb-3">Dashboard de Seguridad</h1>
 
     {% include 'components/filtros.html' %}
 
-    <div class="row g-4 mb-4">
+    <div class="row g-3 mb-3">
         <!-- Puntuación de Riesgo -->
         <div class="col-md-4">
             <div class="card h-100">
                 <div class="card-body">
-                    <div class="d-flex align-items-center mb-3">
-                        <h5 class="mb-0">Puntuación de Riesgo</h5>
+                    <div class="d-flex align-items-center mb-2">
+                        <h5 class="card-title h6 mb-0">Puntuación de Riesgo</h5>
                         <i class="bi bi-exclamation-triangle ms-2 text-warning"></i>
                     </div>
-                    <h2 class="display-3 mb-0">{{ "%.1f"|format(riesgo_promedio) }}/10</h2>
-                    <div class="progress mt-3" style="height: 8px;">
+                    <h2 class="display-6 mb-0">{{ "%.1f"|format(riesgo_promedio) }}/10</h2>
+                    <div class="progress mt-2" style="height: 6px;">
                         <div class="progress-bar bg-warning" role="progressbar" 
                              style="width: {{ (riesgo_promedio/10)*100 }}%"></div>
                     </div>
@@ -28,11 +28,11 @@
         <div class="col-md-4">
             <div class="card h-100">
                 <div class="card-body">
-                    <div class="d-flex align-items-center mb-3">
-                        <h5 class="mb-0">Vulnerabilidades Totales</h5>
+                    <div class="d-flex align-items-center mb-2">
+                        <h5 class="card-title h6 mb-0">Vulnerabilidades Totales</h5>
                         <i class="bi bi-shield-exclamation ms-2 text-primary"></i>
                     </div>
-                    <h2 class="display-3 mb-0">{{ total_vulnerabilidades }}</h2>
+                    <h2 class="display-6 mb-0">{{ total_vulnerabilidades }}</h2>
                 </div>
             </div>
         </div>
@@ -41,24 +41,24 @@
         <div class="col-md-4">
             <div class="card h-100">
                 <div class="card-body">
-                    <div class="d-flex align-items-center mb-3">
-                        <h5 class="mb-0">Estado de Vulnerabilidades</h5>
+                    <div class="d-flex align-items-center mb-2">
+                        <h5 class="card-title h6 mb-0">Estado de Vulnerabilidades</h5>
                         <i class="bi bi-graph-up ms-2 text-success"></i>
                     </div>
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="text-center">
-                            <i class="bi bi-check-circle text-success fs-3"></i>
-                            <h3 class="mb-0">{{ estados.fix }}</h3>
+                            <i class="bi bi-check-circle text-success"></i>
+                            <h3 class="h5 mb-0">{{ estados.fix }}</h3>
                             <small class="text-muted">FIX</small>
                         </div>
                         <div class="text-center">
-                            <i class="bi bi-exclamation-circle text-warning fs-3"></i>
-                            <h3 class="mb-0">{{ estados.asumida }}</h3>
+                            <i class="bi bi-exclamation-circle text-warning"></i>
+                            <h3 class="h5 mb-0">{{ estados.asumida }}</h3>
                             <small class="text-muted">ASUMIDA</small>
                         </div>
                         <div class="text-center">
-                            <i class="bi bi-x-circle text-danger fs-3"></i>
-                            <h3 class="mb-0">{{ estados.vigente }}</h3>
+                            <i class="bi bi-x-circle text-danger"></i>
+                            <h3 class="h5 mb-0">{{ estados.vigente }}</h3>
                             <small class="text-muted">VIGENTE</small>
                         </div>
                     </div>
@@ -67,13 +67,13 @@
         </div>
     </div>
 
-    <div class="row g-4">
+    <div class="row g-3">
         <!-- Criticidad de Vulnerabilidades -->
         <div class="col-md-6">
             <div class="card h-100">
                 <div class="card-body">
-                    <h5 class="card-title mb-4">Criticidad de Vulnerabilidades</h5>
-                    <div style="height: 300px">
+                    <h5 class="card-title h6 mb-3">Criticidad de Vulnerabilidades</h5>
+                    <div style="height: 250px">
                         <canvas id="criticidadChart"></canvas>
                     </div>
                 </div>
@@ -84,8 +84,8 @@
         <div class="col-md-6">
             <div class="card h-100">
                 <div class="card-body">
-                    <h5 class="card-title mb-4">Estado de Vulnerabilidades</h5>
-                    <div style="height: 300px">
+                    <h5 class="card-title h6 mb-3">Estado de Vulnerabilidades</h5>
+                    <div style="height: 250px">
                         <canvas id="estadoChart"></canvas>
                     </div>
                 </div>
