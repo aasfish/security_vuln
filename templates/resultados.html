@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <h3>Resultados del Análisis</h3>
+        <p>Archivo analizado: {{ nombre_archivo }}</p>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Estadísticas</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="vulnerabilidadesChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Distribución por Riesgo</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="riesgosChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Vulnerabilidades Detectadas</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Descripción</th>
+                                <th>Nivel de Riesgo</th>
+                                <th>Fecha Detección</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for vuln in resultado.vulnerabilidades %}
+                            <tr>
+                                <td>{{ vuln.tipo }}</td>
+                                <td>{{ vuln.descripcion }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if vuln.nivel_riesgo == 'Alto' else 'warning' if vuln.nivel_riesgo == 'Medio' else 'info' }}">
+                                        {{ vuln.nivel_riesgo }}
+                                    </span>
+                                </td>
+                                <td>{{ vuln.fecha_deteccion }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">Realizar Nuevo Análisis</a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+    const vulnerabilidadesData = {{ resultado.estadisticas.por_tipo | tojson }};
+    const riesgosData = {{ resultado.estadisticas.por_riesgo | tojson }};
+    crearGraficos(vulnerabilidadesData, riesgosData);
+</script>
+{% endblock %}
