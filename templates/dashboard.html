@@ -113,113 +113,132 @@
     </div>
 </div>
 
-<!-- Chart.js -->
+{% endblock %}
+
+{% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Configuración común para los gráficos
-    Chart.defaults.color = '#6c757d';
-    Chart.defaults.borderColor = '#2c3338';
+    let criticidadChart, estadoChart;
 
-    // Gráfico de Criticidad
-    const criticidadCtx = document.getElementById('criticidadChart').getContext('2d');
-    new Chart(criticidadCtx, {
-        type: 'bar',
-        data: {
-            labels: ['Critical', 'High', 'Medium', 'Low'],
-            datasets: [{
-                label: '# de Vulnerabilidades',
-                data: {{ criticidad|tojson }},
-                backgroundColor: [
-                    'rgba(220, 53, 69, 0.8)',   // Rojo para Critical
-                    'rgba(255, 193, 7, 0.8)',   // Amarillo para High
-                    'rgba(255, 159, 64, 0.8)',  // Naranja para Medium
-                    'rgba(40, 167, 69, 0.8)'    // Verde para Low
-                ],
-                borderColor: [
-                    'rgba(220, 53, 69, 1)',
-                    'rgba(255, 193, 7, 1)',
-                    'rgba(255, 159, 64, 1)',
-                    'rgba(40, 167, 69, 1)'
-                ],
-                borderWidth: 1,
-                borderRadius: 6,
-                maxBarThickness: 50
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: {
-                duration: 1000,
-                easing: 'easeInOutQuart'
+    function initializeCharts(theme) {
+        const isDark = theme === 'dark';
+
+        // Configuración común para los gráficos
+        Chart.defaults.color = isDark ? '#6c757d' : '#495057';
+        Chart.defaults.borderColor = isDark ? '#2c3338' : '#dee2e6';
+
+        // Gráfico de Criticidad
+        const criticidadCtx = document.getElementById('criticidadChart').getContext('2d');
+        criticidadChart = new Chart(criticidadCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Critical', 'High', 'Medium', 'Low'],
+                datasets: [{
+                    label: '# de Vulnerabilidades',
+                    data: {{ criticidad|tojson }},
+                    backgroundColor: [
+                        'rgba(220, 53, 69, 0.8)',   // Rojo para Critical
+                        'rgba(255, 193, 7, 0.8)',   // Amarillo para High
+                        'rgba(255, 159, 64, 0.8)',  // Naranja para Medium
+                        'rgba(40, 167, 69, 0.8)'    // Verde para Low
+                    ],
+                    borderColor: [
+                        'rgba(220, 53, 69, 1)',
+                        'rgba(255, 193, 7, 1)',
+                        'rgba(255, 159, 64, 1)',
+                        'rgba(40, 167, 69, 1)'
+                    ],
+                    borderWidth: 1,
+                    borderRadius: 6,
+                    maxBarThickness: 50
+                }]
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
                     }
                 },
-                x: {
-                    grid: {
+                plugins: {
+                    legend: {
                         display: false
                     }
                 }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                }
             }
-        }
-    });
+        });
 
-    // Gráfico de Estado
-    const estadoCtx = document.getElementById('estadoChart').getContext('2d');
-    new Chart(estadoCtx, {
-        type: 'doughnut',
-        data: {
-            labels: ['FIX', 'ASUMIDA', 'VIGENTE'],
-            datasets: [{
-                data: [{{ estados.fix }}, {{ estados.asumida }}, {{ estados.vigente }}],
-                backgroundColor: [
-                    'rgba(40, 167, 69, 0.8)',  // Verde para FIX
-                    'rgba(255, 193, 7, 0.8)',  // Amarillo para ASUMIDA
-                    'rgba(220, 53, 69, 0.8)'   // Rojo para VIGENTE
-                ],
-                borderColor: [
-                    'rgba(40, 167, 69, 1)',
-                    'rgba(255, 193, 7, 1)',
-                    'rgba(220, 53, 69, 1)'
-                ],
-                borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: {
-                animateRotate: true,
-                animateScale: true,
-                duration: 1000,
-                easing: 'easeInOutQuart'
+        // Gráfico de Estado
+        const estadoCtx = document.getElementById('estadoChart').getContext('2d');
+        estadoChart = new Chart(estadoCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['FIX', 'ASUMIDA', 'VIGENTE'],
+                datasets: [{
+                    data: [{{ estados.fix }}, {{ estados.asumida }}, {{ estados.vigente }}],
+                    backgroundColor: [
+                        'rgba(40, 167, 69, 0.8)',  // Verde para FIX
+                        'rgba(255, 193, 7, 0.8)',  // Amarillo para ASUMIDA
+                        'rgba(220, 53, 69, 0.8)'   // Rojo para VIGENTE
+                    ],
+                    borderColor: [
+                        'rgba(40, 167, 69, 1)',
+                        'rgba(255, 193, 7, 1)',
+                        'rgba(220, 53, 69, 1)'
+                    ],
+                    borderWidth: 2
+                }]
             },
-            plugins: {
-                legend: {
-                    position: 'right',
-                    labels: {
-                        padding: 20,
-                        usePointStyle: true,
-                        pointStyle: 'circle',
-                        font: {
-                            size: 12
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    animateRotate: true,
+                    animateScale: true,
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
+                },
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            font: {
+                                size: 12
+                            },
+                            color: isDark ? '#6c757d' : '#495057'
                         }
                     }
-                }
-            },
-            cutout: '75%'
-        }
-    });
+                },
+                cutout: '75%'
+            }
+        });
+    }
+
+    // Función para actualizar los temas de los gráficos
+    window.updateChartsTheme = function(theme) {
+        if (criticidadChart) criticidadChart.destroy();
+        if (estadoChart) estadoChart.destroy();
+        initializeCharts(theme);
+    };
+
+    // Inicializar los gráficos con el tema actual
+    initializeCharts(document.documentElement.getAttribute('data-bs-theme'));
 });
 </script>
 {% endblock %}
