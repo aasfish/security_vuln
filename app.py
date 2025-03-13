@@ -319,31 +319,20 @@ def comparacion():
             fecha1_obj = datetime.strptime(fecha1, '%Y-%m-%d').date()
             fecha2_obj = datetime.strptime(fecha2, '%Y-%m-%d').date()
 
-            # Consulta SQL para obtener los conteos normalizados
+            # Consulta SQL para obtener los conteos
             sql_query = text("""
-            WITH sede_counts AS (
-                SELECT 
-                    e.sede,
-                    e.fecha_escaneo,
-                    v.nivel_amenaza,
-                    COUNT(*) as total,
-                    SUM(COUNT(*)) OVER (PARTITION BY e.sede, e.fecha_escaneo) as sede_total
-                FROM escaneos e
-                JOIN hosts h ON h.escaneo_id = e.id
-                JOIN vulnerabilidades v ON v.host_id = h.id
-                WHERE (e.sede = :sede1 AND e.fecha_escaneo = :fecha1)
-                   OR (e.sede = :sede2 AND e.fecha_escaneo = :fecha2)
-                GROUP BY e.sede, e.fecha_escaneo, v.nivel_amenaza
-            )
             SELECT 
-                sede,
-                fecha_escaneo,
-                nivel_amenaza,
-                ROUND(CAST(total AS FLOAT) / NULLIF(sede_total, 0), 3) as proporcion,
-                total as total_raw,
-                sede_total
-            FROM sede_counts
-            ORDER BY fecha_escaneo, nivel_amenaza;
+                e.sede,
+                e.fecha_escaneo,
+                v.nivel_amenaza,
+                COUNT(*) as total
+            FROM escaneos e
+            JOIN hosts h ON h.escaneo_id = e.id
+            JOIN vulnerabilidades v ON v.host_id = h.id
+            WHERE (e.sede = :sede1 AND e.fecha_escaneo = :fecha1)
+               OR (e.sede = :sede2 AND e.fecha_escaneo = :fecha2)
+            GROUP BY e.sede, e.fecha_escaneo, v.nivel_amenaza
+            ORDER BY e.fecha_escaneo, v.nivel_amenaza;
             """)
 
             result = db.session.execute(sql_query, {
@@ -363,22 +352,19 @@ def comparacion():
                 sede = row[0]
                 fecha_escaneo = row[1]
                 nivel_amenaza = row[2]
-                proporcion = float(row[3]) if row[3] is not None else 0
-                total_raw = row[4]
-                sede_total = row[5]
+                total = row[3]
 
-                logger.debug(f"Procesando resultado: sede={sede}, fecha={fecha_escaneo}, nivel={nivel_amenaza}, "
-                           f"proporcion={proporcion}, total={total_raw}, sede_total={sede_total}")
+                logger.debug(f"Procesando resultado: sede={sede}, fecha={fecha_escaneo}, nivel={nivel_amenaza}, total={total}")
 
                 if sede == sede1 and fecha_escaneo == fecha1_obj:
-                    primer_conteo[nivel_amenaza] = proporcion
-                    primer_total = sede_total
+                    primer_conteo[nivel_amenaza] = total
+                    primer_total += total
                 elif sede == sede2 and fecha_escaneo == fecha2_obj:
-                    segundo_conteo[nivel_amenaza] = proporcion
-                    segundo_total = sede_total
+                    segundo_conteo[nivel_amenaza] = total
+                    segundo_total += total
 
-            logger.debug(f"Totales procesados - Primer escaneo: {primer_total}, Segundo escaneo: {segundo_total}")
             logger.debug(f"Conteos procesados - Primer: {primer_conteo}, Segundo: {segundo_conteo}")
+            logger.debug(f"Totales procesados - Primer escaneo: {primer_total}, Segundo escaneo: {segundo_total}")
 
             # Calcular variación
             variacion = segundo_total - primer_total
