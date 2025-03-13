@@ -9,10 +9,30 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --bs-body-bg: #0f1114;
-            --bs-body-color: #e9ecef;
             --sidebar-width: 240px;
             --header-height: 60px;
+        }
+
+        /* Estilos para tema oscuro */
+        [data-bs-theme="dark"] {
+            --bs-body-bg: #0f1114;
+            --bs-body-color: #e9ecef;
+            --sidebar-bg: #161719;
+            --card-bg: #1e2124;
+            --text-muted: #a1a1a1;
+            --border-color: rgba(255,255,255,0.05);
+            --hover-bg: rgba(255,255,255,0.05);
+        }
+
+        /* Estilos para tema claro */
+        [data-bs-theme="light"] {
+            --bs-body-bg: #f8f9fa;
+            --bs-body-color: #212529;
+            --sidebar-bg: #ffffff;
+            --card-bg: #ffffff;
+            --text-muted: #6c757d;
+            --border-color: rgba(0,0,0,0.05);
+            --hover-bg: rgba(0,0,0,0.05);
         }
 
         body {
@@ -26,8 +46,8 @@
         /* Sidebar */
         .sidebar {
             width: var(--sidebar-width);
-            background-color: #161719;
-            border-right: 1px solid rgba(255,255,255,0.05);
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
             height: 100vh;
             position: fixed;
             top: 0;
@@ -37,7 +57,7 @@
         }
 
         .sidebar .nav-link {
-            color: #a1a1a1;
+            color: var(--text-muted);
             padding: 0.75rem 1rem;
             border-radius: 0.375rem;
             margin-bottom: 0.25rem;
@@ -45,13 +65,13 @@
         }
 
         .sidebar .nav-link:hover {
-            color: #fff;
-            background-color: rgba(255,255,255,0.05);
+            color: var(--bs-body-color);
+            background-color: var(--hover-bg);
         }
 
         .sidebar .nav-link.active {
-            color: #fff;
-            background-color: rgba(255,255,255,0.1);
+            color: var(--bs-body-color);
+            background-color: var(--hover-bg);
         }
 
         .sidebar .nav-link i {
@@ -66,25 +86,14 @@
             padding: 2rem;
         }
 
-        /* Header */
-        .header {
-            padding: 1rem 0;
-            margin-bottom: 2rem;
-        }
-
-        .header h1 {
-            font-size: 1.75rem;
-            font-weight: 600;
-            margin: 0;
-        }
-
-        /* Cards and tables */
+        /* Cards */
         .card {
-            background-color: #1e2124;
+            background-color: var(--card-bg);
             border: none;
             border-radius: 0.5rem;
         }
 
+        /* Tables */
         .table {
             margin: 0;
         }
@@ -92,39 +101,14 @@
         .table th {
             border-top: none;
             font-weight: 500;
-            color: #a1a1a1;
+            color: var(--text-muted);
             padding: 1rem;
         }
 
         .table td {
             padding: 1rem;
             vertical-align: middle;
-        }
-
-        /* Buttons and badges */
-        .btn {
-            font-size: 0.875rem;
-            padding: 0.5rem 1rem;
-            border-radius: 0.375rem;
-        }
-
-        .badge {
-            font-size: 0.75rem;
-            padding: 0.35rem 0.65rem;
-            border-radius: 0.25rem;
-        }
-
-        .badge.bg-warning {
-            background-color: #d97706 !important;
-            color: #fff;
-        }
-
-        .badge.bg-success {
-            background-color: #059669 !important;
-        }
-
-        .badge.bg-danger {
-            background-color: #dc2626 !important;
+            color: var(--bs-body-color);
         }
 
         /* Theme toggle */
@@ -143,14 +127,15 @@
         #theme-toggle {
             background: transparent;
             border: none;
-            color: #a1a1a1;
+            color: var(--text-muted);
             padding: 0.5rem;
             border-radius: 0.375rem;
+            cursor: pointer;
         }
 
         #theme-toggle:hover {
-            background-color: rgba(255,255,255,0.05);
-            color: #fff;
+            background-color: var(--hover-bg);
+            color: var(--bs-body-color);
         }
     </style>
 </head>
@@ -158,7 +143,7 @@
     <!-- Sidebar -->
     <nav class="sidebar">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <span class="h6 mb-0 text-white">Security Dashboard</span>
+            <span class="h6 mb-0">Security Dashboard</span>
             <button class="btn btn-link p-0" id="theme-toggle">
                 <i class="bi bi-moon-stars theme-icon theme-icon-dark"></i>
                 <i class="bi bi-sun theme-icon theme-icon-light"></i>
