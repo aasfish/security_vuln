@@ -83,6 +83,7 @@ def filtrar_resultados(sede=None, fecha_inicio=None, fecha_fin=None, riesgo=None
             resultados.append({
                 'sede': escaneo.sede.nombre,
                 'fecha_escaneo': escaneo.fecha_escaneo.strftime('%Y-%m-%d'),
+                'escaneo_id': escaneo.id,  # Añadido el ID del escaneo
                 'hosts_detalle': hosts_detalle
             })
 
@@ -98,13 +99,31 @@ def index():
 
 @app.route('/configuracion')
 def configuracion():
-    """Vista de configuración que incluye la gestión de sedes"""
+    """Vista de configuración que incluye la gestión de sedes y escaneos"""
     sedes = Sede.query.order_by(Sede.nombre).all()
     sedes_activas = [s for s in sedes if s.activa]
+
+    # Obtener todos los escaneos organizados por sede
+    escaneos_por_sede = {}
+    for sede in sedes:
+        escaneos = Escaneo.query.filter_by(sede_id=sede.id)\
+            .order_by(Escaneo.fecha_escaneo.desc())\
+            .all()
+        if escaneos:
+            escaneos_por_sede[sede.nombre] = [
+                {
+                    'id': e.id,
+                    'fecha': e.fecha_escaneo.strftime('%Y-%m-%d'),
+                    'total_hosts': len(e.hosts),
+                    'total_vulnerabilidades': sum(len(h.vulnerabilidades) for h in e.hosts)
+                } for e in escaneos
+            ]
+
     return render_template('configuracion.html', 
                          today=datetime.now().strftime('%Y-%m-%d'),
                          sedes=sedes,
-                         sedes_activas=sedes_activas)
+                         sedes_activas=sedes_activas,
+                         escaneos_por_sede=escaneos_por_sede)
 
 @app.route('/crear_sede', methods=['POST'])
 def crear_sede():
@@ -574,7 +593,6 @@ def obtener_tendencias():
     return jsonify(list(tendencias.values()))
 
 
-
 @app.route('/actualizar_estado', methods=['POST'])
 def actualizar_estado():
     data = request.get_json()
@@ -653,6 +671,24 @@ def exportar(tipo, formato):
         logger.error(f"Error en la exportación: {str(e)}", exc_info=True)
         flash('Error al generar el reporte', 'error')
         return redirect(url_for(tipo))
+
+@app.route('/eliminar_escaneo/<int:escaneo_id>', methods=['POST'])
+def eliminar_escaneo(escaneo_id):
+    """Elimina un escaneo y sus datos relacionados"""
+    try:
+        escaneo = Escaneo.query.get_or_404(escaneo_id)
+        sede_nombre = escaneo.sede.nombre
+        fecha = escaneo.fecha_escaneo.strftime('%Y-%m-%d')
+
+        db.session.delete(escaneo)
+        db.session.commit()
+
+        flash(f'Escaneo de {sede_nombre} del {fecha} eliminado exitosamente', 'success')
+    except Exception as e:
+        logger.error(f"Error al eliminar escaneo: {str(e)}", exc_info=True)
+        flash('Error al eliminar el escaneo', 'error')
+
+    return redirect(url_for('hosts'))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
