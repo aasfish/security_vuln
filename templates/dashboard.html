@@ -63,8 +63,8 @@
                             <div class="rounded-circle bg-success bg-opacity-10 p-3 mb-2">
                                 <i class="bi bi-check-circle-fill text-success"></i>
                             </div>
-                            <h3 class="h5 mb-0">{{ estados.fix }}</h3>
-                            <small class="text-muted">FIX</small>
+                            <h3 class="h5 mb-0">{{ estados.mitigada }}</h3>
+                            <small class="text-muted">MITIGADA</small>
                         </div>
                         <div class="text-center">
                             <div class="rounded-circle bg-warning bg-opacity-10 p-3 mb-2">
@@ -186,11 +186,11 @@ document.addEventListener('DOMContentLoaded', function() {
         estadoChart = new Chart(estadoCtx, {
             type: 'doughnut',
             data: {
-                labels: ['FIX', 'ASUMIDA', 'VIGENTE'],
+                labels: ['MITIGADA', 'ASUMIDA', 'VIGENTE'],
                 datasets: [{
-                    data: [{{ estados.fix }}, {{ estados.asumida }}, {{ estados.vigente }}],
+                    data: [{{ estados.mitigada }}, {{ estados.asumida }}, {{ estados.vigente }}],
                     backgroundColor: [
-                        'rgba(40, 167, 69, 0.8)',  // Verde para FIX
+                        'rgba(40, 167, 69, 0.8)',  // Verde para MITIGADA
                         'rgba(255, 193, 7, 0.8)',  // Amarillo para ASUMIDA
                         'rgba(220, 53, 69, 0.8)'   // Rojo para VIGENTE
                     ],

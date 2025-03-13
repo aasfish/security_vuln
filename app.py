@@ -237,15 +237,32 @@ def vulnerabilidades():
     fecha_inicio = request.args.get('fecha_inicio')
     fecha_fin = request.args.get('fecha_fin')
     riesgo = request.args.get('riesgo')
+    estado = request.args.get('estado')  # Nuevo parámetro para filtrar por estado
 
-    resultados_filtrados = filtrar_resultados(sede, fecha_inicio, fecha_fin, riesgo)
+    from models import Escaneo, Host, Vulnerabilidad
+    query = Vulnerabilidad.query.join(Host).join(Escaneo)
+
+    # Aplicar filtros existentes
+    if sede:
+        query = query.filter(Escaneo.sede == sede)
+    if fecha_inicio:
+        query = query.filter(Escaneo.fecha_escaneo >= datetime.strptime(fecha_inicio, '%Y-%m-%d').date())
+    if fecha_fin:
+        query = query.filter(Escaneo.fecha_escaneo <= datetime.strptime(fecha_fin, '%Y-%m-%d').date())
+    if riesgo:
+        query = query.filter(Vulnerabilidad.nivel_amenaza == riesgo)
+    if estado:
+        query = query.filter(Vulnerabilidad.estado == estado)
+
+    vulnerabilidades = query.all()
 
     return render_template('vulnerabilidades.html', 
-                         resultados=resultados_filtrados,
+                         resultados=vulnerabilidades,
                          sedes=obtener_sedes(),
                          sede_seleccionada=sede,
                          fecha_inicio=fecha_inicio,
-                         fecha_fin=fecha_fin)
+                         fecha_fin=fecha_fin,
+                         estado=estado)
 
 @app.route('/comparativa')
 def comparativa():
@@ -318,7 +335,7 @@ def dashboard():
 
     # Contar estados
     estados = {
-        'fix': len([v for v in vulnerabilidades if v.estado == 'FIX']),
+        'mitigada': len([v for v in vulnerabilidades if v.estado == 'MITIGADA']),
         'asumida': len([v for v in vulnerabilidades if v.estado == 'ASUMIDA']),
         'vigente': len([v for v in vulnerabilidades if v.estado == 'ACTIVA'])
     }

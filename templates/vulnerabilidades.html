@@ -17,7 +17,11 @@
                 </div>
                 <div class="dropdown">
                     <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                        Todos los riesgos
+                        {% if request.args.get('riesgo') %}
+                            {{ request.args.get('riesgo') }}
+                        {% else %}
+                            Todos los riesgos
+                        {% endif %}
                         <i class="bi bi-chevron-down ms-2"></i>
                     </button>
                     <ul class="dropdown-menu">
@@ -25,6 +29,22 @@
                         <li><a class="dropdown-item" href="?riesgo=High">Alto</a></li>
                         <li><a class="dropdown-item" href="?riesgo=Medium">Medio</a></li>
                         <li><a class="dropdown-item" href="?riesgo=Low">Bajo</a></li>
+                    </ul>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        {% if request.args.get('estado') %}
+                            {{ request.args.get('estado') }}
+                        {% else %}
+                            Todos los estados
+                        {% endif %}
+                        <i class="bi bi-chevron-down ms-2"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ url_for('vulnerabilidades', sede=sede_seleccionada, fecha_inicio=fecha_inicio) }}">Todos los estados</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('vulnerabilidades', estado='ACTIVA', sede=sede_seleccionada, fecha_inicio=fecha_inicio) }}">VIGENTE</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('vulnerabilidades', estado='MITIGADA', sede=sede_seleccionada, fecha_inicio=fecha_inicio) }}">MITIGADA</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('vulnerabilidades', estado='ASUMIDA', sede=sede_seleccionada, fecha_inicio=fecha_inicio) }}">ASUMIDA</a></li>
                     </ul>
                 </div>
             </div>
