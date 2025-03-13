@@ -21,6 +21,10 @@ class Escaneo(db.Model):
     fecha_escaneo = db.Column(db.Date, nullable=False)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
     hosts = db.relationship('Host', backref='escaneo', lazy=True, cascade='all, delete-orphan')
+    sede = db.relationship('Sede', backref='escaneos', lazy=True)
+
+    def __repr__(self):
+        return f'<Escaneo {self.fecha_escaneo}>'
 
 class Host(db.Model):
     __tablename__ = 'hosts'
@@ -30,6 +34,9 @@ class Host(db.Model):
     nombre_host = db.Column(db.String(200))
     escaneo_id = db.Column(db.Integer, db.ForeignKey('escaneos.id'), nullable=False)
     vulnerabilidades = db.relationship('Vulnerabilidad', backref='host', lazy=True, cascade='all, delete-orphan')
+
+    def __repr__(self):
+        return f'<Host {self.ip}>'
 
 class Vulnerabilidad(db.Model):
     __tablename__ = 'vulnerabilidades'
@@ -47,3 +54,6 @@ class Vulnerabilidad(db.Model):
     referencias = db.Column(db.JSON)
     estado = db.Column(db.String(20), default='ACTIVA')
     host_id = db.Column(db.Integer, db.ForeignKey('hosts.id'), nullable=False)
+
+    def __repr__(self):
+        return f'<Vulnerabilidad {self.nvt}>'
