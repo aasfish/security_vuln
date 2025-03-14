@@ -3,9 +3,7 @@ import logging
 from datetime import datetime
 from flask import Flask, render_template, request, flash, redirect, url_for, send_from_directory, jsonify, send_file
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
-from sqlalchemy.orm import DeclarativeBase
 from werkzeug.utils import secure_filename
 
 # Set up logging with more detail
@@ -19,19 +17,12 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET")
 
-# Database configuration
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-    "pool_recycle": 300,
-    "pool_pre_ping": True
-}
+# Initialize database
+from database import db, init_db
+init_db(app)
 
-# Initialize SQLAlchemy with the app
-class Base(DeclarativeBase):
-    pass
-
-db = SQLAlchemy(model_class=Base)
-db.init_app(app)
+# Import models after database initialization
+from models import User, Sede, Escaneo, Host, Vulnerabilidad, ActivityLog
 
 # Initialize Flask-Login
 login_manager = LoginManager()
@@ -39,11 +30,6 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 login_manager.login_message = 'Por favor inicie sesión para acceder a esta página.'
 login_manager.login_message_category = 'warning'
-
-# Import models after db initialization but before create_all
-with app.app_context():
-    from models import User, Sede, Escaneo, Host, Vulnerabilidad, ActivityLog
-    db.create_all()
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -112,12 +98,11 @@ def logout():
         flash('Error al cerrar sesión', 'error')
         return redirect(url_for('login'))
 
-# Función para registrar actividad
-
 @app.route('/')
-@login_required
 def index():
-    return redirect(url_for('dashboard'))
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    return redirect(url_for('login'))
 
 @app.route('/dashboard')
 @login_required
@@ -251,6 +236,7 @@ def filtrar_resultados(sede=None, fecha_inicio=None, fecha_fin=None, riesgo=None
             })
 
     return resultados
+
 
 
 @app.route('/configuracion')
@@ -769,9 +755,7 @@ def exportar(tipo, formato):
 
         if formato not in ['csv', 'pdf']:
             flash('Formato de exportación no válido', 'error')
-            return redirect(url_for('dashboard'))
-
-        # Obtener datos filtrados
+            return redirect(url_for('dashboard'))# Obtener datos filtrados
         if tipo == 'hosts':
             resultados = filtrar_resultados(sede, fecha_inicio, fecha_fin, riesgo)
             if not resultados:
