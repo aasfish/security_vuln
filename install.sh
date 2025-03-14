@@ -31,6 +31,7 @@ systemctl enable sectracker
 
 # Establecer permisos
 echo "Configurando permisos..."
+useradd -r -s /bin/false sectracker || true
 chown -R sectracker:sectracker $APP_DIR
 chmod -R 755 $APP_DIR
 
