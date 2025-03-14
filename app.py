@@ -763,7 +763,7 @@ def exportar(tipo, formato):
 
             vulnerabilidades = query.all()
             if not vulnerabilidades:
-                flash('No hay datos disponibles para exportar', 'warning')
+                flash('No haydatos disponibles para exportar', 'warning')
                 return redirect(url_for('vulnerabilidades'))
 
             if formato == 'csv':                return exportar_a_csv(vulnerabilidades, tipo_reporte='vulnerabilidades')
