@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=postgresql://sectracker:SecTracker2024!@db:5432/sectracker
+      - SESSION_SECRET=${SESSION_SECRET:-defaultsecret}
+    depends_on:
+      - db
+    restart: always
+    volumes:
+      - ./data:/app/data
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=sectracker
+      - POSTGRES_PASSWORD=SecTracker2024!
+      - POSTGRES_DB=sectracker
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data:
