@@ -10,6 +10,7 @@ import logging
 from datetime import datetime
 from flask_talisman import Talisman
 from werkzeug.middleware.proxy_fix import ProxyFix
+import ssl
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET")
 
-# Force HTTPS
+# Force HTTPS and set secure headers
 Talisman(app, 
     force_https=True,
     content_security_policy={
@@ -28,7 +29,8 @@ Talisman(app,
         'style-src': ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "cdn.replit.com"],
         'img-src': ["'self'", "data:", "cdn.jsdelivr.net", "cdn.replit.com"],
         'font-src': ["'self'", "cdn.jsdelivr.net", "cdn.replit.com"]
-    })
+    },
+    strict_transport_security=True)
 
 # Support for reverse proxy headers
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
@@ -1020,4 +1022,9 @@ def fechas_por_sede(sede):
         return jsonify([])
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # Create SSL context
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    context.load_cert_chain('certs/server.crt', 'certs/server.key')
+
+    # Run with SSL
+    app.run(host='0.0.0.0', port=443, ssl_context=context, debug=True)
