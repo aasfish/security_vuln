@@ -25,7 +25,7 @@ pip install flask==3.0.3 \
     flask-wtf==1.2.1 \
     pandas==2.0.3 \
     reportlab==4.3.1 \
-    matplotlib==3.10.1 \
+    matplotlib==3.7.5 \
     flask-talisman==1.1.0 \
     pyopenssl==25.0.0
 
