@@ -6,7 +6,7 @@ services:
     ports:
       - "443:5000"
     environment:
-      - DATABASE_URL=postgresql://sectracker:SecTracker2024!@db:5432/sectracker
+      - DATABASE_URL=postgresql://sectracker:SecTracker2024!@db:5433/sectracker
       - SESSION_SECRET=${SESSION_SECRET:-defaultsecret}
       - FLASK_APP=app.py
       - FLASK_DEBUG=1
@@ -28,12 +28,13 @@ services:
       - POSTGRES_USER=sectracker
       - POSTGRES_PASSWORD=SecTracker2024!
       - POSTGRES_DB=sectracker
+      - PGPORT=5433
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5433:5432"
+      - "5433:5433"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U sectracker"]
+      test: ["CMD-SHELL", "pg_isready -U sectracker -p 5433"]
       interval: 5s
       timeout: 5s
       retries: 5

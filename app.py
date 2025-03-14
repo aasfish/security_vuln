@@ -20,6 +20,16 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET")
 
+# Database configuration
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_recycle": 300,
+    "pool_pre_ping": True,
+    "connect_args": {
+        "port": 5433
+    }
+}
+
 # Force HTTPS and set secure headers
 Talisman(app, 
     force_https=True,
@@ -89,11 +99,7 @@ def logout():
 init_db(app)
 
 # configure the database, relative to the app instance folder
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-    "pool_recycle": 300,
-    "pool_pre_ping": True,
-}
+
 
 # Configuración para subida de archivos
 ALLOWED_EXTENSIONS = {'txt'}
