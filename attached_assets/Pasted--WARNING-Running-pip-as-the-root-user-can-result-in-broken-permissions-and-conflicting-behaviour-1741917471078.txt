@@ -1,0 +1,40 @@
+
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 25.0.1
+[notice] To update, run: pip install --upgrade pip
+ ---> Removed intermediate container 22b984995290
+ ---> e340bf43a8aa
+Step 4/9 : COPY . .
+ ---> aec879577a8f
+Step 5/9 : RUN chmod +x init_admin.sh
+ ---> Running in 42b0b0e68d1d
+ ---> Removed intermediate container 42b0b0e68d1d
+ ---> 6fe91734f612
+Step 6/9 : EXPOSE 5000
+ ---> Running in 62105c11e0aa
+ ---> Removed intermediate container 62105c11e0aa
+ ---> 4cb9506842ee
+Step 7/9 : ENV FLASK_APP=app.py
+ ---> Running in a5221e3de804
+ ---> Removed intermediate container a5221e3de804
+ ---> 17227d9695f0
+Step 8/9 : ENV PYTHONUNBUFFERED=1
+ ---> Running in 8d95b2b4ab26
+ ---> Removed intermediate container 8d95b2b4ab26
+ ---> a4141ee2a304
+Step 9/9 : CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "app:app"]
+ ---> Running in 934b933da49b
+ ---> Removed intermediate container 934b933da49b
+ ---> dd22bd4fcd14
+
+Successfully built dd22bd4fcd14
+Successfully tagged vulntracker_web:latest
+WARNING: Image for service web was built because it did not already exist. To rebuild this image you must use `docker-compose build` or `docker-compose up --build`.
+Creating vulntracker_db_1 ...
+Creating vulntracker_db_1 ... error
+
+ERROR: for vulntracker_db_1  Cannot start service db: driver failed programming external connectivity on endpoint vulntracker_db_1 (b00f30c56454d4e4e7ae92d7115c4eb5571e2b3e24e30f10fe1b68a218bf8dfb): Error starting userland proxy: listen tcp4 0.0.0.0:5432: bind: address already in use
+
+ERROR: for db  Cannot start service db: driver failed programming external connectivity on endpoint vulntracker_db_1 (b00f30c56454d4e4e7ae92d7115c4eb5571e2b3e24e30f10fe1b68a218bf8dfb): Error starting userland proxy: listen tcp4 0.0.0.0:5432: bind: address already in use
+ERROR: Encountered errors while bringing
