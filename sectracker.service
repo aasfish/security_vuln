@@ -1,0 +1,19 @@
+[Unit]
+Description=SECTRACKER-PRO Security Vulnerability Management
+After=network.target postgresql.service
+
+[Service]
+User=root
+Group=root
+WorkingDirectory=/security_vuln
+Environment="PATH=/usr/local/bin:/usr/bin:/bin"
+Environment="FLASK_APP=app.py"
+Environment="FLASK_ENV=production"
+EnvironmentFile=/security_vuln/.env
+
+ExecStart=/usr/local/bin/gunicorn --workers 4 --bind 0.0.0.0:5000 app:app
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
