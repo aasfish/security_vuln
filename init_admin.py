@@ -24,6 +24,7 @@ def init_admin():
                 email='admin@sectracker.local',
                 is_admin=True,
                 role='admin',
+                is_active=True,
                 created_at=datetime.utcnow()
             )
             admin.set_password('SecTracker2024!')

@@ -34,10 +34,7 @@ def init_db(app):
 
             with app.app_context():
                 # Importar modelos aquí para evitar referencias circulares
-                from models import User, Sede, Escaneo, Host, Vulnerabilidad, ActivityLog
-
-                # Eliminar todas las tablas existentes
-                db.drop_all()
+                from models import User, ActivityLog, Sede, Escaneo, Host, Vulnerabilidad
 
                 # Crear todas las tablas según los modelos
                 db.create_all()
@@ -50,5 +47,5 @@ def init_db(app):
                 logger.warning(f"Attempt {attempt + 1} failed, retrying in {retry_delay} seconds...")
                 time.sleep(retry_delay)
             else:
-                logger.error(f"Error initializing database after {max_retries} attempts: {str(e)}", exc_info=True)
+                logger.error(f"Error initializing database after {max_retries} attempts: {str(e)}")
                 raise
