@@ -1,47 +1,25 @@
 #!/bin/bash
 
-echo "=== Instalando SECTRACKER-PRO: Paso 2 - Instalación y Configuración de Base de Datos ==="
+echo "=== Instalando SECTRACKER-PRO: Paso 2 - Configuración de Base de Datos ==="
 
-# Verificar si PostgreSQL está instalado
-if ! command -v psql &> /dev/null; then
-    echo "PostgreSQL no está instalado. Instalando..."
-    # Agregar el repositorio PostgreSQL
-    sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
-
-    # Actualizar e instalar PostgreSQL
-    sudo apt-get update
-    sudo apt-get install -y postgresql postgresql-contrib libpq-dev
-
-    if [ $? -ne 0 ]; then
-        echo "❌ Error: Falló la instalación de PostgreSQL"
-        exit 1
-    fi
-
-    echo "PostgreSQL instalado correctamente"
-else
-    echo "PostgreSQL ya está instalado"
-fi
-
-# Iniciar PostgreSQL si no está corriendo
+# Verificar si PostgreSQL está disponible
 if ! pg_isready > /dev/null 2>&1; then
-    echo "Iniciando PostgreSQL..."
-    sudo service postgresql start
-    sleep 5  # Dar tiempo a que PostgreSQL inicie completamente
-fi
-
-# Verificar si PostgreSQL está corriendo
-if ! pg_isready > /dev/null 2>&1; then
-    echo "❌ Error: No se pudo iniciar PostgreSQL"
+    echo "❌ Error: PostgreSQL no está disponible"
     exit 1
 fi
 
-# Usar las variables de entorno de Replit si están disponibles
-DB_NAME=${PGDATABASE:-"sectracker"}
-DB_USER=${PGUSER:-"sectracker_user"}
-DB_PASSWORD=${PGPASSWORD:-"SecTracker2024!"}
-DB_HOST=${PGHOST:-"localhost"}
-DB_PORT=${PGPORT:-"5432"}
+# Usar las variables de entorno de Replit
+DB_NAME=${PGDATABASE}
+DB_USER=${PGUSER}
+DB_PASSWORD=${PGPASSWORD}
+DB_HOST=${PGHOST}
+DB_PORT=${PGPORT}
+
+# Verificar que todas las variables necesarias estén definidas
+if [ -z "$DB_NAME" ] || [ -z "$DB_USER" ] || [ -z "$DB_PASSWORD" ] || [ -z "$DB_HOST" ] || [ -z "$DB_PORT" ]; then
+    echo "❌ Error: Variables de entorno de base de datos no configuradas"
+    exit 1
+fi
 
 # Crear usuario y base de datos
 echo "Configurando base de datos..."
@@ -75,10 +53,9 @@ FLASK_ENV="development"
 FLASK_APP="app.py"
 EOF
 
-echo "✅ Base de datos configurada correctamente"
-echo "Variables de entorno creadas en archivo .env"
+echo "✅ Variables de entorno creadas en archivo .env"
 
-# Crear las tablas usando Python directamente sin activar el entorno virtual
+# Crear las tablas de la base de datos
 echo "Creando tablas de la base de datos..."
 python3 create_tables.py
 

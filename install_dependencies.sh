@@ -1,14 +1,7 @@
 #!/bin/bash
 
 echo "=== Instalando SECTRACKER-PRO: Paso 1 - Dependencias ==="
-echo "Instalando dependencias del sistema y Python..."
-
-# Actualizar el sistema
-sudo apt-get update
-sudo apt-get upgrade -y
-
-# Instalar dependencias del sistema
-sudo apt-get install -y python3.11 python3-pip postgresql postgresql-contrib libpq-dev
+echo "Instalando dependencias de Python..."
 
 # Crear y activar entorno virtual
 python3 -m venv venv
