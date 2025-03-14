@@ -1,0 +1,15 @@
+[Unit]
+Description=SECTRACKER-PRO Security Dashboard
+After=network.target
+
+[Service]
+User=sectracker
+Group=sectracker
+WorkingDirectory=/opt/sectracker-pro
+EnvironmentFile=/etc/sectracker-pro.env
+ExecStart=/usr/local/bin/docker-compose up
+ExecStop=/usr/local/bin/docker-compose down
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
