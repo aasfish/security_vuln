@@ -1,0 +1,62 @@
+
+root@SECTRACKER-PRO:~/security_vuln# ./setup_database.sh
+=== Instalando SECTRACKER-PRO: Paso 2 - Configuración de Base de Datos ===
+✅ PostgreSQL está disponible
+Configurando base de datos...
+DO
+DROP DATABASE
+CREATE DATABASE
+GRANT
+You are now connected to database "sectracker" as user "postgres".
+GRANT
+GRANT
+✅ Base de datos configurada correctamente
+Creando archivo .env...
+✅ Variables de entorno creadas en archivo .env
+Verificando conexión a la base de datos...
+✅ Conexión a la base de datos verificada
+Creando tablas de la base de datos...
+2025-03-14 14:56:03 - database - INFO - Database initialized successfully
+2025-03-14 14:56:03,165 - database - INFO - Database initialized successfully
+✅ Tablas creadas exitosamente
+✅ Tablas creadas correctamente
+Para continuar con la instalación, ejecute: ./verify_installation.sh
+root@SECTRACKER-PRO:~/security_vuln# chmod +x *sh
+root@SECTRACKER-PRO:~/security_vuln# ./init_admin.sh
+========================================
+    SECTRACKER-PRO - Inicialización
+========================================
+
+Creando usuario administrador inicial...
+
+2025-03-14 14:56:16 - database - INFO - Database initialized successfully
+2025-03-14 14:56:16,022 - database - INFO - Database initialized successfully
+2025-03-14 14:56:16,127 - __main__ - INFO - Usuario administrador creado exitosamente
+2025-03-14 14:56:16,127 - __main__ - INFO - Usuario: admin
+2025-03-14 14:56:16,127 - __main__ - INFO - Contraseña: SecTracker2024!
+
+========================================
+Para acceder a SECTRACKER-PRO use:
+----------------------------------------
+URL: http://localhost:5000
+Usuario: admin
+Contraseña: SecTracker2024!
+========================================
+
+¡IMPORTANTE! Por seguridad, cambie la
+contraseña después del primer inicio
+de sesión.
+========================================
+root@SECTRACKER-PRO:~/security_vuln# ./start.sh
+[2025-03-14 14:56:21 +0000] [4245] [INFO] Starting gunicorn 23.0.0
+[2025-03-14 14:56:21 +0000] [4245] [ERROR] Connection in use: ('0.0.0.0', 5000)
+[2025-03-14 14:56:21 +0000] [4245] [ERROR] connection to ('0.0.0.0', 5000) failed: [Errno 98] Address already in use
+[2025-03-14 14:56:22 +0000] [4245] [ERROR] Connection in use: ('0.0.0.0', 5000)
+[2025-03-14 14:56:22 +0000] [4245] [ERROR] connection to ('0.0.0.0', 5000) failed: [Errno 98] Address already in use
+[2025-03-14 14:56:23 +0000] [4245] [ERROR] Connection in use: ('0.0.0.0', 5000)
+[2025-03-14 14:56:23 +0000] [4245] [ERROR] connection to ('0.0.0.0', 5000) failed: [Errno 98] Address already in use
+^C[2025-03-14 14:56:24 +0000] [4245] [ERROR] Connection in use: ('0.0.0.0', 5000)
+[2025-03-14 14:56:24 +0000] [4245] [ERROR] connection to ('0.0.0.0', 5000) failed: [Errno 98] Address already in use
+^C^C[2025-03-14 14:56:25 +0000] [4245] [ERROR] Connection in use: ('0.0.0.0', 5000)
+[2025-03-14 14:56:25 +0000] [4245] [ERROR] connection to ('0.0.0.0', 5000) failed: [Errno 98] Address already in use
+[2025-03-14 14:56:26 +0000] [4245] [ERROR] Can't connect to ('0.0.0.0', 5000)
