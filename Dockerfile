@@ -30,6 +30,9 @@ COPY . .
 # Make scripts executable
 RUN chmod +x init_admin.sh
 
+# Create data directory
+RUN mkdir -p /app/data && chmod 777 /app/data
+
 # Expose port
 EXPOSE 5000
 
@@ -37,5 +40,5 @@ EXPOSE 5000
 ENV FLASK_APP=app.py
 ENV PYTHONUNBUFFERED=1
 
-# Run gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "app:app"]
+# Run gunicorn with proper configuration
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-", "app:app"]

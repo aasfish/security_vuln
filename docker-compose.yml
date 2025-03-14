@@ -6,13 +6,20 @@ services:
     ports:
       - "5000:5000"
     environment:
-      - DATABASE_URL=postgresql://sectracker:SecTracker2024!@db:5433/sectracker
+      - DATABASE_URL=postgresql://sectracker:SecTracker2024!@db:5432/sectracker
       - SESSION_SECRET=${SESSION_SECRET:-defaultsecret}
+      - FLASK_APP=app.py
+      - FLASK_DEBUG=1
     depends_on:
       - db
     restart: always
     volumes:
       - ./data:/app/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-count: "3"
 
   db:
     image: postgres:15
@@ -24,6 +31,11 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sectracker"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:
