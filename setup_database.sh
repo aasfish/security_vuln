@@ -8,41 +8,25 @@ if ! pg_isready > /dev/null 2>&1; then
     exit 1
 fi
 
-# Usar las variables de entorno de Replit
-DB_NAME=${PGDATABASE}
-DB_USER=${PGUSER}
-DB_PASSWORD=${PGPASSWORD}
-DB_HOST=${PGHOST}
-DB_PORT=${PGPORT}
+# Exportar las variables de entorno de Replit si existen
+if [ -n "$REPL_ID" ] && [ -n "$REPL_OWNER" ]; then
+    export PGDATABASE=${PGDATABASE}
+    export PGUSER=${PGUSER}
+    export PGPASSWORD=${PGPASSWORD}
+    export PGHOST=${PGHOST}
+    export PGPORT=${PGPORT}
+fi
 
 # Verificar que todas las variables necesarias estén definidas
-if [ -z "$DB_NAME" ] || [ -z "$DB_USER" ] || [ -z "$DB_PASSWORD" ] || [ -z "$DB_HOST" ] || [ -z "$DB_PORT" ]; then
+if [ -z "$PGDATABASE" ] || [ -z "$PGUSER" ] || [ -z "$PGPASSWORD" ] || [ -z "$PGHOST" ] || [ -z "$PGPORT" ]; then
     echo "❌ Error: Variables de entorno de base de datos no configuradas"
     exit 1
 fi
 
-# Crear usuario y base de datos
-echo "Configurando base de datos..."
-sudo -u postgres psql <<EOF
-DO \$\$
-BEGIN
-    IF NOT EXISTS (SELECT FROM pg_catalog.pg_user WHERE usename = '$DB_USER') THEN
-        CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';
-    END IF;
-END
-\$\$;
-
-DROP DATABASE IF EXISTS $DB_NAME;
-CREATE DATABASE $DB_NAME WITH OWNER $DB_USER;
-GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;
-\c $DB_NAME
-GRANT ALL ON ALL TABLES IN SCHEMA public TO $DB_USER;
-GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO $DB_USER;
-EOF
-
 # Crear archivo .env con las variables de entorno
+echo "Creando archivo .env..."
 cat > .env << EOF
-DATABASE_URL="postgresql://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME"
+DATABASE_URL="postgresql://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT}/${PGDATABASE}"
 SESSION_SECRET="$(openssl rand -hex 32)"
 FLASK_ENV="development"
 FLASK_APP="app.py"
