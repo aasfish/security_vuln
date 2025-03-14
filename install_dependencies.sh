@@ -3,10 +3,6 @@
 echo "=== Instalando SECTRACKER-PRO: Paso 1 - Dependencias ==="
 echo "Instalando dependencias de Python..."
 
-# Crear y activar entorno virtual
-python3 -m venv venv
-source venv/bin/activate
-
 # Instalar dependencias de Python
 pip install flask==3.0.3 \
     flask-login==0.6.3 \
