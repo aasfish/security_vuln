@@ -5,7 +5,6 @@ from flask import Flask, render_template, request, flash, redirect, url_for, sen
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from sqlalchemy import text
 from werkzeug.utils import secure_filename
-from parser import analizar_vulnerabilidades
 
 # Set up logging with more detail
 logging.basicConfig(
@@ -38,91 +37,66 @@ login_manager.login_view = 'login'
 login_manager.login_message = 'Por favor inicie sesión para acceder a esta página.'
 login_manager.login_message_category = 'warning'
 
-# Configuración para subida de archivos
-ALLOWED_EXTENSIONS = {'txt'}
-UPLOAD_FOLDER = '/tmp'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Limitar subidas a 16MB
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-def filtrar_resultados(sede=None, fecha_inicio=None, fecha_fin=None, riesgo=None):
-    """Filtra los resultados según los criterios especificados"""
-    query = Escaneo.query.join(Sede)
-
-    if sede and sede != 'Todas las sedes':
-        query = query.filter(Sede.nombre == sede)
-
-    if fecha_inicio:
-        fecha_inicio_obj = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
-        query = query.filter(Escaneo.fecha_escaneo >= fecha_inicio_obj)
-
-    if fecha_fin:
-        fecha_fin_obj = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
-        query = query.filter(Escaneo.fecha_escaneo <= fecha_fin_obj)
-
-    # Ordenar por fecha de escaneo descendente (más reciente primero)
-    escaneos = query.order_by(Escaneo.fecha_escaneo.desc()).all()
-    resultados = []
-
-    for escaneo in escaneos:
-        hosts_detalle = {}
-        for host in escaneo.hosts:
-            vulns = host.vulnerabilidades
-            if riesgo and riesgo != 'all':
-                vulns = [v for v in vulns if v.nivel_amenaza == riesgo]
-                if not vulns:
-                    continue
-
-            hosts_detalle[host.ip] = {
-                'nombre_host': host.nombre_host,
-                'vulnerabilidades': [{
-                    'nvt': v.nvt,
-                    'oid': v.oid,
-                    'nivel_amenaza': v.nivel_amenaza,
-                    'cvss': v.cvss,
-                    'puerto': v.puerto,
-                    'resumen': v.resumen,
-                    'impacto': v.impacto,
-                    'solucion': v.solucion,
-                    'metodo_deteccion': v.metodo_deteccion,
-                    'referencias': v.referencias,
-                    'estado': v.estado
-                } for v in vulns]
-            }
-
-        if hosts_detalle:
-            resultados.append({
-                'sede': escaneo.sede.nombre,
-                'fecha_escaneo': escaneo.fecha_escaneo.strftime('%Y-%m-%d'),
-                'escaneo_id': escaneo.id,
-                'hosts_detalle': hosts_detalle
-            })
-
-    return resultados
-
-
-def obtener_sedes():
-    """Obtiene la lista única de sedes activas que tienen escaneos"""
-    # Query para obtener solo las sedes que tienen escaneos
-    sql = text("""
-        SELECT DISTINCT s.nombre
-        FROM sedes s
-        JOIN escaneos e ON e.sede_id = s.id
-        WHERE s.activa = true
-        ORDER BY s.nombre
-    """)
-    result = db.session.execute(sql)
-    return [row[0] for row in result]
-
 @login_manager.user_loader
 def load_user(user_id):
     try:
-        return User.query.get(int(user_id))
+        user = User.query.get(int(user_id))
+        if user:
+            logger.debug(f"Successfully loaded user {user_id}")
+            return user
+        logger.warning(f"No user found with id {user_id}")
+        return None
     except Exception as e:
         logger.error(f"Error loading user {user_id}: {str(e)}")
         return None
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """Handle user login with detailed error logging"""
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+
+    try:
+        if request.method == 'POST':
+            username = request.form.get('username')
+            password = request.form.get('password')
+
+            if not username or not password:
+                logger.warning("Login attempt with missing credentials")
+                flash('Por favor ingrese usuario y contraseña', 'error')
+                return render_template('login.html')
+
+            logger.debug(f"Login attempt for user: {username}")
+            user = User.query.filter_by(username=username).first()
+
+            if not user:
+                logger.warning(f"Login attempt failed: User {username} not found")
+                flash('Usuario o contraseña incorrectos', 'error')
+                return render_template('login.html')
+
+            if not user.is_active:
+                logger.warning(f"Login attempt failed: User {username} is inactive")
+                flash('Esta cuenta está desactivada', 'error')
+                return render_template('login.html')
+
+            if user.check_password(password):
+                login_user(user)
+                user.last_login = datetime.utcnow()
+                db.session.commit()
+                logger.info(f"User {username} logged in successfully")
+                flash('Has iniciado sesión exitosamente', 'success')
+                return redirect(url_for('dashboard'))
+            else:
+                logger.warning(f"Login attempt failed: Invalid password for user {username}")
+                flash('Usuario o contraseña incorrectos', 'error')
+
+        return render_template('login.html')
+
+    except Exception as e:
+        logger.exception("Error en el proceso de login")
+        db.session.rollback()
+        flash('Error interno del servidor. Por favor, inténtelo de nuevo.', 'error')
+        return render_template('login.html'), 500
 
 def log_activity(action, details=None):
     """Log user activity"""
@@ -138,36 +112,6 @@ def log_activity(action, details=None):
     except Exception as e:
         logger.error(f"Error logging activity: {str(e)}")
         db.session.rollback()
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    """Handle user login with detailed error logging"""
-    try:
-        if request.method == 'POST':
-            username = request.form.get('username')
-            password = request.form.get('password')
-
-            logger.debug(f"Login attempt for user: {username}")
-
-            user = User.query.filter_by(username=username).first()
-
-            if user and user.check_password(password):
-                login_user(user)
-                user.last_login = datetime.utcnow()
-                db.session.commit()
-                log_activity('login', f'Usuario {username} inició sesión')
-                flash('Has iniciado sesión exitosamente', 'success')
-                return redirect(url_for('dashboard'))
-
-            flash('Usuario o contraseña incorrectos', 'error')
-            logger.warning(f"Failed login attempt for user: {username}")
-
-        return render_template('login.html')
-    except Exception as e:
-        logger.exception("Error en el proceso de login")
-        db.session.rollback()
-        flash('Error interno del servidor. Por favor, inténtelo de nuevo.', 'error')
-        return render_template('login.html'), 500
 
 @app.route('/logout')
 @login_required
@@ -245,6 +189,19 @@ def dashboard():
                          fecha_inicio=fecha_inicio,
                          fecha_fin=fecha_fin)
 
+def obtener_sedes():
+    """Obtiene la lista única de sedes activas que tienen escaneos"""
+    # Query para obtener solo las sedes que tienen escaneos
+    sql = text("""
+        SELECT DISTINCT s.nombre
+        FROM sedes s
+        JOIN escaneos e ON e.sede_id = s.id
+        WHERE s.activa = true
+        ORDER BY s.nombre
+    """)
+    result = db.session.execute(sql)
+    return [row[0] for row in result]
+
 @app.route('/configuracion')
 @login_required
 def configuracion():
@@ -305,6 +262,61 @@ def hosts():
                             fecha_inicio=fecha_inicio,
                             fecha_fin=fecha_fin,
                             riesgo=riesgo)
+
+def filtrar_resultados(sede=None, fecha_inicio=None, fecha_fin=None, riesgo=None):
+    """Filtra los resultados según los criterios especificados"""
+    query = Escaneo.query.join(Sede)
+
+    if sede and sede != 'Todas las sedes':
+        query = query.filter(Sede.nombre == sede)
+
+    if fecha_inicio:
+        fecha_inicio_obj = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+        query = query.filter(Escaneo.fecha_escaneo >= fecha_inicio_obj)
+
+    if fecha_fin:
+        fecha_fin_obj = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+        query = query.filter(Escaneo.fecha_escaneo <= fecha_fin_obj)
+
+    # Ordenar por fecha de escaneo descendente (más reciente primero)
+    escaneos = query.order_by(Escaneo.fecha_escaneo.desc()).all()
+    resultados = []
+
+    for escaneo in escaneos:
+        hosts_detalle = {}
+        for host in escaneo.hosts:
+            vulns = host.vulnerabilidades
+            if riesgo and riesgo != 'all':
+                vulns = [v for v in vulns if v.nivel_amenaza == riesgo]
+                if not vulns:
+                    continue
+
+            hosts_detalle[host.ip] = {
+                'nombre_host': host.nombre_host,
+                'vulnerabilidades': [{
+                    'nvt': v.nvt,
+                    'oid': v.oid,
+                    'nivel_amenaza': v.nivel_amenaza,
+                    'cvss': v.cvss,
+                    'puerto': v.puerto,
+                    'resumen': v.resumen,
+                    'impacto': v.impacto,
+                    'solucion': v.solucion,
+                    'metodo_deteccion': v.metodo_deteccion,
+                    'referencias': v.referencias,
+                    'estado': v.estado
+                } for v in vulns]
+            }
+
+        if hosts_detalle:
+            resultados.append({
+                'sede': escaneo.sede.nombre,
+                'fecha_escaneo': escaneo.fecha_escaneo.strftime('%Y-%m-%d'),
+                'escaneo_id': escaneo.id,
+                'hosts_detalle': hosts_detalle
+            })
+
+    return resultados
 
 @app.route('/vulnerabilidades')
 @login_required
@@ -1154,6 +1166,14 @@ def eliminar_usuario(user_id):
         db.session.rollback()
         flash('Error al eliminar el usuario', 'error')
         return redirect(url_for('configuracion'))
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+ALLOWED_EXTENSIONS = {'txt'}
+UPLOAD_FOLDER = '/tmp'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Limitar subidas a 16MB
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

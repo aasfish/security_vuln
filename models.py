@@ -10,17 +10,31 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(64), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(256))
-    is_admin = db.Column(db.Boolean, default=False, nullable=False)  # Make it required
+    is_admin = db.Column(db.Boolean, default=False, nullable=False)
     role = db.Column(db.String(20), default='user')
-    is_active = db.Column(db.Boolean, default=True)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)  # Cambiado a nullable=False y quitada la propiedad
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_login = db.Column(db.DateTime)
 
     def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
+        """Generate password hash using werkzeug.security"""
+        if password:
+            self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
+        """Check password against stored hash"""
+        if self.password_hash and password:
+            return check_password_hash(self.password_hash, password)
+        return False
+
+    def get_id(self):
+        """Required for Flask-Login"""
+        return str(self.id)
+
+    @property
+    def is_authenticated(self):
+        """Required for Flask-Login"""
+        return True
 
     def __repr__(self):
         return f'<User {self.username}>'
