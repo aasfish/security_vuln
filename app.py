@@ -1,9 +1,39 @@
 import os
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import DeclarativeBase
+
+class Base(DeclarativeBase):
+    pass
+
+db = SQLAlchemy(model_class=Base)
+# create the app
+app = Flask(__name__)
+app.secret_key = os.environ.get("SESSION_SECRET")
+
+# configure the database, relative to the app instance folder
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_recycle": 300,
+    "pool_pre_ping": True,
+    "connect_args": {
+        "port": 5433
+    }
+}
+
+# initialize the app with the extension
+db.init_app(app)
+
+with app.app_context():
+    # Make sure to import the models here or their tables won't be created
+    import models  # noqa: F401
+    db.create_all()
+
 from flask import Flask, render_template, request, flash, redirect, url_for, send_from_directory, jsonify, send_file
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from sqlalchemy import text
 from werkzeug.utils import secure_filename
-from database import db, init_db
+from database import init_db
 from models import Sede, Escaneo, Host, Vulnerabilidad, User, ActivityLog
 from exportar import exportar_a_csv, exportar_a_pdf
 import logging
@@ -13,19 +43,6 @@ from datetime import datetime
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-# create the app
-app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET")
-
-# Database configuration
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-    "pool_recycle": 300,
-    "pool_pre_ping": True,
-    "connect_args": {
-        "port": 5433
-    }
-}
 
 # Initialize Flask-Login
 login_manager = LoginManager()
@@ -75,12 +92,6 @@ def logout():
     logout_user()
     flash('Has cerrado sesión exitosamente', 'success')
     return redirect(url_for('login'))
-
-
-# initialize the database
-init_db(app)
-
-# configure the database, relative to the app instance folder
 
 
 # Configuración para subida de archivos
@@ -753,7 +764,7 @@ def exportar(tipo, formato):
         else:  # vulnerabilidades
             query = Vulnerabilidad.query.join(Host).join(Escaneo).join(Sede)
             if sede and sede != 'Todas las sedes':
-                query = query.filter(Sede.nombre == sede)
+                query = query.filter(Sede.nombre ==sede)
             if fecha_inicio:
                 query = query.filter(Escaneo.fecha_escaneo >= datetime.strptime(fecha_inicio, '%Y-%m-%d').date())
             if fecha_fin:
