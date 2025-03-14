@@ -22,7 +22,7 @@ pip install flask==3.0.3 \
     psycopg2-binary==2.9.10 \
     sqlalchemy==2.0.39 \
     email-validator==2.2.0 \
-    flask-wtf==1.2.2 \
+    flask-wtf==1.2.1 \
     pandas==2.2.3 \
     reportlab==4.3.1 \
     matplotlib==3.10.1 \
