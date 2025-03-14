@@ -765,7 +765,7 @@ def editar_sede(sede_id):
             return redirect(url_for('configuracion'))
 
         sede.nombre = nombre
-        sede.descripcion = descripcion
+        sede.descripcion =descripcion = descripcion
         sede.activa = activa
 
         db.session.commit()
@@ -904,6 +904,30 @@ def toggle_sede(sede_id):
         db.session.rollback()
         flash('Error al cambiar el estado de la sede', 'error')
     return redirect(url_for('configuracion'))
+
+@app.route('/fechas_por_sede/<sede>')
+def fechas_por_sede(sede):
+    """Obtiene las fechas disponibles para una sede específica"""
+    try:
+        query = db.session.query(Escaneo.fecha_escaneo)\
+            .join(Sede)\
+            .filter(Sede.activa == True)
+
+        if sede != 'Todas las sedes':
+            query = query.filter(Sede.nombre == sede)
+
+        # Ordenar por fecha descendente y obtener fechas únicas
+        fechas = query.order_by(Escaneo.fecha_escaneo.desc())\
+            .distinct()\
+            .all()
+
+        # Formatear las fechas como strings YYYY-MM-DD
+        fechas_formateadas = [fecha[0].strftime('%Y-%m-%d') for fecha in fechas]
+
+        return jsonify(fechas_formateadas)
+    except Exception as e:
+        logger.error(f"Error al obtener fechas por sede: {str(e)}", exc_info=True)
+        return jsonify([])
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
