@@ -27,6 +27,8 @@ def init_admin():
                 is_active=True,
                 created_at=datetime.utcnow()
             )
+
+            # Establecer la contraseña
             admin.set_password('SecTracker2024!')
 
             # Guardar en la base de datos
