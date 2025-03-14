@@ -1,3 +1,4 @@
+import os
 from flask import Flask, render_template, request, flash, redirect, url_for, send_from_directory, jsonify, send_file
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from sqlalchemy import text
@@ -7,7 +8,6 @@ from database import db, init_db
 from models import Sede, Escaneo, Host, Vulnerabilidad, User, ActivityLog # Added User and ActivityLog
 from exportar import exportar_a_csv, exportar_a_pdf
 import logging
-import os
 from datetime import datetime
 from flask_talisman import Talisman
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -19,14 +19,22 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET")
 
-# Force HTTPS
-Talisman(app, force_https=True, content_security_policy={
-    'default-src': "'self'",
-    'script-src': ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "cdn.replit.com"],
-    'style-src': ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "cdn.replit.com"],
-    'img-src': ["'self'", "data:", "cdn.jsdelivr.net", "cdn.replit.com"],
-    'font-src': ["'self'", "cdn.jsdelivr.net", "cdn.replit.com"]
-})
+# SSL context
+ssl_context = (
+    '/app/certs/server.crt',  # Certificado
+    '/app/certs/server.key'   # Clave privada
+)
+
+# Force HTTPS and set secure headers
+Talisman(app, 
+    force_https=True,
+    content_security_policy={
+        'default-src': "'self'",
+        'script-src': ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "cdn.replit.com"],
+        'style-src': ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "cdn.replit.com"],
+        'img-src': ["'self'", "data:", "cdn.jsdelivr.net", "cdn.replit.com"],
+        'font-src': ["'self'", "cdn.jsdelivr.net", "cdn.replit.com"]
+    })
 
 # Support for reverse proxy headers
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
@@ -1018,4 +1026,4 @@ def fechas_por_sede(sede):
         return jsonify([])
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True, ssl_context=ssl_context)
