@@ -31,11 +31,6 @@ class User(UserMixin, db.Model):
         """Required for Flask-Login"""
         return str(self.id)
 
-    @property
-    def is_authenticated(self):
-        """Required for Flask-Login"""
-        return True
-
     def __repr__(self):
         return f'<User {self.username}>'
 

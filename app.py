@@ -37,6 +37,39 @@ login_manager.login_view = 'login'
 login_manager.login_message = 'Por favor inicie sesión para acceder a esta página.'
 login_manager.login_message_category = 'warning'
 
+def create_default_admin():
+    """Create default admin user if it doesn't exist"""
+    try:
+        # Importante: Verificar si ya existe el usuario admin
+        admin = User.query.filter_by(username='admin').first()
+        if not admin:
+            logger.info("Creating default admin user...")
+            admin = User(
+                username='admin',
+                email='admin@sectracker.local',
+                is_admin=True,
+                role='admin',
+                is_active=True,
+                created_at=datetime.utcnow()
+            )
+            admin.set_password('SecTracker2024!')
+            db.session.add(admin)
+            db.session.commit()
+            logger.info("✅ Default admin user created successfully")
+            logger.info("Username: admin")
+            logger.info("Password: SecTracker2024!")
+        else:
+            logger.info("Default admin user already exists")
+    except Exception as e:
+        logger.error(f"Error creating default admin user: {str(e)}")
+        db.session.rollback()
+
+# Initialize database and create admin user
+with app.app_context():
+    db.create_all()
+    create_default_admin()
+
+
 @login_manager.user_loader
 def load_user(user_id):
     try:
@@ -1178,32 +1211,11 @@ UPLOAD_FOLDER = '/tmp'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Limitar subidas a 16MB
 
-def create_default_admin():
-    """Create default admin user if it doesn't exist"""
-    try:
-        with app.app_context():
-            admin = User.query.filter_by(username='admin').first()
-            if not admin:
-                admin = User(
-                    username='admin',
-                    email='admin@sectracker.local',
-                    is_admin=True,
-                    role='admin',
-                    is_active=True,
-                    created_at=datetime.utcnow()
-                )
-                admin.set_password('SecTracker2024!')
-                db.session.add(admin)
-                db.session.commit()
-                logger.info("Default admin user created successfully")
-                logger.info("Username: admin")
-                logger.info("Password: SecTracker2024!")
-    except Exception as e:
-        logger.error(f"Error creating default admin user: {str(e)}")
-        db.session.rollback()
+def analizar_vulnerabilidades(filepath):
+    # Aquí debe ir la lógica para analizar el archivo y extraer las vulnerabilidades
+    # ... (implementación del análisis del archivo) ...
+    pass # Placeholder: Replace with actual vulnerability analysis logic
 
-# Create default admin user during app initialization
-create_default_admin()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
