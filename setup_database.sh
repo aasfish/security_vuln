@@ -24,8 +24,17 @@ else
 fi
 
 # Iniciar PostgreSQL si no está corriendo
-sudo systemctl start postgresql
-sudo systemctl enable postgresql
+if ! pg_isready > /dev/null 2>&1; then
+    echo "Iniciando PostgreSQL..."
+    sudo service postgresql start
+    sleep 5  # Dar tiempo a que PostgreSQL inicie completamente
+fi
+
+# Verificar si PostgreSQL está corriendo
+if ! pg_isready > /dev/null 2>&1; then
+    echo "❌ Error: No se pudo iniciar PostgreSQL"
+    exit 1
+fi
 
 # Usar las variables de entorno de Replit si están disponibles
 DB_NAME=${PGDATABASE:-"sectracker"}
@@ -35,8 +44,17 @@ DB_HOST=${PGHOST:-"localhost"}
 DB_PORT=${PGPORT:-"5432"}
 
 # Crear usuario y base de datos
+echo "Configurando base de datos..."
 sudo -u postgres psql <<EOF
-CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';
+DO \$\$
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_catalog.pg_user WHERE usename = '$DB_USER') THEN
+        CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';
+    END IF;
+END
+\$\$;
+
+DROP DATABASE IF EXISTS $DB_NAME;
 CREATE DATABASE $DB_NAME WITH OWNER $DB_USER;
 GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;
 \c $DB_NAME
