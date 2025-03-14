@@ -1115,5 +1115,40 @@ def toggle_usuario(user_id):
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/eliminar_usuario/<int:user_id>', methods=['POST'])
+@login_required
+def eliminar_usuario(user_id):
+    """Elimina un usuario del sistema"""
+    try:
+        usuario = User.query.get_or_404(user_id)
+
+        # No permitir eliminar al usuario admin
+        if usuario.username == 'admin':
+            flash('No se puede eliminar el usuario administrador', 'error')
+            return redirect(url_for('configuracion'))
+
+        # Guardar el username para el log
+        username = usuario.username
+
+        # Eliminar el usuario
+        db.session.delete(usuario)
+        db.session.commit()
+
+        log_activity('delete_user', f'Eliminó el usuario {username}')
+        flash('Usuario eliminado exitosamente', 'success')
+
+        # Si el usuario eliminó su propia cuenta, cerrar sesión
+        if current_user.id == user_id:
+            logout_user()
+            return redirect(url_for('login'))
+
+        return redirect(url_for('configuracion'))
+
+    except Exception as e:
+        logger.error(f"Error al eliminar usuario: {str(e)}", exc_info=True)
+        db.session.rollback()
+        flash('Error al eliminar el usuario', 'error')
+        return redirect(url_for('configuracion'))
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
