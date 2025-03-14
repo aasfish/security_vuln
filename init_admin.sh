@@ -7,6 +7,16 @@ echo
 echo "Creando usuario administrador inicial..."
 echo
 
+# Cargar variables de entorno
+if [ -f .env ]; then
+    set -a
+    source .env
+    set +a
+else
+    echo "❌ Error: Archivo .env no encontrado"
+    exit 1
+fi
+
 # Ejecutar el script de Python para crear el admin
 python init_admin.py
 
