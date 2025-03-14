@@ -15,10 +15,7 @@ app.secret_key = os.environ.get("SESSION_SECRET")
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
-    "pool_pre_ping": True,
-    "connect_args": {
-        "port": 5433
-    }
+    "pool_pre_ping": True
 }
 
 # initialize the app with the extension
