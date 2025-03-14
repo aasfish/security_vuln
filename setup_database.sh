@@ -60,9 +60,8 @@ EOF
 echo "✅ Base de datos configurada correctamente"
 echo "Variables de entorno creadas en archivo .env"
 
-# Activar el entorno virtual y crear las tablas
+# Crear las tablas usando Python directamente sin activar el entorno virtual
 echo "Creando tablas de la base de datos..."
-source venv/bin/activate
 python3 create_tables.py
 
 if [ $? -ne 0 ]; then
