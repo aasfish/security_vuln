@@ -775,11 +775,13 @@ def exportar(tipo, formato):
 
         if formato not in ['csv', 'pdf']:
             flash('Formato de exportación no válido', 'error')
-            return redirect(url_for('dashboard'))# Obtener datos filtrados
+            return redirect(url_for('dashboard'))
+
+        # Obtener datos filtrados
         if tipo == 'hosts':
             resultados = filtrar_resultados(sede, fecha_inicio, fecha_fin, riesgo)
             if not resultados:
-                flash('No hay datosdisponibles para exportar', 'warning')
+                flash('No hay datos disponibles para exportar', 'warning')
                 return redirect(url_for('hosts'))
             if formato == 'csv':
                 return exportar_a_csv(resultados, tipo_reporte='hosts')
@@ -788,9 +790,9 @@ def exportar(tipo, formato):
         else:  # vulnerabilidades
             query = Vulnerabilidad.query.join(Host).join(Escaneo).join(Sede)
             if sede and sede != 'Todas las sedes':
-                query = query.filter(Sede.nombre ==sede)
+                query = query.filter(Sede.nombre == sede)
             if fecha_inicio:
-                query =query.filter(Escaneo.fecha_escaneo >= datetime.strptime(fecha_inicio, '%Y-%m-%d').date())
+                query = query.filter(Escaneo.fecha_escaneo >= datetime.strptime(fecha_inicio, '%Y-%m-%d').date())
             if fecha_fin:
                 query = query.filter(Escaneo.fecha_escaneo <= datetime.strptime(fecha_fin, '%Y-%m-%d').date())
             if riesgo and riesgo != 'all':
@@ -798,15 +800,16 @@ def exportar(tipo, formato):
 
             vulnerabilidades = query.all()
             if not vulnerabilidades:
-                flash('No haydatos disponibles para exportar', 'warning')
+                flash('No hay datos disponibles para exportar', 'warning')
                 return redirect(url_for('vulnerabilidades'))
 
-            if formato== 'csv':                return exportar_a_csv(vulnerabilidades, tipo_reporte='vulnerabilidades')
+            if formato == 'csv':
+                return exportar_a_csv(vulnerabilidades, tipo_reporte='vulnerabilidades')
             else:  # pdf
                 return exportar_a_pdf(vulnerabilidades, tipo_reporte='vulnerabilidades')
 
     except Exception as e:
-        logger.error(f"Error al exportar datos: {str(e)}", exc_info=True)
+        logger.error(f"Error al exportar datos: {str(e)}")
         flash('Error al exportar los datos', 'error')
         return redirect(url_for('dashboard'))
 
@@ -1174,6 +1177,33 @@ ALLOWED_EXTENSIONS = {'txt'}
 UPLOAD_FOLDER = '/tmp'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Limitar subidas a 16MB
+
+def create_default_admin():
+    """Create default admin user if it doesn't exist"""
+    try:
+        with app.app_context():
+            admin = User.query.filter_by(username='admin').first()
+            if not admin:
+                admin = User(
+                    username='admin',
+                    email='admin@sectracker.local',
+                    is_admin=True,
+                    role='admin',
+                    is_active=True,
+                    created_at=datetime.utcnow()
+                )
+                admin.set_password('SecTracker2024!')
+                db.session.add(admin)
+                db.session.commit()
+                logger.info("Default admin user created successfully")
+                logger.info("Username: admin")
+                logger.info("Password: SecTracker2024!")
+    except Exception as e:
+        logger.error(f"Error creating default admin user: {str(e)}")
+        db.session.rollback()
+
+# Create default admin user during app initialization
+create_default_admin()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
