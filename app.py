@@ -1,9 +1,10 @@
 from flask import Flask, render_template, request, flash, redirect, url_for, send_from_directory, jsonify, send_file
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from sqlalchemy import text
 from werkzeug.utils import secure_filename
 from parser import analizar_vulnerabilidades
 from database import db, init_db
-from models import Sede, Escaneo, Host, Vulnerabilidad
+from models import Sede, Escaneo, Host, Vulnerabilidad, User, ActivityLog # Added User and ActivityLog
 from exportar import exportar_a_csv, exportar_a_pdf
 import logging
 import os
@@ -15,6 +16,56 @@ logger = logging.getLogger(__name__)
 # create the app
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET")
+
+# Initialize Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+login_manager.login_message = 'Por favor inicie sesión para acceder a esta página.'
+login_manager.login_message_category = 'warning'
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+def log_activity(action, details=None):
+    """Log user activity"""
+    if current_user.is_authenticated:
+        activity = ActivityLog(
+            user_id=current_user.id,
+            action=action,
+            details=details
+        )
+        db.session.add(activity)
+        db.session.commit()
+
+# Authentication routes
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        user = User.query.filter_by(username=username).first()
+
+        if user and user.check_password(password):
+            login_user(user)
+            user.last_login = datetime.utcnow()
+            db.session.commit()
+            log_activity('login', f'Usuario {username} inició sesión')
+            flash('Has iniciado sesión exitosamente', 'success')
+            return redirect(url_for('dashboard'))
+
+        flash('Usuario o contraseña incorrectos', 'error')
+    return render_template('login.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    log_activity('logout', f'Usuario {current_user.username} cerró sesión')
+    logout_user()
+    flash('Has cerrado sesión exitosamente', 'success')
+    return redirect(url_for('login'))
+
 
 # initialize the database
 init_db(app)
@@ -103,10 +154,12 @@ def obtener_sedes():
     return [row[0] for row in result]
 
 @app.route('/')
+@login_required
 def index():
     return redirect(url_for('dashboard'))
 
 @app.route('/configuracion')
+@login_required
 def configuracion():
     """Vista de configuración que incluye la gestión de sedes y escaneos"""
     sedes = Sede.query.order_by(Sede.nombre).all()
@@ -135,6 +188,7 @@ def configuracion():
                          escaneos_por_sede=escaneos_por_sede)
 
 @app.route('/dashboard')
+@login_required
 def dashboard():
     """Vista del dashboard principal"""
     sede = request.args.get('sede')
@@ -191,6 +245,7 @@ def dashboard():
                          fecha_fin=fecha_fin)
 
 @app.route('/hosts')
+@login_required
 def hosts():
     sede = request.args.get('sede')
     fecha_inicio = request.args.get('fecha_inicio')
@@ -220,6 +275,7 @@ def hosts():
                             riesgo=riesgo)
 
 @app.route('/vulnerabilidades')
+@login_required
 def vulnerabilidades():
     try:
         sede = request.args.get('sede')
@@ -269,6 +325,7 @@ def vulnerabilidades():
                             estado=estado if 'estado' in locals() else None)
 
 @app.route('/comparacion')
+@login_required
 def comparacion():
     """Vista de comparación de escaneos"""
     try:
@@ -411,10 +468,12 @@ def comparacion():
         return redirect(url_for('dashboard'))
 
 @app.route('/static/<path:filename>')
+@login_required
 def serve_static(filename):
     return send_from_directory(app.static_folder, filename)
 
 @app.route('/tendencias')
+@login_required
 def obtener_tendencias():
     """Endpoint para obtener datos de tendencias de vulnerabilidades"""
     sede = request.args.get('sede')
@@ -478,6 +537,7 @@ def obtener_tendencias():
     return jsonify(list(tendencias.values()))
 
 @app.route('/actualizar_estado', methods=['POST'])
+@login_required
 def actualizar_estado():
     data = request.get_json()
     ip = data.get('ip')
@@ -499,6 +559,7 @@ def actualizar_estado():
             if vulnerabilidad:
                 vulnerabilidad.estado = nuevo_estado
                 db.session.commit()
+                log_activity('update_vulnerability_status', f'Actualizó el estado de la vulnerabilidad {oid} a {nuevo_estado}')
                 return jsonify({'success': True})
 
         return jsonify({'success': False, 'error': 'Vulnerabilidad no encontrada'}), 404
@@ -508,6 +569,7 @@ def actualizar_estado():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/eliminar_escaneo/<int:escaneo_id>', methods=['POST'])
+@login_required
 def eliminar_escaneo(escaneo_id):
     """Elimina un escaneo y sus datos relacionados"""
     try:
@@ -517,7 +579,7 @@ def eliminar_escaneo(escaneo_id):
 
         db.session.delete(escaneo)
         db.session.commit()
-
+        log_activity('delete_scan', f'Eliminó el escaneo {escaneo_id} de la sede {sede_nombre}')
         flash(f'Escaneo de {sede_nombre} del {fecha} eliminado exitosamente', 'success')
     except Exception as e:
         logger.error(f"Error al eliminar escaneo: {str(e)}", exc_info=True)
@@ -526,6 +588,7 @@ def eliminar_escaneo(escaneo_id):
     return redirect(url_for('configuracion'))
 
 @app.route('/informes')
+@login_required
 def informes():
     """Vista de informes que permite generar diferentes tipos de reportes"""
     sede = request.args.get('sede')
@@ -563,6 +626,7 @@ def informes():
                          fecha_fin=fecha_fin)
 
 @app.route('/generar_informe/<tipo>/<formato>')
+@login_required
 def generar_informe(tipo, formato):
     """
     Genera un informe en el formato especificado
@@ -649,6 +713,7 @@ def generar_informe(tipo, formato):
 
 
 @app.route('/exportar/<tipo>/<formato>')
+@login_required
 def exportar(tipo, formato):
     """
     Maneja la exportación de datos en diferentes formatos
@@ -707,6 +772,7 @@ def exportar(tipo, formato):
         return redirect(url_for('dashboard'))
 
 @app.route('/crear_sede', methods=['POST'])
+@login_required
 def crear_sede():
     """Crea una nueva sede"""
     try:
@@ -731,7 +797,7 @@ def crear_sede():
 
         db.session.add(nueva_sede)
         db.session.commit()
-
+        log_activity('create_sede', f'Creó la sede {nombre}')
         flash('Sede creada exitosamente', 'success')
 
     except Exception as e:
@@ -742,6 +808,7 @@ def crear_sede():
     return redirect(url_for('configuracion'))
 
 @app.route('/editar_sede/<int:sede_id>', methods=['POST'])
+@login_required
 def editar_sede(sede_id):
     """Edita una sede existente"""
     try:
@@ -765,10 +832,11 @@ def editar_sede(sede_id):
             return redirect(url_for('configuracion'))
 
         sede.nombre = nombre
-        sede.descripcion =descripcion = descripcion
+        sede.descripcion = descripcion
         sede.activa = activa
 
         db.session.commit()
+        log_activity('update_sede', f'Actualizó la sede {nombre}')
         flash('Sede actualizada exitosamente', 'success')
 
     except Exception as e:
@@ -779,6 +847,7 @@ def editar_sede(sede_id):
     return redirect(url_for('configuracion'))
 
 @app.route('/eliminar_sede/<int:sede_id>', methods=['POST'])
+@login_required
 def eliminar_sede(sede_id):
     """Elimina una sede si no tiene escaneos asociados"""
     try:
@@ -791,6 +860,7 @@ def eliminar_sede(sede_id):
 
         db.session.delete(sede)
         db.session.commit()
+        log_activity('delete_sede', f'Eliminó la sede {sede.nombre}')
         flash('Sede eliminada exitosamente', 'success')
 
     except Exception as e:
@@ -801,6 +871,7 @@ def eliminar_sede(sede_id):
     return redirect(url_for('configuracion'))
 
 @app.route('/subir_reporte', methods=['POST'])
+@login_required
 def subir_reporte():
     """Maneja la subida de un nuevo reporte de vulnerabilidades"""
     try:
@@ -878,6 +949,7 @@ def subir_reporte():
                 db.session.add(nueva_vuln)
 
         db.session.commit()
+        log_activity('upload_report', f'Subió un reporte y creó {len(resultados.get("hosts_detalle", {}))} nuevos registros')
         logger.info("Reporte procesado exitosamente")
         flash('Reporte procesado exitosamente', 'success')
 
@@ -892,12 +964,14 @@ def subir_reporte():
         return redirect(url_for('configuracion'))
 
 @app.route('/toggle_sede/<int:sede_id>', methods=['POST'])
+@login_required
 def toggle_sede(sede_id):
     """Activa o desactiva una sede"""
     try:
         sede = Sede.query.get_or_404(sede_id)
         sede.activa = not sede.activa
         db.session.commit()
+        log_activity('toggle_sede', f'Cambió el estado de la sede {sede.nombre} a {"Activa" if sede.activa else "Inactiva"}')
         flash(f'Sede {sede.nombre} {"activada" if sede.activa else "desactivada"} exitosamente', 'success')
     except Exception as e:
         logger.error(f"Error al cambiar estado de sede: {str(e)}", exc_info=True)
@@ -906,6 +980,7 @@ def toggle_sede(sede_id):
     return redirect(url_for('configuracion'))
 
 @app.route('/fechas_por_sede/<sede>')
+@login_required
 def fechas_por_sede(sede):
     """Obtiene las fechas disponibles para una sede específica"""
     try:
