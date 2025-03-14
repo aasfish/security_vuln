@@ -4,8 +4,12 @@ import time
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 
-# Configurar logging
+# Configurar logging con codificación UTF-8
 logger = logging.getLogger(__name__)
+handler = logging.StreamHandler()
+handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s', '%Y-%m-%d %H:%M:%S'))
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)
 
 class Base(DeclarativeBase):
     pass
