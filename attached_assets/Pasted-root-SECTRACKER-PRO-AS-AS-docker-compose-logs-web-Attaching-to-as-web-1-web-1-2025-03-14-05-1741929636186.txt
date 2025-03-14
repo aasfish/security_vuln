@@ -1,0 +1,1245 @@
+root@SECTRACKER-PRO:~/AS/AS# docker-compose logs web
+Attaching to as_web_1
+web_1  | [2025-03-14 05:15:13 +0000] [1] [INFO] Starting gunicorn 23.0.0
+web_1  | [2025-03-14 05:15:13 +0000] [1] [INFO] Listening at: http://0.0.0.0:5000 (1)
+web_1  | [2025-03-14 05:15:13 +0000] [1] [INFO] Using worker: sync
+web_1  | [2025-03-14 05:15:13 +0000] [7] [INFO] Booting worker with pid: 7
+web_1  | [2025-03-14 05:15:13 +0000] [8] [INFO] Booting worker with pid: 8
+web_1  | [2025-03-14 05:15:13 +0000] [9] [INFO] Booting worker with pid: 9
+web_1  | [2025-03-14 05:15:13 +0000] [10] [INFO] Booting worker with pid: 10
+web_1  | 2025-03-14 05:15:13,837 - database - ERROR - Error initializing database: (psycopg2.OperationalError) connection to server at "db" (172.20.0.2), port 5432 failed: Connection refused
+web_1  |        Is the server running on that host and accepting TCP/IP connections?
+web_1  |
+web_1  | (Background on this error at: https://sqlalche.me/e/20/e3q8)
+web_1  | Traceback (most recent call last):
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+web_1  |     self._dbapi_connection = engine.raw_connection()
+web_1  |                              ^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3298, in raw_connection
+web_1  |     return self.pool.connect()
+web_1  |            ^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+web_1  |     return _ConnectionFairy._checkout(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1264, in _checkout
+web_1  |     fairy = _ConnectionRecord.checkout(pool)
+web_1  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 713, in checkout
+web_1  |     rec = pool._do_get()
+web_1  |           ^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+web_1  |     with util.safe_reraise():
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+web_1  |     raise exc_value.with_traceback(exc_tb)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+web_1  |     return self._create_connection()
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+web_1  |     return _ConnectionRecord(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 675, in __init__
+web_1  |     self.__connect()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 901, in __connect
+web_1  |     with util.safe_reraise():
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+web_1  |     raise exc_value.with_traceback(exc_tb)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 897, in __connect
+web_1  |     self.dbapi_connection = connection = pool._invoke_creator(self)
+web_1  |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 646, in connect
+web_1  |     return dialect.connect(*cargs, **cparams)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 622, in connect
+web_1  |     return self.loaded_dbapi.connect(*cargs, **cparams)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/psycopg2/__init__.py", line 122, in connect
+web_1  |     conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  | psycopg2.OperationalError: connection to server at "db" (172.20.0.2), port 5432 failed: Connection refused
+web_1  |        Is the server running on that host and accepting TCP/IP connections?
+web_1  |
+web_1  |
+web_1  | The above exception was the direct cause of the following exception:
+web_1  |
+web_1  | Traceback (most recent call last):
+web_1  |   File "/app/database.py", line 32, in init_db
+web_1  |     db.create_all()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/flask_sqlalchemy/extension.py", line 900, in create_all
+web_1  |     self._call_for_binds(bind_key, "create_all")
+web_1  |   File "/usr/local/lib/python3.11/site-packages/flask_sqlalchemy/extension.py", line 881, in _call_for_binds
+web_1  |     getattr(metadata, op_name)(bind=engine)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/schema.py", line 5907, in create_all
+web_1  |     bind._run_ddl_visitor(
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3248, in _run_ddl_visitor
+web_1  |     with self.begin() as conn:
+web_1  |   File "/usr/local/lib/python3.11/contextlib.py", line 137, in __enter__
+web_1  |     return next(self.gen)
+web_1  |            ^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3238, in begin
+web_1  |     with self.connect() as conn:
+web_1  |          ^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3274, in connect
+web_1  |     return self._connection_cls(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 148, in __init__
+web_1  |     Connection._handle_dbapi_exception_noconnection(
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2439, in _handle_dbapi_exception_noconnection
+web_1  |     raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+web_1  |     self._dbapi_connection = engine.raw_connection()
+web_1  |                              ^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3298, in raw_connection
+web_1  |     return self.pool.connect()
+web_1  |            ^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+web_1  |     return _ConnectionFairy._checkout(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1264, in _checkout
+web_1  |     fairy = _ConnectionRecord.checkout(pool)
+web_1  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 713, in checkout
+web_1  |     rec = pool._do_get()
+web_1  |           ^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+web_1  |     with util.safe_reraise():
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+web_1  |     raise exc_value.with_traceback(exc_tb)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+web_1  |     return self._create_connection()
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+web_1  |     return _ConnectionRecord(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 675, in __init__
+web_1  |     self.__connect()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 901, in __connect
+web_1  |     with util.safe_reraise():
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+web_1  |     raise exc_value.with_traceback(exc_tb)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 897, in __connect
+web_1  |     self.dbapi_connection = connection = pool._invoke_creator(self)
+web_1  |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 646, in connect
+web_1  |     return dialect.connect(*cargs, **cparams)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 622, in connect
+web_1  |     return self.loaded_dbapi.connect(*cargs, **cparams)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/psycopg2/__init__.py", line 122, in connect
+web_1  |     conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  | sqlalchemy.exc.OperationalError: (psycopg2.OperationalError) connection to server at "db" (172.20.0.2), port 5432 failed: Connection refused
+web_1  |        Is the server running on that host and accepting TCP/IP connections?
+web_1  |
+web_1  | (Background on this error at: https://sqlalche.me/e/20/e3q8)
+web_1  | [2025-03-14 05:15:13 +0000] [7] [ERROR] Exception in worker process
+web_1  | Traceback (most recent call last):
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+web_1  |     self._dbapi_connection = engine.raw_connection()
+web_1  |                              ^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3298, in raw_connection
+web_1  |     return self.pool.connect()
+web_1  |            ^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+web_1  |     return _ConnectionFairy._checkout(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1264, in _checkout
+web_1  |     fairy = _ConnectionRecord.checkout(pool)
+web_1  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 713, in checkout
+web_1  |     rec = pool._do_get()
+web_1  |           ^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+web_1  |     with util.safe_reraise():
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+web_1  |     raise exc_value.with_traceback(exc_tb)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+web_1  |     return self._create_connection()
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+web_1  |     return _ConnectionRecord(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 675, in __init__
+web_1  |     self.__connect()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 901, in __connect
+web_1  |     with util.safe_reraise():
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+web_1  |     raise exc_value.with_traceback(exc_tb)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 897, in __connect
+web_1  |     self.dbapi_connection = connection = pool._invoke_creator(self)
+web_1  |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 646, in connect
+web_1  |     return dialect.connect(*cargs, **cparams)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 622, in connect
+web_1  |     return self.loaded_dbapi.connect(*cargs, **cparams)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/psycopg2/__init__.py", line 122, in connect
+web_1  |     conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  | psycopg2.OperationalError: connection to server at "db" (172.20.0.2), port 5432 failed: Connection refused
+web_1  |        Is the server running on that host and accepting TCP/IP connections?
+web_1  |
+web_1  |
+web_1  | The above exception was the direct cause of the following exception:
+web_1  |
+web_1  | Traceback (most recent call last):
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/arbiter.py", line 608, in spawn_worker
+web_1  |     worker.init_process()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/workers/base.py", line 135, in init_process
+web_1  |     self.load_wsgi()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/workers/base.py", line 147, in load_wsgi
+web_1  |     self.wsgi = self.app.wsgi()
+web_1  |                 ^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/app/base.py", line 66, in wsgi
+web_1  |     self.callable = self.load()
+web_1  |                     ^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+web_1  |     return self.load_wsgiapp()
+web_1  |            ^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+web_1  |     return util.import_app(self.app_uri)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/util.py", line 370, in import_app
+web_1  |     mod = importlib.import_module(module)
+web_1  |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/importlib/__init__.py", line 126, in import_module
+web_1  |     return _bootstrap._gcd_import(name[level:], package, level)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+web_1  |   File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+web_1  |   File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+web_1  |   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+web_1  |   File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+web_1  |   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+web_1  |   File "/app/app.py", line 29, in <module>
+web_1  |     init_db(app)
+web_1  |   File "/app/database.py", line 32, in init_db
+web_1  |     db.create_all()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/flask_sqlalchemy/extension.py", line 900, in create_all
+web_1  |     self._call_for_binds(bind_key, "create_all")
+web_1  |   File "/usr/local/lib/python3.11/site-packages/flask_sqlalchemy/extension.py", line 881, in _call_for_binds
+web_1  |     getattr(metadata, op_name)(bind=engine)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/schema.py", line 5907, in create_all
+web_1  |     bind._run_ddl_visitor(
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3248, in _run_ddl_visitor
+web_1  |     with self.begin() as conn:
+web_1  |   File "/usr/local/lib/python3.11/contextlib.py", line 137, in __enter__
+web_1  |     return next(self.gen)
+web_1  |            ^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3238, in begin
+web_1  |     with self.connect() as conn:
+web_1  |          ^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3274, in connect
+web_1  |     return self._connection_cls(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 148, in __init__
+web_1  |     Connection._handle_dbapi_exception_noconnection(
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2439, in _handle_dbapi_exception_noconnection
+web_1  |     raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+web_1  |     self._dbapi_connection = engine.raw_connection()
+web_1  |                              ^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3298, in raw_connection
+web_1  |     return self.pool.connect()
+web_1  |            ^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+web_1  |     return _ConnectionFairy._checkout(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1264, in _checkout
+web_1  |     fairy = _ConnectionRecord.checkout(pool)
+web_1  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 713, in checkout
+web_1  |     rec = pool._do_get()
+web_1  |           ^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+web_1  |     with util.safe_reraise():
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+web_1  |     raise exc_value.with_traceback(exc_tb)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+web_1  |     return self._create_connection()
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+web_1  |     return _ConnectionRecord(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 675, in __init__
+web_1  |     self.__connect()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 901, in __connect
+web_1  |     with util.safe_reraise():
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+web_1  |     raise exc_value.with_traceback(exc_tb)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 897, in __connect
+web_1  |     self.dbapi_connection = connection = pool._invoke_creator(self)
+web_1  |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 646, in connect
+web_1  |     return dialect.connect(*cargs, **cparams)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 622, in connect
+web_1  |     return self.loaded_dbapi.connect(*cargs, **cparams)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/psycopg2/__init__.py", line 122, in connect
+web_1  |     conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  | sqlalchemy.exc.OperationalError: (psycopg2.OperationalError) connection to server at "db" (172.20.0.2), port 5432 failed: Connection refused
+web_1  |        Is the server running on that host and accepting TCP/IP connections?
+web_1  |
+web_1  | (Background on this error at: https://sqlalche.me/e/20/e3q8)
+web_1  | [2025-03-14 05:15:13 +0000] [7] [INFO] Worker exiting (pid: 7)
+web_1  | 2025-03-14 05:15:13,856 - database - ERROR - Error initializing database: (psycopg2.OperationalError) connection to server at "db" (172.20.0.2), port 5432 failed: Connection refused
+web_1  |        Is the server running on that host and accepting TCP/IP connections?
+web_1  |
+web_1  | (Background on this error at: https://sqlalche.me/e/20/e3q8)
+web_1  | Traceback (most recent call last):
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+web_1  |     self._dbapi_connection = engine.raw_connection()
+web_1  |                              ^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3298, in raw_connection
+web_1  |     return self.pool.connect()
+web_1  |            ^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+web_1  |     return _ConnectionFairy._checkout(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1264, in _checkout
+web_1  |     fairy = _ConnectionRecord.checkout(pool)
+web_1  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 713, in checkout
+web_1  |     rec = pool._do_get()
+web_1  |           ^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+web_1  |     with util.safe_reraise():
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+web_1  |     raise exc_value.with_traceback(exc_tb)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+web_1  |     return self._create_connection()
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+web_1  |     return _ConnectionRecord(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 675, in __init__
+web_1  |     self.__connect()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 901, in __connect
+web_1  |     with util.safe_reraise():
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+web_1  |     raise exc_value.with_traceback(exc_tb)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 897, in __connect
+web_1  |     self.dbapi_connection = connection = pool._invoke_creator(self)
+web_1  |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 646, in connect
+web_1  |     return dialect.connect(*cargs, **cparams)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 622, in connect
+web_1  |     return self.loaded_dbapi.connect(*cargs, **cparams)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/psycopg2/__init__.py", line 122, in connect
+web_1  |     conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  | psycopg2.OperationalError: connection to server at "db" (172.20.0.2), port 5432 failed: Connection refused
+web_1  |        Is the server running on that host and accepting TCP/IP connections?
+web_1  |
+web_1  |
+web_1  | The above exception was the direct cause of the following exception:
+web_1  |
+web_1  | Traceback (most recent call last):
+web_1  |   File "/app/database.py", line 32, in init_db
+web_1  |     db.create_all()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/flask_sqlalchemy/extension.py", line 900, in create_all
+web_1  |     self._call_for_binds(bind_key, "create_all")
+web_1  |   File "/usr/local/lib/python3.11/site-packages/flask_sqlalchemy/extension.py", line 881, in _call_for_binds
+web_1  |     getattr(metadata, op_name)(bind=engine)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/schema.py", line 5907, in create_all
+web_1  |     bind._run_ddl_visitor(
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3248, in _run_ddl_visitor
+web_1  |     with self.begin() as conn:
+web_1  |   File "/usr/local/lib/python3.11/contextlib.py", line 137, in __enter__
+web_1  |     return next(self.gen)
+web_1  |            ^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3238, in begin
+web_1  |     with self.connect() as conn:
+web_1  |          ^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3274, in connect
+web_1  |     return self._connection_cls(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 148, in __init__
+web_1  |     Connection._handle_dbapi_exception_noconnection(
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2439, in _handle_dbapi_exception_noconnection
+web_1  |     raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+web_1  |     self._dbapi_connection = engine.raw_connection()
+web_1  |                              ^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3298, in raw_connection
+web_1  |     return self.pool.connect()
+web_1  |            ^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+web_1  |     return _ConnectionFairy._checkout(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1264, in _checkout
+web_1  |     fairy = _ConnectionRecord.checkout(pool)
+web_1  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 713, in checkout
+web_1  |     rec = pool._do_get()
+web_1  |           ^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+web_1  |     with util.safe_reraise():
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+web_1  |     raise exc_value.with_traceback(exc_tb)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+web_1  |     return self._create_connection()
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+web_1  |     return _ConnectionRecord(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 675, in __init__
+web_1  |     self.__connect()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 901, in __connect
+web_1  |     with util.safe_reraise():
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+web_1  |     raise exc_value.with_traceback(exc_tb)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 897, in __connect
+web_1  |     self.dbapi_connection = connection = pool._invoke_creator(self)
+web_1  |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 646, in connect
+web_1  |     return dialect.connect(*cargs, **cparams)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 622, in connect
+web_1  |     return self.loaded_dbapi.connect(*cargs, **cparams)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/psycopg2/__init__.py", line 122, in connect
+web_1  |     conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  | sqlalchemy.exc.OperationalError: (psycopg2.OperationalError) connection to server at "db" (172.20.0.2), port 5432 failed: Connection refused
+web_1  |        Is the server running on that host and accepting TCP/IP connections?
+web_1  |
+web_1  | (Background on this error at: https://sqlalche.me/e/20/e3q8)
+web_1  | [2025-03-14 05:15:13 +0000] [8] [ERROR] Exception in worker process
+web_1  | Traceback (most recent call last):
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+web_1  |     self._dbapi_connection = engine.raw_connection()
+web_1  |                              ^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3298, in raw_connection
+web_1  |     return self.pool.connect()
+web_1  |            ^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+web_1  |     return _ConnectionFairy._checkout(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1264, in _checkout
+web_1  |     fairy = _ConnectionRecord.checkout(pool)
+web_1  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 713, in checkout
+web_1  |     rec = pool._do_get()
+web_1  |           ^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+web_1  |     with util.safe_reraise():
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+web_1  |     raise exc_value.with_traceback(exc_tb)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+web_1  |     return self._create_connection()
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+web_1  |     return _ConnectionRecord(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 675, in __init__
+web_1  |     self.__connect()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 901, in __connect
+web_1  |     with util.safe_reraise():
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+web_1  |     raise exc_value.with_traceback(exc_tb)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 897, in __connect
+web_1  |     self.dbapi_connection = connection = pool._invoke_creator(self)
+web_1  |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 646, in connect
+web_1  |     return dialect.connect(*cargs, **cparams)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 622, in connect
+web_1  |     return self.loaded_dbapi.connect(*cargs, **cparams)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/psycopg2/__init__.py", line 122, in connect
+web_1  |     conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  | psycopg2.OperationalError: connection to server at "db" (172.20.0.2), port 5432 failed: Connection refused
+web_1  |        Is the server running on that host and accepting TCP/IP connections?
+web_1  |
+web_1  |
+web_1  | The above exception was the direct cause of the following exception:
+web_1  |
+web_1  | Traceback (most recent call last):
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/arbiter.py", line 608, in spawn_worker
+web_1  |     worker.init_process()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/workers/base.py", line 135, in init_process
+web_1  |     self.load_wsgi()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/workers/base.py", line 147, in load_wsgi
+web_1  |     self.wsgi = self.app.wsgi()
+web_1  |                 ^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/app/base.py", line 66, in wsgi
+web_1  |     self.callable = self.load()
+web_1  |                     ^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+web_1  |     return self.load_wsgiapp()
+web_1  |            ^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+web_1  |     return util.import_app(self.app_uri)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/util.py", line 370, in import_app
+web_1  |     mod = importlib.import_module(module)
+web_1  |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/importlib/__init__.py", line 126, in import_module
+web_1  |     return _bootstrap._gcd_import(name[level:], package, level)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+web_1  |   File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+web_1  |   File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+web_1  |   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+web_1  |   File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+web_1  |   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+web_1  |   File "/app/app.py", line 29, in <module>
+web_1  |     init_db(app)
+web_1  |   File "/app/database.py", line 32, in init_db
+web_1  |     db.create_all()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/flask_sqlalchemy/extension.py", line 900, in create_all
+web_1  |     self._call_for_binds(bind_key, "create_all")
+web_1  |   File "/usr/local/lib/python3.11/site-packages/flask_sqlalchemy/extension.py", line 881, in _call_for_binds
+web_1  |     getattr(metadata, op_name)(bind=engine)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/schema.py", line 5907, in create_all
+web_1  |     bind._run_ddl_visitor(
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3248, in _run_ddl_visitor
+web_1  |     with self.begin() as conn:
+web_1  |   File "/usr/local/lib/python3.11/contextlib.py", line 137, in __enter__
+web_1  |     return next(self.gen)
+web_1  |            ^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3238, in begin
+web_1  |     with self.connect() as conn:
+web_1  |          ^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3274, in connect
+web_1  |     return self._connection_cls(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 148, in __init__
+web_1  |     Connection._handle_dbapi_exception_noconnection(
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2439, in _handle_dbapi_exception_noconnection
+web_1  |     raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+web_1  |     self._dbapi_connection = engine.raw_connection()
+web_1  |                              ^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3298, in raw_connection
+web_1  |     return self.pool.connect()
+web_1  |            ^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+web_1  |     return _ConnectionFairy._checkout(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1264, in _checkout
+web_1  |     fairy = _ConnectionRecord.checkout(pool)
+web_1  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 713, in checkout
+web_1  |     rec = pool._do_get()
+web_1  |           ^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+web_1  |     with util.safe_reraise():
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+web_1  |     raise exc_value.with_traceback(exc_tb)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+web_1  |     return self._create_connection()
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+web_1  |     return _ConnectionRecord(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 675, in __init__
+web_1  |     self.__connect()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 901, in __connect
+web_1  |     with util.safe_reraise():
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+web_1  |     raise exc_value.with_traceback(exc_tb)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 897, in __connect
+web_1  |     self.dbapi_connection = connection = pool._invoke_creator(self)
+web_1  |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 646, in connect
+web_1  |     return dialect.connect(*cargs, **cparams)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 622, in connect
+web_1  |     return self.loaded_dbapi.connect(*cargs, **cparams)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/psycopg2/__init__.py", line 122, in connect
+web_1  |     conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  | sqlalchemy.exc.OperationalError: (psycopg2.OperationalError) connection to server at "db" (172.20.0.2), port 5432 failed: Connection refused
+web_1  |        Is the server running on that host and accepting TCP/IP connections?
+web_1  |
+web_1  | (Background on this error at: https://sqlalche.me/e/20/e3q8)
+web_1  | [2025-03-14 05:15:13 +0000] [8] [INFO] Worker exiting (pid: 8)
+web_1  | [2025-03-14 05:15:13 +0000] [1] [ERROR] Worker (pid:7) exited with code 3
+web_1  | [2025-03-14 05:15:13 +0000] [1] [ERROR] Worker (pid:8) was sent SIGTERM!
+web_1  | 2025-03-14 05:15:13,941 - database - ERROR - Error initializing database: (psycopg2.OperationalError) connection to server at "db" (172.20.0.2), port 5432 failed: Connection refused
+web_1  |        Is the server running on that host and accepting TCP/IP connections?
+web_1  |
+web_1  | (Background on this error at: https://sqlalche.me/e/20/e3q8)
+web_1  | Traceback (most recent call last):
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+web_1  |     self._dbapi_connection = engine.raw_connection()
+web_1  |                              ^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3298, in raw_connection
+web_1  |     return self.pool.connect()
+web_1  |            ^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+web_1  |     return _ConnectionFairy._checkout(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1264, in _checkout
+web_1  |     fairy = _ConnectionRecord.checkout(pool)
+web_1  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 713, in checkout
+web_1  |     rec = pool._do_get()
+web_1  |           ^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+web_1  |     with util.safe_reraise():
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+web_1  |     raise exc_value.with_traceback(exc_tb)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+web_1  |     return self._create_connection()
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+web_1  |     return _ConnectionRecord(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 675, in __init__
+web_1  |     self.__connect()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 901, in __connect
+web_1  |     with util.safe_reraise():
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+web_1  |     raise exc_value.with_traceback(exc_tb)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 897, in __connect
+web_1  |     self.dbapi_connection = connection = pool._invoke_creator(self)
+web_1  |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 646, in connect
+web_1  |     return dialect.connect(*cargs, **cparams)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 622, in connect
+web_1  |     return self.loaded_dbapi.connect(*cargs, **cparams)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/psycopg2/__init__.py", line 122, in connect
+web_1  |     conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  | psycopg2.OperationalError: connection to server at "db" (172.20.0.2), port 5432 failed: Connection refused
+web_1  |        Is the server running on that host and accepting TCP/IP connections?
+web_1  |
+web_1  |
+web_1  | The above exception was the direct cause of the following exception:
+web_1  |
+web_1  | Traceback (most recent call last):
+web_1  |   File "/app/database.py", line 32, in init_db
+web_1  |     db.create_all()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/flask_sqlalchemy/extension.py", line 900, in create_all
+web_1  |     self._call_for_binds(bind_key, "create_all")
+web_1  |   File "/usr/local/lib/python3.11/site-packages/flask_sqlalchemy/extension.py", line 881, in _call_for_binds
+web_1  |     getattr(metadata, op_name)(bind=engine)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/schema.py", line 5907, in create_all
+web_1  |     bind._run_ddl_visitor(
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3248, in _run_ddl_visitor
+web_1  |     with self.begin() as conn:
+web_1  |   File "/usr/local/lib/python3.11/contextlib.py", line 137, in __enter__
+web_1  |     return next(self.gen)
+web_1  |            ^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3238, in begin
+web_1  |     with self.connect() as conn:
+web_1  |          ^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3274, in connect
+web_1  |     return self._connection_cls(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 148, in __init__
+web_1  |     Connection._handle_dbapi_exception_noconnection(
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2439, in _handle_dbapi_exception_noconnection
+web_1  |     raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+web_1  |     self._dbapi_connection = engine.raw_connection()
+web_1  |                              ^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3298, in raw_connection
+web_1  |     return self.pool.connect()
+web_1  |            ^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+web_1  |     return _ConnectionFairy._checkout(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1264, in _checkout
+web_1  |     fairy = _ConnectionRecord.checkout(pool)
+web_1  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 713, in checkout
+web_1  |     rec = pool._do_get()
+web_1  |           ^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+web_1  |     with util.safe_reraise():
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+web_1  |     raise exc_value.with_traceback(exc_tb)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+web_1  |     return self._create_connection()
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+web_1  |     return _ConnectionRecord(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 675, in __init__
+web_1  |     self.__connect()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 901, in __connect
+web_1  |     with util.safe_reraise():
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+web_1  |     raise exc_value.with_traceback(exc_tb)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 897, in __connect
+web_1  |     self.dbapi_connection = connection = pool._invoke_creator(self)
+web_1  |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 646, in connect
+web_1  |     return dialect.connect(*cargs, **cparams)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 622, in connect
+web_1  |     return self.loaded_dbapi.connect(*cargs, **cparams)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/psycopg2/__init__.py", line 122, in connect
+web_1  |     conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  | sqlalchemy.exc.OperationalError: (psycopg2.OperationalError) connection to server at "db" (172.20.0.2), port 5432 failed: Connection refused
+web_1  |        Is the server running on that host and accepting TCP/IP connections?
+web_1  |
+web_1  | (Background on this error at: https://sqlalche.me/e/20/e3q8)
+web_1  | [2025-03-14 05:15:13 +0000] [9] [ERROR] Exception in worker process
+web_1  | Traceback (most recent call last):
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+web_1  |     self._dbapi_connection = engine.raw_connection()
+web_1  |                              ^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3298, in raw_connection
+web_1  |     return self.pool.connect()
+web_1  |            ^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+web_1  |     return _ConnectionFairy._checkout(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1264, in _checkout
+web_1  |     fairy = _ConnectionRecord.checkout(pool)
+web_1  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 713, in checkout
+web_1  |     rec = pool._do_get()
+web_1  |           ^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+web_1  |     with util.safe_reraise():
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+web_1  |     raise exc_value.with_traceback(exc_tb)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+web_1  |     return self._create_connection()
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+web_1  |     return _ConnectionRecord(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 675, in __init__
+web_1  |     self.__connect()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 901, in __connect
+web_1  |     with util.safe_reraise():
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+web_1  |     raise exc_value.with_traceback(exc_tb)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 897, in __connect
+web_1  |     self.dbapi_connection = connection = pool._invoke_creator(self)
+web_1  |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 646, in connect
+web_1  |     return dialect.connect(*cargs, **cparams)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 622, in connect
+web_1  |     return self.loaded_dbapi.connect(*cargs, **cparams)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/psycopg2/__init__.py", line 122, in connect
+web_1  |     conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  | psycopg2.OperationalError: connection to server at "db" (172.20.0.2), port 5432 failed: Connection refused
+web_1  |        Is the server running on that host and accepting TCP/IP connections?
+web_1  |
+web_1  |
+web_1  | The above exception was the direct cause of the following exception:
+web_1  |
+web_1  | Traceback (most recent call last):
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/arbiter.py", line 608, in spawn_worker
+web_1  |     worker.init_process()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/workers/base.py", line 135, in init_process
+web_1  |     self.load_wsgi()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/workers/base.py", line 147, in load_wsgi
+web_1  |     self.wsgi = self.app.wsgi()
+web_1  |                 ^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/app/base.py", line 66, in wsgi
+web_1  |     self.callable = self.load()
+web_1  |                     ^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+web_1  |     return self.load_wsgiapp()
+web_1  |            ^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+web_1  |     return util.import_app(self.app_uri)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/util.py", line 370, in import_app
+web_1  |     mod = importlib.import_module(module)
+web_1  |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/importlib/__init__.py", line 126, in import_module
+web_1  |     return _bootstrap._gcd_import(name[level:], package, level)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+web_1  |   File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+web_1  |   File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+web_1  |   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+web_1  |   File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+web_1  |   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+web_1  |   File "/app/app.py", line 29, in <module>
+web_1  |     init_db(app)
+web_1  |   File "/app/database.py", line 32, in init_db
+web_1  |     db.create_all()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/flask_sqlalchemy/extension.py", line 900, in create_all
+web_1  |     self._call_for_binds(bind_key, "create_all")
+web_1  |   File "/usr/local/lib/python3.11/site-packages/flask_sqlalchemy/extension.py", line 881, in _call_for_binds
+web_1  |     getattr(metadata, op_name)(bind=engine)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/schema.py", line 5907, in create_all
+web_1  |     bind._run_ddl_visitor(
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3248, in _run_ddl_visitor
+web_1  |     with self.begin() as conn:
+web_1  |   File "/usr/local/lib/python3.11/contextlib.py", line 137, in __enter__
+web_1  |     return next(self.gen)
+web_1  |            ^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3238, in begin
+web_1  |     with self.connect() as conn:
+web_1  |          ^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3274, in connect
+web_1  |     return self._connection_cls(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 148, in __init__
+web_1  |     Connection._handle_dbapi_exception_noconnection(
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2439, in _handle_dbapi_exception_noconnection
+web_1  |     raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 146, in __init__
+web_1  |     self._dbapi_connection = engine.raw_connection()
+web_1  |                              ^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3298, in raw_connection
+web_1  |     return self.pool.connect()
+web_1  |            ^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 449, in connect
+web_1  |     return _ConnectionFairy._checkout(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 1264, in _checkout
+web_1  |     fairy = _ConnectionRecord.checkout(pool)
+web_1  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 713, in checkout
+web_1  |     rec = pool._do_get()
+web_1  |           ^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 179, in _do_get
+web_1  |     with util.safe_reraise():
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+web_1  |     raise exc_value.with_traceback(exc_tb)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+web_1  |     return self._create_connection()
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 390, in _create_connection
+web_1  |     return _ConnectionRecord(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 675, in __init__
+web_1  |     self.__connect()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 901, in __connect
+web_1  |     with util.safe_reraise():
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+web_1  |     raise exc_value.with_traceback(exc_tb)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/pool/base.py", line 897, in __connect
+web_1  |     self.dbapi_connection = connection = pool._invoke_creator(self)
+web_1  |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/create.py", line 646, in connect
+web_1  |     return dialect.connect(*cargs, **cparams)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 622, in connect
+web_1  |     return self.loaded_dbapi.connect(*cargs, **cparams)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/psycopg2/__init__.py", line 122, in connect
+web_1  |     conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  | sqlalchemy.exc.OperationalError: (psycopg2.OperationalError) connection to server at "db" (172.20.0.2), port 5432 failed: Connection refused
+web_1  |        Is the server running on that host and accepting TCP/IP connections?
+web_1  |
+web_1  | (Background on this error at: https://sqlalche.me/e/20/e3q8)
+web_1  | [2025-03-14 05:15:13 +0000] [9] [INFO] Worker exiting (pid: 9)
+web_1  | [2025-03-14 05:15:14 +0000] [1] [ERROR] Worker (pid:9) exited with code 3
+web_1  | Traceback (most recent call last):
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/arbiter.py", line 208, in run
+web_1  |     self.sleep()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/arbiter.py", line 359, in sleep
+web_1  |     ready = select.select([self.PIPE[0]], [], [], 1.0)
+web_1  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/arbiter.py", line 241, in handle_chld
+web_1  |     self.reap_workers()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/arbiter.py", line 529, in reap_workers
+web_1  |     raise HaltServer(reason, self.WORKER_BOOT_ERROR)
+web_1  | gunicorn.errors.HaltServer: <HaltServer 'Worker failed to boot.' 3>
+web_1  |
+web_1  | During handling of the above exception, another exception occurred:
+web_1  |
+web_1  | Traceback (most recent call last):
+web_1  |   File "/usr/local/bin/gunicorn", line 8, in <module>
+web_1  |     sys.exit(run())
+web_1  |              ^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 66, in run
+web_1  |     WSGIApplication("%(prog)s [OPTIONS] [APP_MODULE]", prog=prog).run()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/app/base.py", line 235, in run
+web_1  |     super().run()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/app/base.py", line 71, in run
+web_1  |     Arbiter(self).run()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/arbiter.py", line 228, in run
+web_1  |     self.halt(reason=inst.reason, exit_status=inst.exit_status)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/arbiter.py", line 341, in halt
+web_1  |     self.stop()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/arbiter.py", line 395, in stop
+web_1  |     time.sleep(0.1)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/arbiter.py", line 241, in handle_chld
+web_1  |     self.reap_workers()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/arbiter.py", line 529, in reap_workers
+web_1  |     raise HaltServer(reason, self.WORKER_BOOT_ERROR)
+web_1  | gunicorn.errors.HaltServer: <HaltServer 'Worker failed to boot.' 3>
+web_1  | [2025-03-14 05:15:14 +0000] [1] [INFO] Starting gunicorn 23.0.0
+web_1  | [2025-03-14 05:15:14 +0000] [1] [INFO] Listening at: http://0.0.0.0:5000 (1)
+web_1  | [2025-03-14 05:15:14 +0000] [1] [INFO] Using worker: sync
+web_1  | [2025-03-14 05:15:14 +0000] [7] [INFO] Booting worker with pid: 7
+web_1  | [2025-03-14 05:15:14 +0000] [8] [INFO] Booting worker with pid: 8
+web_1  | [2025-03-14 05:15:14 +0000] [9] [INFO] Booting worker with pid: 9
+web_1  | [2025-03-14 05:15:14 +0000] [10] [INFO] Booting worker with pid: 10
+web_1  | 2025-03-14 05:15:15,197 - database - INFO - Database initialized successfully
+web_1  | 2025-03-14 05:15:15,198 - database - ERROR - Error initializing database: (psycopg2.errors.UniqueViolation) duplicate key value violates unique constraint "pg_class_relname_nsp_index"
+web_1  | DETAIL:  Key (relname, relnamespace)=(users_id_seq, 2200) already exists.
+web_1  |
+web_1  | [SQL:
+web_1  | CREATE TABLE users (
+web_1  |        id SERIAL NOT NULL,
+web_1  |        username VARCHAR(64) NOT NULL,
+web_1  |        email VARCHAR(120) NOT NULL,
+web_1  |        password_hash VARCHAR(256),
+web_1  |        role VARCHAR(20),
+web_1  |        is_active BOOLEAN,
+web_1  |        created_at TIMESTAMP WITHOUT TIME ZONE,
+web_1  |        last_login TIMESTAMP WITHOUT TIME ZONE,
+web_1  |        PRIMARY KEY (id),
+web_1  |        UNIQUE (username),
+web_1  |        UNIQUE (email)
+web_1  | )
+web_1  |
+web_1  | ]
+web_1  | (Background on this error at: https://sqlalche.me/e/20/gkpj)
+web_1  | Traceback (most recent call last):
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1964, in _exec_single_context
+web_1  |     self.dialect.do_execute(
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 942, in do_execute
+web_1  |     cursor.execute(statement, parameters)
+web_1  | psycopg2.errors.UniqueViolation: duplicate key value violates unique constraint "pg_class_relname_nsp_index"
+web_1  | DETAIL:  Key (relname, relnamespace)=(users_id_seq, 2200) already exists.
+web_1  |
+web_1  |
+web_1  | The above exception was the direct cause of the following exception:
+web_1  |
+web_1  | Traceback (most recent call last):
+web_1  |   File "/app/database.py", line 32, in init_db
+web_1  |     db.create_all()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/flask_sqlalchemy/extension.py", line 900, in create_all
+web_1  |     self._call_for_binds(bind_key, "create_all")
+web_1  |   File "/usr/local/lib/python3.11/site-packages/flask_sqlalchemy/extension.py", line 881, in _call_for_binds
+web_1  |     getattr(metadata, op_name)(bind=engine)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/schema.py", line 5907, in create_all
+web_1  |     bind._run_ddl_visitor(
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3249, in _run_ddl_visitor
+web_1  |     conn._run_ddl_visitor(visitorcallable, element, **kwargs)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2456, in _run_ddl_visitor
+web_1  |     visitorcallable(self.dialect, self, **kwargs).traverse_single(element)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/visitors.py", line 664, in traverse_single
+web_1  |     return meth(obj, **kw)
+web_1  |            ^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/ddl.py", line 978, in visit_metadata
+web_1  |     self.traverse_single(
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/visitors.py", line 664, in traverse_single
+web_1  |     return meth(obj, **kw)
+web_1  |            ^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/ddl.py", line 1016, in visit_table
+web_1  |     )._invoke_with(self.connection)
+web_1  |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/ddl.py", line 314, in _invoke_with
+web_1  |     return bind.execute(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1416, in execute
+web_1  |     return meth(
+web_1  |            ^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/ddl.py", line 180, in _execute_on_connection
+web_1  |     return connection._execute_ddl(
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1527, in _execute_ddl
+web_1  |     ret = self._execute_context(
+web_1  |           ^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1843, in _execute_context
+web_1  |     return self._exec_single_context(
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1983, in _exec_single_context
+web_1  |     self._handle_dbapi_exception(
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2352, in _handle_dbapi_exception
+web_1  |     raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1964, in _exec_single_context
+web_1  |     self.dialect.do_execute(
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 942, in do_execute
+web_1  |     cursor.execute(statement, parameters)
+web_1  | sqlalchemy.exc.IntegrityError: (psycopg2.errors.UniqueViolation) duplicate key value violates unique constraint "pg_class_relname_nsp_index"
+web_1  | DETAIL:  Key (relname, relnamespace)=(users_id_seq, 2200) already exists.
+web_1  |
+web_1  | [SQL:
+web_1  | CREATE TABLE users (
+web_1  |        id SERIAL NOT NULL,
+web_1  |        username VARCHAR(64) NOT NULL,
+web_1  |        email VARCHAR(120) NOT NULL,
+web_1  |        password_hash VARCHAR(256),
+web_1  |        role VARCHAR(20),
+web_1  |        is_active BOOLEAN,
+web_1  |        created_at TIMESTAMP WITHOUT TIME ZONE,
+web_1  |        last_login TIMESTAMP WITHOUT TIME ZONE,
+web_1  |        PRIMARY KEY (id),
+web_1  |        UNIQUE (username),
+web_1  |        UNIQUE (email)
+web_1  | )
+web_1  |
+web_1  | ]
+web_1  | (Background on this error at: https://sqlalche.me/e/20/gkpj)
+web_1  | [2025-03-14 05:15:15 +0000] [8] [ERROR] Exception in worker process
+web_1  | Traceback (most recent call last):
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1964, in _exec_single_context
+web_1  |     self.dialect.do_execute(
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 942, in do_execute
+web_1  |     cursor.execute(statement, parameters)
+web_1  | psycopg2.errors.UniqueViolation: duplicate key value violates unique constraint "pg_class_relname_nsp_index"
+web_1  | DETAIL:  Key (relname, relnamespace)=(users_id_seq, 2200) already exists.
+web_1  |
+web_1  |
+web_1  | The above exception was the direct cause of the following exception:
+web_1  |
+web_1  | Traceback (most recent call last):
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/arbiter.py", line 608, in spawn_worker
+web_1  |     worker.init_process()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/workers/base.py", line 135, in init_process
+web_1  |     self.load_wsgi()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/workers/base.py", line 147, in load_wsgi
+web_1  |     self.wsgi = self.app.wsgi()
+web_1  |                 ^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/app/base.py", line 66, in wsgi
+web_1  |     self.callable = self.load()
+web_1  |                     ^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+web_1  |     return self.load_wsgiapp()
+web_1  |            ^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+web_1  |     return util.import_app(self.app_uri)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/util.py", line 370, in import_app
+web_1  |     mod = importlib.import_module(module)
+web_1  |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/importlib/__init__.py", line 126, in import_module
+web_1  |     return _bootstrap._gcd_import(name[level:], package, level)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+web_1  |   File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+web_1  |   File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+web_1  |   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+web_1  |   File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+web_1  |   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+web_1  |   File "/app/app.py", line 29, in <module>
+web_1  |     init_db(app)
+web_1  |   File "/app/database.py", line 32, in init_db
+web_1  |     db.create_all()
+web_1  |   File "/usr/local/lib/python3.11/site-packages/flask_sqlalchemy/extension.py", line 900, in create_all
+web_1  |     self._call_for_binds(bind_key, "create_all")
+web_1  |   File "/usr/local/lib/python3.11/site-packages/flask_sqlalchemy/extension.py", line 881, in _call_for_binds
+web_1  |     getattr(metadata, op_name)(bind=engine)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/schema.py", line 5907, in create_all
+web_1  |     bind._run_ddl_visitor(
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 3249, in _run_ddl_visitor
+web_1  |     conn._run_ddl_visitor(visitorcallable, element, **kwargs)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2456, in _run_ddl_visitor
+web_1  |     visitorcallable(self.dialect, self, **kwargs).traverse_single(element)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/visitors.py", line 664, in traverse_single
+web_1  |     return meth(obj, **kw)
+web_1  |            ^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/ddl.py", line 978, in visit_metadata
+web_1  |     self.traverse_single(
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/visitors.py", line 664, in traverse_single
+web_1  |     return meth(obj, **kw)
+web_1  |            ^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/ddl.py", line 1016, in visit_table
+web_1  |     )._invoke_with(self.connection)
+web_1  |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/ddl.py", line 314, in _invoke_with
+web_1  |     return bind.execute(self)
+web_1  |            ^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1416, in execute
+web_1  |     return meth(
+web_1  |            ^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/ddl.py", line 180, in _execute_on_connection
+web_1  |     return connection._execute_ddl(
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1527, in _execute_ddl
+web_1  |     ret = self._execute_context(
+web_1  |           ^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1843, in _execute_context
+web_1  |     return self._exec_single_context(
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1983, in _exec_single_context
+web_1  |     self._handle_dbapi_exception(
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2352, in _handle_dbapi_exception
+web_1  |     raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1964, in _exec_single_context
+web_1  |     self.dialect.do_execute(
+web_1  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 942, in do_execute
+web_1  |     cursor.execute(statement, parameters)
+web_1  | sqlalchemy.exc.IntegrityError: (psycopg2.errors.UniqueViolation) duplicate key value violates unique constraint "pg_class_relname_nsp_index"
+web_1  | DETAIL:  Key (relname, relnamespace)=(users_id_seq, 2200) already exists.
+web_1  |
+web_1  | [SQL:
+web_1  | CREATE TABLE users (
+web_1  |        id SERIAL NOT NULL,
+web_1  |        username VARCHAR(64) NOT NULL,
+web_1  |        email VARCHAR(120) NOT NULL,
+web_1  |        password_hash VARCHAR(256),
+web_1  |        role VARCHAR(20),
+web_1  |        is_active BOOLEAN,
+web_1  |        created_at TIMESTAMP WITHOUT TIME ZONE,
+web_1  |        last_login TIMESTAMP WITHOUT TIME ZONE,
+web_1  |        PRIMARY KEY (id),
+web_1  |        UNIQUE (username),
+web_1  |        UNIQUE (email)
+web_1  | )
+web_1  |
+web_1  | ]
+web_1  | (Background on this error at: https://sqlalche.me/e/20/gkpj)
+web_1  | [2025-03-14 05:15:15 +0000] [8] [INFO] Worker exiting (pid: 8)
+web_1  | 2025-03-14 05:15:15,211 - database - INFO - Database initialized successfully
+web_1  | [2025-03-14 05:15:15 +0000] [1] [ERROR] Worker (pid:8) exited with code 3
+web_1  | [2025-03-14 05:15:15 +0000] [7] [INFO] Worker exiting (pid: 7)
+web_1  | [2025-03-14 05:15:15 +0000] [9] [INFO] Worker exiting (pid: 9)
+web_1  | 2025-03-14 05:15:15,293 - database - INFO - Database initialized successfully
+web_1  | [2025-03-14 05:15:15 +0000] [10] [INFO] Worker exiting (pid: 10)
+web_1  | [2025-03-14 05:15:15 +0000] [1] [ERROR] Shutting down: Master
+web_1  | [2025-03-14 05:15:15 +0000] [1] [ERROR] Reason: Worker failed to boot.
+web_1  | [2025-03-14 05:15:16 +0000] [1] [INFO] Starting gunicorn 23.0.0
+web_1  | [2025-03-14 05:15:16 +0000] [1] [INFO] Listening at: http://0.0.0.0:5000 (1)
+web_1  | [2025-03-14 05:15:16 +0000] [1] [INFO] Using worker: sync
+web_1  | [2025-03-14 05:15:16 +0000] [7] [INFO] Booting worker with pid: 7
+web_1  | [2025-03-14 05:15:16 +0000] [8] [INFO] Booting worker with pid: 8
+web_1  | [2025-03-14 05:15:16 +0000] [9] [INFO] Booting worker with pid: 9
+web_1  | [2025-03-14 05:15:16 +0000] [10] [INFO] Booting worker with pid: 10
+web_1  | 2025-03-14 05:15:16,558 - database - INFO - Database initialized successfully
+web_1  | 2025-03-14 05:15:16,564 - database - INFO - Database initialized successfully
+web_1  | 2025-03-14 05:15:16,602 - database - INFO - Database initialized successfully
+web_1  | 2025-03-14 05:15:16,685 - database - INFO - Database initialized successfully
+web_1  | 2025-03-14 05:15:33,809 - app - WARNING - Failed login attempt for user: admin
+web_1  | 172.17.1.1 - - [14/Mar/2025:05:15:33 +0000] "POST /login HTTP/1.1" 200 2429 "http://172.17.1.12:5000/login" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edg/134.0.0.0"
+web_1  | [2025-03-14 05:16:04 +0000] [1] [CRITICAL] WORKER TIMEOUT (pid:9)
+web_1  | [2025-03-14 05:16:04 +0000] [9] [ERROR] Error handling request (no URI read)
+web_1  | Traceback (most recent call last):
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/workers/sync.py", line 133, in handle
+web_1  |     req = next(parser)
+web_1  |           ^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/http/parser.py", line 41, in __next__
+web_1  |     self.mesg = self.mesg_class(self.cfg, self.unreader, self.source_addr, self.req_count)
+web_1  |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/http/message.py", line 259, in __init__
+web_1  |     super().__init__(cfg, unreader, peer_addr)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/http/message.py", line 60, in __init__
+web_1  |     unused = self.parse(self.unreader)
+web_1  |              ^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/http/message.py", line 271, in parse
+web_1  |     self.get_data(unreader, buf, stop=True)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/http/message.py", line 262, in get_data
+web_1  |     data = unreader.read()
+web_1  |            ^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/http/unreader.py", line 36, in read
+web_1  |     d = self.chunk()
+web_1  |         ^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/http/unreader.py", line 63, in chunk
+web_1  |     return self.sock.recv(self.mxchunk)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/workers/base.py", line 204, in handle_abort
+web_1  |     sys.exit(1)
+web_1  | SystemExit: 1
+web_1  | [2025-03-14 05:16:04 +0000] [9] [INFO] Worker exiting (pid: 9)
+web_1  | [2025-03-14 05:16:04 +0000] [11] [INFO] Booting worker with pid: 11
+web_1  | 2025-03-14 05:16:04,805 - database - INFO - Database initialized successfully
+web_1  | 2025-03-14 05:17:39,182 - app - WARNING - Failed login attempt for user: admin
+web_1  | 172.17.1.1 - - [14/Mar/2025:05:17:39 +0000] "POST /login HTTP/1.1" 200 2429 "http://172.17.1.12:5000/login" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edg/134.0.0.0"
+web_1  | [2025-03-14 05:18:09 +0000] [1] [CRITICAL] WORKER TIMEOUT (pid:10)
+web_1  | [2025-03-14 05:18:09 +0000] [10] [ERROR] Error handling request (no URI read)
+web_1  | Traceback (most recent call last):
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/workers/sync.py", line 133, in handle
+web_1  |     req = next(parser)
+web_1  |           ^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/http/parser.py", line 41, in __next__
+web_1  |     self.mesg = self.mesg_class(self.cfg, self.unreader, self.source_addr, self.req_count)
+web_1  |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/http/message.py", line 259, in __init__
+web_1  |     super().__init__(cfg, unreader, peer_addr)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/http/message.py", line 60, in __init__
+web_1  |     unused = self.parse(self.unreader)
+web_1  |              ^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/http/message.py", line 271, in parse
+web_1  |     self.get_data(unreader, buf, stop=True)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/http/message.py", line 262, in get_data
+web_1  |     data = unreader.read()
+web_1  |            ^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/http/unreader.py", line 36, in read
+web_1  |     d = self.chunk()
+web_1  |         ^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/http/unreader.py", line 63, in chunk
+web_1  |     return self.sock.recv(self.mxchunk)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/workers/base.py", line 204, in handle_abort
+web_1  |     sys.exit(1)
+web_1  | SystemExit: 1
+web_1  | [2025-03-14 05:18:09 +0000] [10] [INFO] Worker exiting (pid: 10)
+web_1  | [2025-03-14 05:18:09 +0000] [18] [INFO] Booting worker with pid: 18
+web_1  | 2025-03-14 05:18:10,037 - database - INFO - Database initialized successfully
+web_1  | [2025-03-14 05:18:53 +0000] [1] [CRITICAL] WORKER TIMEOUT (pid:7)
+web_1  | [2025-03-14 05:18:53 +0000] [1] [CRITICAL] WORKER TIMEOUT (pid:11)
+web_1  | [2025-03-14 05:18:53 +0000] [7] [ERROR] Error handling request (no URI read)
+web_1  | Traceback (most recent call last):
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/workers/sync.py", line 133, in handle
+web_1  |     req = next(parser)
+web_1  |           ^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/http/parser.py", line 41, in __next__
+web_1  |     self.mesg = self.mesg_class(self.cfg, self.unreader, self.source_addr, self.req_count)
+web_1  |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/http/message.py", line 259, in __init__
+web_1  |     super().__init__(cfg, unreader, peer_addr)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/http/message.py", line 60, in __init__
+web_1  |     unused = self.parse(self.unreader)
+web_1  |              ^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/http/message.py", line 271, in parse
+web_1  |     self.get_data(unreader, buf, stop=True)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/http/message.py", line 262, in get_data
+web_1  |     data = unreader.read()
+web_1  |            ^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/http/unreader.py", line 36, in read
+web_1  |     d = self.chunk()
+web_1  |         ^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/http/unreader.py", line 63, in chunk
+web_1  |     return self.sock.recv(self.mxchunk)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/workers/base.py", line 204, in handle_abort
+web_1  |     sys.exit(1)
+web_1  | SystemExit: 1
+web_1  | [2025-03-14 05:18:53 +0000] [11] [ERROR] Error handling request (no URI read)
+web_1  | Traceback (most recent call last):
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/workers/sync.py", line 133, in handle
+web_1  |     req = next(parser)
+web_1  |           ^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/http/parser.py", line 41, in __next__
+web_1  |     self.mesg = self.mesg_class(self.cfg, self.unreader, self.source_addr, self.req_count)
+web_1  |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/http/message.py", line 259, in __init__
+web_1  |     super().__init__(cfg, unreader, peer_addr)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/http/message.py", line 60, in __init__
+web_1  |     unused = self.parse(self.unreader)
+web_1  |              ^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/http/message.py", line 271, in parse
+web_1  |     self.get_data(unreader, buf, stop=True)
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/http/message.py", line 262, in get_data
+web_1  |     data = unreader.read()
+web_1  |            ^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/http/unreader.py", line 36, in read
+web_1  |     d = self.chunk()
+web_1  |         ^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/http/unreader.py", line 63, in chunk
+web_1  |     return self.sock.recv(self.mxchunk)
+web_1  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+web_1  |   File "/usr/local/lib/python3.11/site-packages/gunicorn/workers/base.py", line 204, in handle_abort
+web_1  |     sys.exit(1)
+web_1  | SystemExit: 1
+web_1  | [2025-03-14 05:18:53 +0000] [7] [INFO] Worker exiting (pid: 7)
+web_1  | [2025-03-14 05:18:53 +0000] [11] [INFO] Worker exiting (pid: 11)
+web_1  | [2025-03-14 05:18:53 +0000] [19] [INFO] Booting worker with pid: 19
+web_1  | [2025-03-14 05:18:53 +0000] [1] [ERROR] Worker (pid:7) was sent SIGKILL! Perhaps out of memory?
+web_1  | [2025-03-14 05:18:53 +0000] [20] [INFO] Booting worker with pid: 20
+web_1  | 2025-03-14 05:18:54,258 - database - INFO - Database initialized successfully
+web_1  | 2025-03-14 05:18:54,304 - database - INFO - Database initialized successfully
