@@ -1,155 +1,120 @@
 # SECTRACKER-PRO - Sistema de Gestión de Vulnerabilidades
 
-## Descripción
-SECTRACKER-PRO es una aplicación web para la gestión integral de vulnerabilidades de seguridad, enfocada en el monitoreo y reporte de seguridad de forma amigable.
+## Instalación Local con Docker
 
-## Características Principales
-- 🔍 Dashboard interactivo de vulnerabilidades
-- 🏢 Gestión de múltiples sedes
-- 📊 Seguimiento de vulnerabilidades
-- 📑 Generación de informes técnicos y ejecutivos
-- 🔐 Autenticación y control de acceso
-- 🛡️ HTTPS forzado para mayor seguridad
+### Requisitos Previos
+- Sistema operativo Linux (Ubuntu/Debian recomendado)
+- Acceso root o sudo
+- Conexión a Internet
 
-## Requisitos del Sistema
-- Docker y Docker Compose
-- 4GB RAM mínimo recomendado
-- 2 CPU cores mínimo recomendado
+### Pasos de Instalación
 
-## Guía de Instalación
-
-### 1. Preparación del Servidor
+1. Desinstalar versiones anteriores de Docker:
 ```bash
-# Actualizar el sistema
-sudo apt-get update && sudo apt-get upgrade -y
+sudo apt-get remove docker docker-engine docker.io containerd runc
+```
 
-# Instalar Docker y Docker Compose
-sudo apt-get install -y docker.io docker-compose
+2. Actualizar el sistema e instalar dependencias:
+```bash
+sudo apt-get update
+sudo apt-get install -y \
+    ca-certificates \
+    curl \
+    gnupg
+```
 
-# Agregar usuario al grupo docker
+3. Añadir el repositorio oficial de Docker:
+```bash
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+echo \
+  "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+```
+
+4. Instalar Docker:
+```bash
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+5. Configurar usuario:
+```bash
 sudo usermod -aG docker $USER
 ```
 
-### 2. Instalación de la Aplicación
-
-1. Clonar el repositorio:
+6. Clonar el repositorio:
 ```bash
-git clone https://github.com/aasfish/escaneo_vuln.git
-cd escaneo_vuln
+git clone https://github.com/aasfish/AS.git
+cd AS
 ```
 
-2. Configurar variables de entorno:
+7. Configurar el ambiente:
 ```bash
 cp .env.example .env
-# Editar .env con tus configuraciones
 ```
 
-3. Configurar recursos según tu servidor en .env:
-```ini
-# Ejemplo para servidor con 16GB RAM
-WEB_CPU_LIMIT=4       # 4 CPUs para la aplicación web
-WEB_MEMORY_LIMIT=8G   # 8GB de RAM para la web
-DB_CPU_LIMIT=2        # 2 CPUs para la base de datos
-DB_MEMORY_LIMIT=4G    # 4GB para la base de datos
-
-# Configuración de seguridad
-SESSION_SECRET=tu_clave_secreta_aqui
-DB_PASSWORD=tu_contraseña_segura_aqui
-```
-
-4. Iniciar la aplicación:
+8. Iniciar la aplicación:
 ```bash
-docker-compose up -d
+docker-compose up -d --build
 ```
 
-5. Crear usuario administrador:
+### Verificación
+
+Para verificar que todo está funcionando correctamente:
+
 ```bash
-docker-compose exec web ./init_admin.sh
+# Ver el estado de los contenedores
+docker-compose ps
+
+# Ver los logs
+docker-compose logs
 ```
 
 La aplicación estará disponible en: http://localhost:5000
 
-## Credenciales Iniciales
-- Usuario: admin
-- Contraseña: La mostrada al ejecutar init_admin.sh
-
-**¡IMPORTANTE!** Por seguridad, cambie la contraseña del administrador después del primer inicio de sesión.
-
 ## Mantenimiento
 
-### Respaldos de Base de Datos
+### Detener la aplicación
 ```bash
-# Crear respaldo
-docker-compose exec db pg_dump -U sectracker sectracker > backup.sql
-
-# Restaurar respaldo
-docker-compose exec -T db psql -U sectracker sectracker < backup.sql
+docker-compose down
 ```
 
-### Actualización del Sistema
+### Reiniciar la aplicación
 ```bash
-# Actualizar a la última versión
-git pull
+docker-compose restart
+```
 
-# Reconstruir e iniciar contenedores
+### Actualizar la aplicación
+```bash
+git pull
 docker-compose down
 docker-compose up -d --build
 ```
 
-### Logs del Sistema
+### Limpiar completamente (eliminar todos los datos)
 ```bash
-# Ver logs de la aplicación web
-docker-compose logs web
-
-# Ver logs de la base de datos
-docker-compose logs db
+docker-compose down -v
 ```
 
-## Resolución de Problemas
+## Solución de Problemas
 
-### Error de Permisos
-Si encuentras errores de permisos:
-```bash
-# Ajustar permisos de archivos
-sudo chown -R $(whoami):$(whoami) .
-```
+### Error de permisos de Docker
+Si ves errores de permisos al ejecutar comandos docker:
+1. Asegúrate de haber ejecutado: `sudo usermod -aG docker $USER`
+2. Cierra sesión y vuelve a iniciar sesión
+3. Verifica con: `docker ps`
 
-### Error de Conexión a la Base de Datos
-Verificar que la base de datos está corriendo:
-```bash
-docker-compose ps
-docker-compose logs db
-```
-
-### Reinicio de Servicios
-```bash
-# Reiniciar todos los servicios
-docker-compose restart
-
-# Reiniciar servicio específico
-docker-compose restart web
-docker-compose restart db
-```
-
-## Seguridad
-- ✅ Todas las contraseñas se almacenan hasheadas
-- ✅ Sistema de logging para auditoría
-- ✅ Control de acceso basado en roles
-- ✅ Variables de entorno para configuraciones sensibles
+### Error de conexión a la base de datos
+Si el contenedor web no puede conectarse a la base de datos:
+1. Verifica que ambos contenedores estén corriendo: `docker-compose ps`
+2. Revisa los logs: `docker-compose logs`
+3. Si es necesario, reinicia los contenedores: `docker-compose restart`
 
 ## Soporte
+
 Para reportar problemas o sugerir mejoras, por favor crear un issue en el repositorio:
-https://github.com/aasfish/escaneo_vuln/issues
-
-## Licencia
-Este proyecto está licenciado bajo la Licencia MIT.
-
-## Estructura del Proyecto
-```
-sectracker-pro/
-├── app.py           # Aplicación principal
-├── models.py        # Modelos de datos
-├── templates/       # Plantillas HTML
-├── static/         # Archivos estáticos
-├── docker/         # Configuración de Docker
-└── scripts/        # Scripts de utilidad
+https://github.com/aasfish/AS/issues
