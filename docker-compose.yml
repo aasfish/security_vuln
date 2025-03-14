@@ -20,8 +20,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1'
-          memory: 1G
+          cpus: ${WEB_CPU_LIMIT:-1}
+          memory: ${WEB_MEMORY_LIMIT:-1G}
     logging:
       driver: "json-file"
       options:
@@ -46,8 +46,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: 512M
+          cpus: ${DB_CPU_LIMIT:-0.5}
+          memory: ${DB_MEMORY_LIMIT:-512M}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U sectracker"]
       interval: 5s

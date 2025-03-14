@@ -3,75 +3,86 @@
 ## Descripción
 SECTRACKER-PRO es una aplicación web para la gestión integral de vulnerabilidades de seguridad, enfocada en el monitoreo y reporte de seguridad de forma amigable.
 
-## Características
-- Dashboard interactivo de vulnerabilidades
-- Gestión de múltiples sedes
-- Seguimiento de vulnerabilidades
-- Generación de informes técnicos y ejecutivos
-- Autenticación y control de acceso
-- HTTPS forzado para mayor seguridad
+## Características Principales
+- 🔍 Dashboard interactivo de vulnerabilidades
+- 🏢 Gestión de múltiples sedes
+- 📊 Seguimiento de vulnerabilidades
+- 📑 Generación de informes técnicos y ejecutivos
+- 🔐 Autenticación y control de acceso
+- 🛡️ HTTPS forzado para mayor seguridad
 
 ## Requisitos
 - Docker y Docker Compose
-- O alternativamente:
-  - Python 3.x
-  - PostgreSQL
-  - Las dependencias listadas en `requirements.txt`
+- 4GB RAM mínimo recomendado
+- 2 CPU cores mínimo recomendado
 
-## Instalación con Docker (Recomendado)
+## Instalación Rápida
 
-1. Clone el repositorio:
+1. Clonar el repositorio:
 ```bash
-git clone https://github.com/aasfish/Vulntracker.git
-cd Vulntracker
+git clone https://github.com/aasfish/escaneo_vuln.git
+cd escaneo_vuln
 ```
 
-2. Cree un archivo .env con la configuración necesaria:
+2. Configurar variables de entorno:
 ```bash
-echo "SESSION_SECRET=your_secret_key_here" > .env
+cp .env.example .env
+# Editar .env con tus configuraciones
 ```
 
-3. Inicie los contenedores:
+3. Iniciar con Docker Compose:
 ```bash
 docker-compose up -d
 ```
 
-4. Cree el usuario administrador inicial:
+4. Crear usuario administrador:
 ```bash
 docker-compose exec web ./init_admin.sh
 ```
 
-La aplicación estará disponible en: https://localhost:5000
+La aplicación estará disponible en: http://localhost:5000
 
-## Instalación Manual
-1. Clone el repositorio:
-```bash
-git clone https://github.com/aasfish/Vulntracker.git
-cd Vulntracker
+## Configuración de Recursos
+
+Puedes ajustar los recursos según tu servidor en el archivo `.env`:
+
+```
+# Ejemplo para servidor con 16GB RAM
+WEB_CPU_LIMIT=4       # 4 CPUs para la aplicación web
+WEB_MEMORY_LIMIT=8G   # 8GB de RAM para la web
+DB_CPU_LIMIT=2        # 2 CPUs para la base de datos
+DB_MEMORY_LIMIT=4G    # 4GB para la base de datos
 ```
 
-2. Instale las dependencias:
+## Seguridad
+- ✅ Todas las contraseñas se almacenan hasheadas
+- ✅ Sistema de logging para auditoría
+- ✅ Control de acceso basado en roles
+- ✅ Variables de entorno para configuraciones sensibles
+
+## Mantenimiento
+
+### Respaldos
 ```bash
-pip install -r requirements.txt
+# Crear respaldo
+docker-compose exec db pg_dump -U sectracker sectracker > backup.sql
+
+# Restaurar respaldo
+docker-compose exec -T db psql -U sectracker sectracker < backup.sql
 ```
 
-3. Configure las variables de entorno:
+### Actualización
 ```bash
-export DATABASE_URL="postgresql://usuario:contraseña@localhost:5432/sectracker"
-export SESSION_SECRET="tu_secreto_seguro"
+git pull
+docker-compose down
+docker-compose up -d --build
 ```
 
-4. Ejecute el script de inicialización:
-```bash
-chmod +x init_admin.sh
-./init_admin.sh
-```
+## Soporte
+Para reportar problemas o sugerir mejoras, por favor crear un issue en el repositorio.
 
-## Credenciales Iniciales
-- Usuario: admin
-- Contraseña: SecTracker2024!
-
-**IMPORTANTE:** Por seguridad, cambie la contraseña del administrador después del primer inicio de sesión.
+## Licencia
+Este proyecto está licenciado bajo la Licencia MIT.
 
 ## Estructura del Proyecto
 ```
@@ -84,11 +95,11 @@ sectracker-pro/
 └── scripts/        # Scripts de utilidad
 ```
 
-## Seguridad
-- Todas las conexiones son forzadas a HTTPS
-- Las contraseñas se almacenan hasheadas
-- Sistema de logging para auditoría
-- Control de acceso basado en roles
+## Credenciales Iniciales
+- Usuario: admin
+- Contraseña: SecTracker2024!
+
+**IMPORTANTE:** Por seguridad, cambie la contraseña del administrador después del primer inicio de sesión.
 
 ## Base de Datos
 La aplicación utiliza PostgreSQL como base de datos. Al usar Docker Compose:
@@ -96,17 +107,6 @@ La aplicación utiliza PostgreSQL como base de datos. Al usar Docker Compose:
 - Los datos se persisten en un volumen Docker
 - No es necesario instalar PostgreSQL en el host
 - Las credenciales se configuran mediante variables de entorno
-
-## Respaldo y Restauración
-Para respaldar la base de datos:
-```bash
-docker-compose exec db pg_dump -U sectracker sectracker > backup.sql
-```
-
-Para restaurar:
-```bash
-docker-compose exec -T db psql -U sectracker sectracker < backup.sql
-```
 
 ## Despliegue en Producción (Linux)
 
