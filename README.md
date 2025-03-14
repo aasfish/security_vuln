@@ -1,7 +1,7 @@
 # SECTRACKER-PRO - Sistema de Gestión de Vulnerabilidades
 
 ## Descripción
-SECTRACKER-PRO es una aplicación web para la gestión integral de vulnerabilidades de seguridad, con soporte para múltiples sedes y generación de informes detallados.
+SECTRACKER-PRO es una aplicación web para la gestión integral de vulnerabilidades de seguridad, enfocada en el monitoreo y reporte de seguridad de forma amigable.
 
 ## Características
 - Dashboard interactivo de vulnerabilidades
@@ -22,8 +22,8 @@ SECTRACKER-PRO es una aplicación web para la gestión integral de vulnerabilida
 
 1. Clone el repositorio:
 ```bash
-git clone <repositorio>/sectracker-pro.git
-cd sectracker-pro
+git clone https://github.com/aasfish/Vulntracker.git
+cd Vulntracker
 ```
 
 2. Cree un archivo .env con la configuración necesaria:
@@ -44,11 +44,10 @@ docker-compose exec web ./init_admin.sh
 La aplicación estará disponible en: https://localhost:5000
 
 ## Instalación Manual
-
 1. Clone el repositorio:
 ```bash
-git clone <repositorio>/sectracker-pro.git
-cd sectracker-pro
+git clone https://github.com/aasfish/Vulntracker.git
+cd Vulntracker
 ```
 
 2. Instale las dependencias:
@@ -81,7 +80,8 @@ sectracker-pro/
 ├── models.py        # Modelos de datos
 ├── templates/       # Plantillas HTML
 ├── static/         # Archivos estáticos
-└── docker/         # Configuración de Docker
+├── docker/         # Configuración de Docker
+└── scripts/        # Scripts de utilidad
 ```
 
 ## Seguridad
@@ -89,6 +89,24 @@ sectracker-pro/
 - Las contraseñas se almacenan hasheadas
 - Sistema de logging para auditoría
 - Control de acceso basado en roles
+
+## Base de Datos
+La aplicación utiliza PostgreSQL como base de datos. Al usar Docker Compose:
+- La base de datos se crea automáticamente
+- Los datos se persisten en un volumen Docker
+- No es necesario instalar PostgreSQL en el host
+- Las credenciales se configuran mediante variables de entorno
+
+## Respaldo y Restauración
+Para respaldar la base de datos:
+```bash
+docker-compose exec db pg_dump -U sectracker sectracker > backup.sql
+```
+
+Para restaurar:
+```bash
+docker-compose exec -T db psql -U sectracker sectracker < backup.sql
+```
 
 ## Contribuir
 1. Fork el repositorio
