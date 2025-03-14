@@ -39,6 +39,29 @@ env/
 .env.local
 *.sqlite3
 
+# Temp files
+/tmp/*
+!/tmp/.gitkeep
+
 # OS
 .DS_Store
 Thumbs.db
+
+# Database files
+*.sqlite
+*.db
+
+# Environment variables
+.env*
+!.env.example
+
+# Certificates
+*.pem
+*.key
+*.crt
+
+# Reports and uploads
+reports/*
+uploads/*
+!reports/.gitkeep
+!uploads/.gitkeep

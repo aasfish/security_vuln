@@ -5,18 +5,24 @@ from flask import Flask, render_template, request, flash, redirect, url_for, sen
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from sqlalchemy import text
 from werkzeug.utils import secure_filename
-from parser import analizar_vulnerabilidades  # Agregamos la importación correcta
+from parser import analizar_vulnerabilidades
 
 # Set up logging with more detail
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.DEBUG if os.environ.get('FLASK_DEBUG') == '1' else logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
 
 # Initialize Flask app
 app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET")
+
+# Configuración segura de la clave secreta
+if not os.environ.get("SESSION_SECRET"):
+    logger.warning("SESSION_SECRET not set! Using a random secret key.")
+    app.secret_key = os.urandom(24)
+else:
+    app.secret_key = os.environ.get("SESSION_SECRET")
 
 # Initialize database
 from database import db, init_db
@@ -31,6 +37,84 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 login_manager.login_message = 'Por favor inicie sesión para acceder a esta página.'
 login_manager.login_message_category = 'warning'
+
+# Configuración para subida de archivos
+ALLOWED_EXTENSIONS = {'txt'}
+UPLOAD_FOLDER = '/tmp'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Limitar subidas a 16MB
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def filtrar_resultados(sede=None, fecha_inicio=None, fecha_fin=None, riesgo=None):
+    """Filtra los resultados según los criterios especificados"""
+    query = Escaneo.query.join(Sede)
+
+    if sede and sede != 'Todas las sedes':
+        query = query.filter(Sede.nombre == sede)
+
+    if fecha_inicio:
+        fecha_inicio_obj = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+        query = query.filter(Escaneo.fecha_escaneo >= fecha_inicio_obj)
+
+    if fecha_fin:
+        fecha_fin_obj = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+        query = query.filter(Escaneo.fecha_escaneo <= fecha_fin_obj)
+
+    # Ordenar por fecha de escaneo descendente (más reciente primero)
+    escaneos = query.order_by(Escaneo.fecha_escaneo.desc()).all()
+    resultados = []
+
+    for escaneo in escaneos:
+        hosts_detalle = {}
+        for host in escaneo.hosts:
+            vulns = host.vulnerabilidades
+            if riesgo and riesgo != 'all':
+                vulns = [v for v in vulns if v.nivel_amenaza == riesgo]
+                if not vulns:
+                    continue
+
+            hosts_detalle[host.ip] = {
+                'nombre_host': host.nombre_host,
+                'vulnerabilidades': [{
+                    'nvt': v.nvt,
+                    'oid': v.oid,
+                    'nivel_amenaza': v.nivel_amenaza,
+                    'cvss': v.cvss,
+                    'puerto': v.puerto,
+                    'resumen': v.resumen,
+                    'impacto': v.impacto,
+                    'solucion': v.solucion,
+                    'metodo_deteccion': v.metodo_deteccion,
+                    'referencias': v.referencias,
+                    'estado': v.estado
+                } for v in vulns]
+            }
+
+        if hosts_detalle:
+            resultados.append({
+                'sede': escaneo.sede.nombre,
+                'fecha_escaneo': escaneo.fecha_escaneo.strftime('%Y-%m-%d'),
+                'escaneo_id': escaneo.id,
+                'hosts_detalle': hosts_detalle
+            })
+
+    return resultados
+
+
+def obtener_sedes():
+    """Obtiene la lista única de sedes activas que tienen escaneos"""
+    # Query para obtener solo las sedes que tienen escaneos
+    sql = text("""
+        SELECT DISTINCT s.nombre
+        FROM sedes s
+        JOIN escaneos e ON e.sede_id = s.id
+        WHERE s.activa = true
+        ORDER BY s.nombre
+    """)
+    result = db.session.execute(sql)
+    return [row[0] for row in result]
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -160,85 +244,6 @@ def dashboard():
                          sede_seleccionada=sede,
                          fecha_inicio=fecha_inicio,
                          fecha_fin=fecha_fin)
-
-# Función auxiliar para obtener sedes
-def obtener_sedes():
-    """Obtiene la lista única de sedes activas que tienen escaneos"""
-    # Query para obtener solo las sedes que tienen escaneos
-    sql = text("""
-        SELECT DISTINCT s.nombre
-        FROM sedes s
-        JOIN escaneos e ON e.sede_id = s.id
-        WHERE s.activa = true
-        ORDER BY s.nombre
-    """)
-    result = db.session.execute(sql)
-    return [row[0] for row in result]
-
-# Configuración para subida de archivos
-ALLOWED_EXTENSIONS = {'txt'}
-UPLOAD_FOLDER = '/tmp'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-def filtrar_resultados(sede=None, fecha_inicio=None, fecha_fin=None, riesgo=None):
-    """Filtra los resultados según los criterios especificados"""
-    query = Escaneo.query.join(Sede)
-
-    if sede and sede != 'Todas las sedes':
-        query = query.filter(Sede.nombre == sede)
-
-    if fecha_inicio:
-        fecha_inicio_obj = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
-        query = query.filter(Escaneo.fecha_escaneo >= fecha_inicio_obj)
-
-    if fecha_fin:
-        fecha_fin_obj = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
-        query = query.filter(Escaneo.fecha_escaneo <= fecha_fin_obj)
-
-    # Ordenar por fecha de escaneo descendente (más reciente primero)
-    escaneos = query.order_by(Escaneo.fecha_escaneo.desc()).all()
-    resultados = []
-
-    for escaneo in escaneos:
-        hosts_detalle = {}
-        for host in escaneo.hosts:
-            vulns = host.vulnerabilidades
-            if riesgo and riesgo != 'all':
-                vulns = [v for v in vulns if v.nivel_amenaza == riesgo]
-                if not vulns:
-                    continue
-
-            hosts_detalle[host.ip] = {
-                'nombre_host': host.nombre_host,
-                'vulnerabilidades': [{
-                    'nvt': v.nvt,
-                    'oid': v.oid,
-                    'nivel_amenaza': v.nivel_amenaza,
-                    'cvss': v.cvss,
-                    'puerto': v.puerto,
-                    'resumen': v.resumen,
-                    'impacto': v.impacto,
-                    'solucion': v.solucion,
-                    'metodo_deteccion': v.metodo_deteccion,
-                    'referencias': v.referencias,
-                    'estado': v.estado
-                } for v in vulns]
-            }
-
-        if hosts_detalle:
-            resultados.append({
-                'sede': escaneo.sede.nombre,
-                'fecha_escaneo': escaneo.fecha_escaneo.strftime('%Y-%m-%d'),
-                'escaneo_id': escaneo.id,
-                'hosts_detalle': hosts_detalle
-            })
-
-    return resultados
-
-
 
 @app.route('/configuracion')
 @login_required
