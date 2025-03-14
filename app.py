@@ -29,7 +29,7 @@ with app.app_context():
     import models  # noqa: F401
     db.create_all()
 
-from flask import Flask, render_template, request, flash, redirect, url_for, send_from_directory, jsonify, send_file
+from flask import render_template, request, flash, redirect, url_for, send_from_directory, jsonify, send_file
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from sqlalchemy import text
 from werkzeug.utils import secure_filename
@@ -42,7 +42,6 @@ from datetime import datetime
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-
 
 # Initialize Flask-Login
 login_manager = LoginManager()
