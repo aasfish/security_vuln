@@ -8,6 +8,14 @@ if ! command -v psql &> /dev/null; then
     exit 1
 fi
 
+# Verificar variables de entorno
+if [ -z "$PGHOST" ] || [ -z "$PGUSER" ] || [ -z "$PGDATABASE" ]; then
+    echo "❌ Error: Variables de entorno no configuradas"
+    echo "Por favor, asegúrate de que las siguientes variables estén configuradas:"
+    echo "PGHOST, PGUSER, PGDATABASE"
+    exit 1
+fi
+
 # Verificar si se proporcionó un archivo
 if [ $# -ne 1 ]; then
     echo "❌ Error: Debe especificar el archivo de backup"
@@ -25,7 +33,11 @@ fi
 
 # Restaurar la base de datos
 echo "Restaurando base de datos desde: $BACKUP_FILE"
-psql -h $PGHOST -U $PGUSER -d $PGDATABASE < "$BACKUP_FILE"
+if [ -n "$PGPASSWORD" ]; then
+    PGPASSWORD="$PGPASSWORD" psql -h "$PGHOST" -U "$PGUSER" -d "$PGDATABASE" < "$BACKUP_FILE"
+else
+    psql -h "$PGHOST" -U "$PGUSER" -d "$PGDATABASE" < "$BACKUP_FILE"
+fi
 
 if [ $? -eq 0 ]; then
     echo "✅ Base de datos restaurada exitosamente"
