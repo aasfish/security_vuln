@@ -11,6 +11,7 @@ from datetime import datetime
 from flask_talisman import Talisman
 from werkzeug.middleware.proxy_fix import ProxyFix
 
+# Set up logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,7 @@ app.secret_key = os.environ.get("SESSION_SECRET")
 
 # Force HTTPS
 Talisman(app, 
-    force_https=False,  # Desactivamos HTTPS por ahora
+    force_https=True,
     content_security_policy={
         'default-src': "'self'",
         'script-src': ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "cdn.replit.com"],
