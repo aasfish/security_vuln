@@ -10,9 +10,21 @@ RUN apt-get update && apt-get install -y \
     python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python packages
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python packages directly
+RUN pip install --no-cache-dir \
+    flask \
+    flask-login \
+    flask-sqlalchemy \
+    flask-wtf \
+    gunicorn \
+    psycopg2-binary \
+    sqlalchemy \
+    werkzeug \
+    matplotlib \
+    pandas \
+    reportlab \
+    trafilatura \
+    email-validator
 
 # Final stage
 FROM python:3.11-slim
