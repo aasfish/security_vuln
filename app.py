@@ -1212,9 +1212,13 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Limitar subidas a 16MB
 
 def analizar_vulnerabilidades(filepath):
-    # Aquí debe ir la lógica para analizar el archivo y extraer las vulnerabilidades
-    # ... (implementación del análisis del archivo) ...
-    pass # Placeholder: Replace with actual vulnerability analysis logic
+    """Analiza el archivo de reporte de vulnerabilidades"""
+    try:
+        from parser import analizar_vulnerabilidades as parser_analizar
+        return parser_analizar(filepath)
+    except Exception as e:
+        logger.error(f"Error al analizar vulnerabilidades: {str(e)}")
+        raise
 
 
 if __name__ == '__main__':
