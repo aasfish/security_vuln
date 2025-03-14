@@ -5,6 +5,7 @@ from flask import Flask, render_template, request, flash, redirect, url_for, sen
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from sqlalchemy import text
 from werkzeug.utils import secure_filename
+from parser import analizar_vulnerabilidades  # Agregamos la importación correcta
 
 # Set up logging with more detail
 logging.basicConfig(
@@ -892,95 +893,96 @@ def eliminar_sede(sede_id):
 @app.route('/subir_reporte', methods=['POST'])
 @login_required
 def subir_reporte():
-    """Maneja la subida de un nuevo reporte de vulnerabilidades"""
+    """
+    Maneja la subida y procesamiento de reportes de vulnerabilidades
+    """
     try:
+        logger.debug("Iniciando procesamiento de archivo")
+
         if 'archivo' not in request.files:
             flash('No se seleccionó ningún archivo', 'error')
-            return redirect(url_for('configuracion'))
+            return redirect(url_for('index'))
 
         archivo = request.files['archivo']
-        if archivo.filename == '':
-            flash('No se seleccionó ningún archivo', 'error')
-            return redirect(url_for('configuracion'))
-
-        if not allowed_file(archivo.filename):
-            flash('Tipo de archivo no permitido. Solo se permiten archivos .txt', 'error')
-            return redirect(url_for('configuracion'))
-
-        # Obtener datos del formulario
-        sede_id = request.form.get('sede_id')
+        sede_id = request.form.get('sede')
         fecha_escaneo = request.form.get('fecha_escaneo')
 
-        if not sede_id or not fecha_escaneo:
-            flash('La sede y la fecha de escaneo son requeridas', 'error')
-            return redirect(url_for('configuracion'))
-
-        logger.debug(f"Iniciando procesamiento de archivo: {archivo.filename}")
         logger.debug(f"Sede ID: {sede_id}, Fecha escaneo: {fecha_escaneo}")
 
-        # Guardar el archivo
-        filename = secure_filename(archivo.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        archivo.save(filepath)
+        if archivo.filename == '':
+            flash('No se seleccionó ningún archivo', 'error')
+            return redirect(url_for('index'))
 
-        # Procesar el archivo
-        resultados = analizar_vulnerabilidades(filepath)
-        if not resultados:
-            logger.warning("No se encontraron vulnerabilidades en el archivo")
-            flash('No se encontraron vulnerabilidades en el archivo', 'warning')
-            os.remove(filepath)
-            return redirect(url_for('configuracion'))
+        if not sede_id:
+            flash('Debe seleccionar una sede', 'error')
+            return redirect(url_for('index'))
 
-        logger.debug(f"Vulnerabilidades encontradas: {len(resultados.get('hosts_detalle', {}))}")
+        if archivo and allowed_file(archivo.filename):
+            filename = secure_filename(archivo.filename)
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            archivo.save(filepath)
 
-        # Crear el escaneo y sus relaciones
-        fecha_escaneo_obj = datetime.strptime(fecha_escaneo, '%Y-%m-%d').date()
-        nuevo_escaneo = Escaneo(
-            sede_id=sede_id,
-            fecha_escaneo=fecha_escaneo_obj
-        )
-        db.session.add(nuevo_escaneo)
+            # Procesar el reporte
+            resultados = analizar_vulnerabilidades(filepath)
+            if not resultados:
+                flash('No se encontraron vulnerabilidades en el archivo', 'warning')
+                return redirect(url_for('index'))
 
-        # Procesar cada host y sus vulnerabilidades
-        for ip, host_data in resultados['hosts_detalle'].items():
-            nuevo_host = Host(
-                ip=ip,
-                nombre_host=host_data.get('nombre_host', ''),
-                escaneo=nuevo_escaneo
+            # Crear el escaneo
+            escaneo = Escaneo(
+                sede_id=sede_id,
+                fecha_escaneo=datetime.strptime(fecha_escaneo, '%Y-%m-%d').date(),
+                fecha_creacion=datetime.utcnow()
             )
-            db.session.add(nuevo_host)
+            db.session.add(escaneo)
+            db.session.flush()  # Para obtener el ID del escaneo
 
-            for vuln_data in host_data.get('vulnerabilidades', []):
-                nueva_vuln = Vulnerabilidad(
-                    host=nuevo_host,
-                    oid=vuln_data.get('oid', ''),
-                    nvt=vuln_data.get('nvt', ''),
-                    nivel_amenaza=vuln_data.get('nivel_amenaza', ''),
-                    cvss=vuln_data.get('cvss', ''),
-                    puerto=vuln_data.get('puerto', ''),
-                    resumen=vuln_data.get('resumen', ''),
-                    impacto=vuln_data.get('impacto', ''),
-                    solucion=vuln_data.get('solucion', ''),
-                    metodo_deteccion=vuln_data.get('metodo_deteccion', ''),
-                    referencias=vuln_data.get('referencias', []),
-                    estado='ACTIVA'
+            # Procesar cada host y sus vulnerabilidades
+            for ip, host_data in resultados['hosts_detalle'].items():
+                host = Host(
+                    ip=ip,
+                    nombre_host=host_data['nombre_host'],
+                    escaneo_id=escaneo.id
                 )
-                db.session.add(nueva_vuln)
+                db.session.add(host)
+                db.session.flush()  # Para obtener el ID del host
 
-        db.session.commit()
-        log_activity('upload_report', f'Subió un reporte y creó {len(resultados.get("hosts_detalle", {}))} nuevos registros')
-        logger.info("Reporte procesado exitosamente")
-        flash('Reporte procesado exitosamente', 'success')
+                for vuln_data in host_data['vulnerabilidades']:
+                    vulnerabilidad = Vulnerabilidad(
+                        host_id=host.id,
+                        nvt=vuln_data['nvt'],
+                        oid=vuln_data['oid'],
+                        nivel_amenaza=vuln_data['nivel_amenaza'],
+                        cvss=vuln_data['cvss'],
+                        puerto=vuln_data['puerto'],
+                        resumen=vuln_data['resumen'],
+                        impacto=vuln_data['impacto'],
+                        solucion=vuln_data['solucion'],
+                        metodo_deteccion=vuln_data['metodo_deteccion'],
+                        referencias=vuln_data['referencias'],
+                        estado='ACTIVA'
+                    )
+                    db.session.add(vulnerabilidad)
 
-        # Eliminar el archivo temporal
-        os.remove(filepath)
-        return redirect(url_for('configuracion'))
+            db.session.commit()
+            log_activity('upload_report', f'Subió reporte para sede ID {sede_id}')
+            flash('Reporte procesado exitosamente', 'success')
+
+            return render_template('resultados.html',
+                                resultado=resultados,
+                                nombre_archivo=filename)
+
+        flash('Tipo de archivo no permitido', 'error')
+        return redirect(url_for('index'))
 
     except Exception as e:
         logger.error(f"Error al procesar el reporte: {str(e)}", exc_info=True)
         db.session.rollback()
-        flash('Error al procesar el reporte: ' + str(e), 'error')
-        return redirect(url_for('configuracion'))
+        flash('Error al procesar el reporte', 'error')
+        return redirect(url_for('index'))
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route('/toggle_sede/<int:sede_id>', methods=['POST'])
 @login_required
