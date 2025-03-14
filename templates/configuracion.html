@@ -46,6 +46,12 @@
                                 <small class="text-muted">{{ usuario.email }}</small>
                             </div>
                             <div class="btn-group">
+                                {% if usuario.username != 'admin' %}
+                                <button type="button" class="btn btn-sm btn-danger me-2"
+                                        onclick="confirmarEliminacionUsuario({{ usuario.id }}, '{{ usuario.username }}')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                {% endif %}
                                 <button type="button" class="btn btn-sm {% if usuario.is_active %}btn-success{% else %}btn-secondary{% endif %}"
                                         onclick="toggleUsuario({{ usuario.id }}, '{{ usuario.username }}')">
                                     {% if usuario.is_active %}
@@ -78,7 +84,7 @@
                         <div class="mb-3">
                             <label for="descripcion" class="form-label">Descripción</label>
                             <textarea class="form-control" id="descripcion" name="descripcion" rows="3"
-                                    placeholder="Descripción de la sede"></textarea>
+                                      placeholder="Descripción de la sede"></textarea>
                         </div>
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-plus-circle"></i> Agregar Sede
@@ -124,7 +130,7 @@
                             {% for sede, escaneos in escaneos_por_sede.items() %}
                             <div class="accordion-item">
                                 <h2 class="accordion-header">
-                                    <button class="accordion-button collapsed" type="button" 
+                                    <button class="accordion-button collapsed" type="button"
                                             data-bs-toggle="collapse" data-bs-target="#sede{{ loop.index }}">
                                         {{ sede }} ({{ escaneos|length }} escaneos)
                                     </button>
@@ -137,11 +143,11 @@
                                                 <div>
                                                     <h6 class="mb-1">{{ escaneo.fecha }}</h6>
                                                     <small class="text-muted">
-                                                        {{ escaneo.total_hosts }} hosts, 
+                                                        {{ escaneo.total_hosts }} hosts,
                                                         {{ escaneo.total_vulnerabilidades }} vulnerabilidades
                                                     </small>
                                                 </div>
-                                                <button class="btn btn-outline-danger btn-sm" 
+                                                <button class="btn btn-outline-danger btn-sm"
                                                         onclick="confirmarEliminacion('{{ sede }}', '{{ escaneo.fecha }}', {{ escaneo.id }})">
                                                     <i class="bi bi-trash"></i>
                                                 </button>
@@ -202,7 +208,7 @@
                         </div>
 
                         <div class="progress mb-3 d-none" id="progressContainer">
-                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                            <div class="progress-bar progress-bar-striped progress-bar-animated"
                                  role="progressbar" style="width: 0%" id="uploadProgress"></div>
                         </div>
 
@@ -231,6 +237,28 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <form id="deleteForm" method="POST">
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación de eliminación de usuario -->
+<div class="modal fade" id="confirmDeleteUserModal" tabindex="-1" aria-labelledby="confirmDeleteUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmDeleteUserModalLabel">Confirmar eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                ¿Está seguro que desea eliminar al usuario <span id="userName"></span>?
+                Esta acción no se puede deshacer.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="deleteUserForm" method="POST">
                     <button type="submit" class="btn btn-danger">Eliminar</button>
                 </form>
             </div>
@@ -336,6 +364,13 @@ function toggleUsuario(userId, username) {
             alert('Error al cambiar el estado del usuario');
         });
     }
+}
+
+function confirmarEliminacionUsuario(userId, username) {
+    document.getElementById('userName').textContent = username;
+    document.getElementById('deleteUserForm').action = `/eliminar_usuario/${userId}`;
+    var modal = new bootstrap.Modal(document.getElementById('confirmDeleteUserModal'));
+    modal.show();
 }
 </script>
 {% endblock %}

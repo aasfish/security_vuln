@@ -34,6 +34,30 @@
             left: 0;
             z-index: 100;
             padding: 1.25rem 0.875rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* User profile section */
+        .user-profile {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .user-profile .user-name {
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .user-profile .user-email {
+            color: #6c757d;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         /* App name styling */
@@ -172,55 +196,67 @@
 <body>
     <!-- Sidebar -->
     <nav class="sidebar">
-        <div class="d-flex flex-column align-items-center mb-3">
+        <div class="d-flex flex-column">
             <div class="app-name">SECTRACKER-PRO</div>
             <div class="app-subtitle">Security Dashboard</div>
-        </div>
-        <ul class="nav flex-column">
-            <li class="nav-item">
-                <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
-                    <i class="bi bi-speedometer2"></i>
-                    Dashboard
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {% if request.endpoint == 'hosts' %}active{% endif %}" href="{{ url_for('hosts') }}">
-                    <i class="bi bi-hdd-network-fill"></i>
-                    Hosts
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {% if request.endpoint == 'vulnerabilidades' %}active{% endif %}" href="{{ url_for('vulnerabilidades') }}">
-                    <i class="bi bi-shield-lock-fill"></i>
-                    Vulnerabilidades
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {% if request.endpoint == 'comparacion' %}active{% endif %}" href="{{ url_for('comparacion') }}">
-                    <i class="bi bi-graph-up-arrow"></i>
-                    Comparación
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {% if request.endpoint == 'informes' %}active{% endif %}" href="{{ url_for('informes') }}">
-                    <i class="bi bi-file-earmark-pdf-fill"></i>
-                    Informes
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {% if request.endpoint == 'configuracion' %}active{% endif %}" href="{{ url_for('configuracion') }}">
-                    <i class="bi bi-gear-fill"></i>
-                    Configuración
-                </a>
-            </li>
-            <li class="nav-item mt-auto">
+
+            <!-- User Profile Section -->
+            <div class="user-profile">
+                <div class="user-name">
+                    <i class="bi bi-person-circle me-1"></i>
+                    {{ current_user.username }}
+                </div>
+                <div class="user-email">{{ current_user.email }}</div>
+            </div>
+
+            <ul class="nav flex-column flex-grow-1">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
+                        <i class="bi bi-speedometer2"></i>
+                        Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'hosts' %}active{% endif %}" href="{{ url_for('hosts') }}">
+                        <i class="bi bi-hdd-network-fill"></i>
+                        Hosts
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'vulnerabilidades' %}active{% endif %}" href="{{ url_for('vulnerabilidades') }}">
+                        <i class="bi bi-shield-lock-fill"></i>
+                        Vulnerabilidades
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'comparacion' %}active{% endif %}" href="{{ url_for('comparacion') }}">
+                        <i class="bi bi-graph-up-arrow"></i>
+                        Comparación
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'informes' %}active{% endif %}" href="{{ url_for('informes') }}">
+                        <i class="bi bi-file-earmark-pdf-fill"></i>
+                        Informes
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'configuracion' %}active{% endif %}" href="{{ url_for('configuracion') }}">
+                        <i class="bi bi-gear-fill"></i>
+                        Configuración
+                    </a>
+                </li>
+            </ul>
+
+            <!-- Logout at bottom -->
+            <div class="mt-auto">
                 <hr class="border-secondary my-3">
                 <a class="nav-link text-danger" href="{{ url_for('logout') }}">
                     <i class="bi bi-box-arrow-right"></i>
                     Cerrar Sesión
                 </a>
-            </li>
-        </ul>
+            </div>
+        </div>
     </nav>
 
     <!-- Main content -->
