@@ -8,7 +8,7 @@ echo "Creando usuario administrador inicial..."
 echo
 
 # Ejecutar el script de Python para crear el admin
-python3 create_admin.py
+docker-compose exec -T web python init_admin.py
 
 echo
 echo "========================================"
