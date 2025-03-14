@@ -4,18 +4,18 @@ services:
   web:
     build: .
     ports:
-      - "443:5000"
+      - "5000:5000"
     environment:
       - DATABASE_URL=postgresql://sectracker:SecTracker2024!@db:5432/sectracker
       - SESSION_SECRET=${SESSION_SECRET:-defaultsecret}
       - FLASK_APP=app.py
       - FLASK_DEBUG=1
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     restart: always
     volumes:
       - ./data:/app/data
-      - ./certs:/app/certs
     logging:
       driver: "json-file"
       options:

@@ -3,9 +3,8 @@ from flask import Flask, render_template, request, flash, redirect, url_for, sen
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from sqlalchemy import text
 from werkzeug.utils import secure_filename
-from parser import analizar_vulnerabilidades
 from database import db, init_db
-from models import Sede, Escaneo, Host, Vulnerabilidad, User, ActivityLog # Added User and ActivityLog
+from models import Sede, Escaneo, Host, Vulnerabilidad, User, ActivityLog
 from exportar import exportar_a_csv, exportar_a_pdf
 import logging
 from datetime import datetime
@@ -19,15 +18,9 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET")
 
-# SSL context
-ssl_context = (
-    '/app/certs/server.crt',  # Certificado
-    '/app/certs/server.key'   # Clave privada
-)
-
-# Force HTTPS and set secure headers
+# Force HTTPS
 Talisman(app, 
-    force_https=True,
+    force_https=False,  # Desactivamos HTTPS por ahora
     content_security_policy={
         'default-src': "'self'",
         'script-src': ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "cdn.replit.com"],
@@ -1026,4 +1019,4 @@ def fechas_por_sede(sede):
         return jsonify([])
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True, ssl_context=ssl_context)
+    app.run(host='0.0.0.0', port=5000, debug=True)
