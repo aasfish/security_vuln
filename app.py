@@ -1,44 +1,26 @@
 import os
-from flask import Flask
+from flask import Flask, render_template, request, flash, redirect, url_for, send_from_directory, jsonify, send_file
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from sqlalchemy import text
+from werkzeug.utils import secure_filename
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
+from datetime import datetime
+import logging
 
 class Base(DeclarativeBase):
     pass
 
 db = SQLAlchemy(model_class=Base)
-# create the app
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET")
 
-# configure the database, relative to the app instance folder
+# Database configuration
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
     "pool_pre_ping": True
 }
-
-# initialize the app with the extension
-db.init_app(app)
-
-with app.app_context():
-    # Make sure to import the models here or their tables won't be created
-    import models  # noqa: F401
-    db.create_all()
-
-from flask import render_template, request, flash, redirect, url_for, send_from_directory, jsonify, send_file
-from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from sqlalchemy import text
-from werkzeug.utils import secure_filename
-from database import init_db
-from models import Sede, Escaneo, Host, Vulnerabilidad, User, ActivityLog
-from exportar import exportar_a_csv, exportar_a_pdf
-import logging
-from datetime import datetime
-
-# Set up logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
 
 # Initialize Flask-Login
 login_manager = LoginManager()
@@ -46,6 +28,17 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 login_manager.login_message = 'Por favor inicie sesión para acceder a esta página.'
 login_manager.login_message_category = 'warning'
+
+# Initialize the database
+db.init_app(app)
+
+# Set up logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+with app.app_context():
+    from models import User, Sede, Escaneo, Host, Vulnerabilidad, ActivityLog
+    db.create_all()
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -724,7 +717,6 @@ def generar_informe(tipo, formato):
         flash('Error al generar el informe. Por favor, inténtelo de nuevo.', 'error')
         return redirect(url_for('informes'))
 
-
 @app.route('/exportar/<tipo>/<formato>')
 @login_required
 def exportar(tipo, formato):
@@ -773,7 +765,7 @@ def exportar(tipo, formato):
                 flash('No haydatos disponibles para exportar', 'warning')
                 return redirect(url_for('vulnerabilidades'))
 
-            if formato == 'csv':                return exportar_a_csv(vulnerabilidades, tipo_reporte='vulnerabilidades')
+            if formato== 'csv':                return exportar_a_csv(vulnerabilidades, tipo_reporte='vulnerabilidades')
             else:  # pdf
                 return exportar_a_pdf(vulnerabilidades, tipo_reporte='vulnerabilidades')
 
