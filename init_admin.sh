@@ -18,7 +18,7 @@ else
 fi
 
 # Ejecutar el script de Python para crear el admin
-python init_admin.py
+python3 init_admin.py
 
 echo
 echo "========================================"
