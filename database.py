@@ -33,8 +33,15 @@ def init_db(app):
             db.init_app(app)
 
             with app.app_context():
+                # Importar modelos aquí para evitar referencias circulares
                 from models import User, Sede, Escaneo, Host, Vulnerabilidad, ActivityLog
+
+                # Eliminar todas las tablas existentes
+                db.drop_all()
+
+                # Crear todas las tablas según los modelos
                 db.create_all()
+
                 logger.info("Database initialized successfully")
                 return
 
