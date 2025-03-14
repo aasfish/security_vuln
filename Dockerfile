@@ -4,14 +4,25 @@ FROM python:3.11-slim
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies and Python packages
 RUN apt-get update && apt-get install -y \
     postgresql-client \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy requirements first to leverage Docker cache
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install --no-cache-dir \
+    flask \
+    flask-login \
+    flask-sqlalchemy \
+    flask-talisman \
+    flask-wtf \
+    gunicorn \
+    psycopg2-binary \
+    sqlalchemy \
+    werkzeug \
+    matplotlib \
+    pandas \
+    reportlab \
+    trafilatura \
+    email-validator
 
 # Copy application code
 COPY . .
