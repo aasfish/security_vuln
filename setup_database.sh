@@ -27,12 +27,12 @@ fi
 sudo systemctl start postgresql
 sudo systemctl enable postgresql
 
-# Definir variables de la base de datos
-DB_NAME="sectracker"
-DB_USER="sectracker_user"
-DB_PASSWORD="SecTracker2024!"
-DB_HOST="localhost"
-DB_PORT="5432"
+# Usar las variables de entorno de Replit si están disponibles
+DB_NAME=${PGDATABASE:-"sectracker"}
+DB_USER=${PGUSER:-"sectracker_user"}
+DB_PASSWORD=${PGPASSWORD:-"SecTracker2024!"}
+DB_HOST=${PGHOST:-"localhost"}
+DB_PORT=${PGPORT:-"5432"}
 
 # Crear usuario y base de datos
 sudo -u postgres psql <<EOF
@@ -52,7 +52,7 @@ fi
 # Crear archivo .env con las variables de entorno
 cat > .env << EOF
 DATABASE_URL="postgresql://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME"
-SESSION_SECRET="tu_clave_secreta_aqui_cambiame_en_produccion"
+SESSION_SECRET="$(openssl rand -hex 32)"
 FLASK_ENV="development"
 FLASK_APP="app.py"
 EOF
@@ -62,6 +62,7 @@ echo "Variables de entorno creadas en archivo .env"
 
 # Activar el entorno virtual y crear las tablas
 echo "Creando tablas de la base de datos..."
+source venv/bin/activate
 python3 create_tables.py
 
 if [ $? -ne 0 ]; then
