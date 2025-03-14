@@ -40,11 +40,6 @@ GRANT ALL ON ALL TABLES IN SCHEMA public TO $DB_USER;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO $DB_USER;
 EOF
 
-if [ $? -ne 0 ]; then
-    echo "❌ Error: Falló la creación de la base de datos"
-    exit 1
-fi
-
 # Crear archivo .env con las variables de entorno
 cat > .env << EOF
 DATABASE_URL="postgresql://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME"
