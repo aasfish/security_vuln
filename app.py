@@ -1,17 +1,21 @@
 import os
+import logging
+from datetime import datetime
 from flask import Flask, render_template, request, flash, redirect, url_for, send_from_directory, jsonify, send_file
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from sqlalchemy import text
-from werkzeug.utils import secure_filename
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text
 from sqlalchemy.orm import DeclarativeBase
-from datetime import datetime
-import logging
+from werkzeug.utils import secure_filename
 
-class Base(DeclarativeBase):
-    pass
+# Set up logging with more detail
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
-db = SQLAlchemy(model_class=Base)
+# Initialize Flask app
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET")
 
@@ -22,6 +26,13 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_pre_ping": True
 }
 
+# Initialize SQLAlchemy with the app
+class Base(DeclarativeBase):
+    pass
+
+db = SQLAlchemy(model_class=Base)
+db.init_app(app)
+
 # Initialize Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -29,59 +40,154 @@ login_manager.login_view = 'login'
 login_manager.login_message = 'Por favor inicie sesión para acceder a esta página.'
 login_manager.login_message_category = 'warning'
 
-# Initialize the database
-db.init_app(app)
-
-# Set up logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
-
+# Import models after db initialization but before create_all
 with app.app_context():
     from models import User, Sede, Escaneo, Host, Vulnerabilidad, ActivityLog
     db.create_all()
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    try:
+        return User.query.get(int(user_id))
+    except Exception as e:
+        logger.error(f"Error loading user {user_id}: {str(e)}")
+        return None
 
 def log_activity(action, details=None):
     """Log user activity"""
-    if current_user.is_authenticated:
-        activity = ActivityLog(
-            user_id=current_user.id,
-            action=action,
-            details=details
-        )
-        db.session.add(activity)
-        db.session.commit()
+    try:
+        if current_user.is_authenticated:
+            activity = ActivityLog(
+                user_id=current_user.id,
+                action=action,
+                details=details
+            )
+            db.session.add(activity)
+            db.session.commit()
+    except Exception as e:
+        logger.error(f"Error logging activity: {str(e)}")
+        db.session.rollback()
 
-# Authentication routes
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        user = User.query.filter_by(username=username).first()
+    """Handle user login with detailed error logging"""
+    try:
+        if request.method == 'POST':
+            username = request.form.get('username')
+            password = request.form.get('password')
 
-        if user and user.check_password(password):
-            login_user(user)
-            user.last_login = datetime.utcnow()
-            db.session.commit()
-            log_activity('login', f'Usuario {username} inició sesión')
-            flash('Has iniciado sesión exitosamente', 'success')
-            return redirect(url_for('dashboard'))
+            logger.debug(f"Login attempt for user: {username}")
 
-        flash('Usuario o contraseña incorrectos', 'error')
-    return render_template('login.html')
+            user = User.query.filter_by(username=username).first()
+
+            if user and user.check_password(password):
+                login_user(user)
+                user.last_login = datetime.utcnow()
+                db.session.commit()
+                log_activity('login', f'Usuario {username} inició sesión')
+                flash('Has iniciado sesión exitosamente', 'success')
+                return redirect(url_for('dashboard'))
+
+            flash('Usuario o contraseña incorrectos', 'error')
+            logger.warning(f"Failed login attempt for user: {username}")
+
+        return render_template('login.html')
+    except Exception as e:
+        logger.exception("Error en el proceso de login")
+        db.session.rollback()
+        flash('Error interno del servidor. Por favor, inténtelo de nuevo.', 'error')
+        return render_template('login.html'), 500
 
 @app.route('/logout')
 @login_required
 def logout():
-    log_activity('logout', f'Usuario {current_user.username} cerró sesión')
-    logout_user()
-    flash('Has cerrado sesión exitosamente', 'success')
-    return redirect(url_for('login'))
+    try:
+        username = current_user.username
+        log_activity('logout', f'Usuario {username} cerró sesión')
+        logout_user()
+        flash('Has cerrado sesión exitosamente', 'success')
+        return redirect(url_for('login'))
+    except Exception as e:
+        logger.exception("Error during logout")
+        flash('Error al cerrar sesión', 'error')
+        return redirect(url_for('login'))
 
+# Función para registrar actividad
+
+@app.route('/')
+@login_required
+def index():
+    return redirect(url_for('dashboard'))
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    """Vista del dashboard principal"""
+    sede = request.args.get('sede')
+    fecha_inicio = request.args.get('fecha_inicio')
+    fecha_fin = request.args.get('fecha_fin')
+    riesgo = request.args.get('riesgo')
+
+    # Query base
+    query = Vulnerabilidad.query.join(Host).join(Escaneo).join(Sede)
+
+    # Aplicar filtros
+    if sede:
+        query = query.filter(Sede.nombre == sede)
+    if fecha_inicio:
+        query = query.filter(Escaneo.fecha_escaneo >= datetime.strptime(fecha_inicio, '%Y-%m-%d').date())
+    if fecha_fin:
+        query = query.filter(Escaneo.fecha_escaneo <= datetime.strptime(fecha_fin, '%Y-%m-%d').date())
+
+    vulnerabilidades = query.all()
+    total_vulnerabilidades = len(vulnerabilidades)
+
+    # Calcular riesgo promedio (CVSS)
+    vulnerabilidades_con_cvss = [v for v in vulnerabilidades if v.cvss and v.cvss.replace('.','').isdigit()]
+    if vulnerabilidades_con_cvss:
+        riesgo_total = sum(float(v.cvss) for v in vulnerabilidades_con_cvss)
+        riesgo_promedio = round(riesgo_total / len(vulnerabilidades_con_cvss), 1)
+    else:
+        riesgo_promedio = 0.0
+
+    # Contar estados
+    estados = {
+        'mitigada': len([v for v in vulnerabilidades if v.estado == 'MITIGADA']),
+        'asumida': len([v for v in vulnerabilidades if v.estado == 'ASUMIDA']),
+        'vigente': len([v for v in vulnerabilidades if v.estado == 'ACTIVA'])
+    }
+
+    # Contar por criticidad
+    criticidad = {
+        'Critical': len([v for v in vulnerabilidades if v.nivel_amenaza == 'Critical']),
+        'High': len([v for v in vulnerabilidades if v.nivel_amenaza == 'High']),
+        'Medium': len([v for v in vulnerabilidades if v.nivel_amenaza == 'Medium']),
+        'Low': len([v for v in vulnerabilidades if v.nivel_amenaza == 'Low'])
+    }
+
+    return render_template('dashboard.html',
+                         riesgo_promedio=riesgo_promedio,
+                         total_vulnerabilidades=total_vulnerabilidades,
+                         estados=estados,
+                         criticidad=list(criticidad.values()),
+                         sedes=obtener_sedes(),
+                         sede_seleccionada=sede,
+                         fecha_inicio=fecha_inicio,
+                         fecha_fin=fecha_fin)
+
+# Función auxiliar para obtener sedes
+def obtener_sedes():
+    """Obtiene la lista única de sedes activas que tienen escaneos"""
+    # Query para obtener solo las sedes que tienen escaneos
+    sql = text("""
+        SELECT DISTINCT s.nombre
+        FROM sedes s
+        JOIN escaneos e ON e.sede_id = s.id
+        WHERE s.activa = true
+        ORDER BY s.nombre
+    """)
+    result = db.session.execute(sql)
+    return [row[0] for row in result]
 
 # Configuración para subida de archivos
 ALLOWED_EXTENSIONS = {'txt'}
@@ -146,23 +252,6 @@ def filtrar_resultados(sede=None, fecha_inicio=None, fecha_fin=None, riesgo=None
 
     return resultados
 
-def obtener_sedes():
-    """Obtiene la lista única de sedes activas que tienen escaneos"""
-    # Query para obtener solo las sedes que tienen escaneos
-    sql = text("""
-        SELECT DISTINCT s.nombre
-        FROM sedes s
-        JOIN escaneos e ON e.sede_id = s.id
-        WHERE s.activa = true
-        ORDER BY s.nombre
-    """)
-    result = db.session.execute(sql)
-    return [row[0] for row in result]
-
-@app.route('/')
-@login_required
-def index():
-    return redirect(url_for('dashboard'))
 
 @app.route('/configuracion')
 @login_required
@@ -192,63 +281,6 @@ def configuracion():
                          sedes=sedes,
                          sedes_activas=sedes_activas,
                          escaneos_por_sede=escaneos_por_sede)
-
-@app.route('/dashboard')
-@login_required
-def dashboard():
-    """Vista del dashboard principal"""
-    sede = request.args.get('sede')
-    fecha_inicio = request.args.get('fecha_inicio')
-    fecha_fin = request.args.get('fecha_fin')
-    riesgo = request.args.get('riesgo')
-
-    # Query base
-    query = Vulnerabilidad.query.join(Host).join(Escaneo).join(Sede)
-
-    # Aplicar filtros
-    if sede:
-        query = query.filter(Sede.nombre == sede)
-    if fecha_inicio:
-        query = query.filter(Escaneo.fecha_escaneo >= datetime.strptime(fecha_inicio, '%Y-%m-%d').date())
-    if fecha_fin:
-        query = query.filter(Escaneo.fecha_escaneo <= datetime.strptime(fecha_fin, '%Y-%m-%d').date())
-
-    # Obtener todas las vulnerabilidades que cumplen los filtros
-    vulnerabilidades = query.all()
-    total_vulnerabilidades = len(vulnerabilidades)
-
-    # Calcular riesgo promedio (CVSS)
-    vulnerabilidades_con_cvss = [v for v in vulnerabilidades if v.cvss and v.cvss.replace('.','').isdigit()]
-    if vulnerabilidades_con_cvss:
-        riesgo_total = sum(float(v.cvss) for v in vulnerabilidades_con_cvss)
-        riesgo_promedio = round(riesgo_total / len(vulnerabilidades_con_cvss), 1)
-    else:
-        riesgo_promedio = 0.0
-
-    # Contar estados
-    estados = {
-        'mitigada': len([v for v in vulnerabilidades if v.estado == 'MITIGADA']),
-        'asumida': len([v for v in vulnerabilidades if v.estado == 'ASUMIDA']),
-        'vigente': len([v for v in vulnerabilidades if v.estado == 'ACTIVA'])
-    }
-
-    # Contar por criticidad
-    criticidad = {
-        'Critical': len([v for v in vulnerabilidades if v.nivel_amenaza == 'Critical']),
-        'High': len([v for v in vulnerabilidades if v.nivel_amenaza == 'High']),
-        'Medium': len([v for v in vulnerabilidades if v.nivel_amenaza == 'Medium']),
-        'Low': len([v for v in vulnerabilidades if v.nivel_amenaza == 'Low'])
-    }
-
-    return render_template('dashboard.html',
-                         riesgo_promedio=riesgo_promedio,
-                         total_vulnerabilidades=total_vulnerabilidades,
-                         estados=estados,
-                         criticidad=list(criticidad.values()),
-                         sedes=obtener_sedes(),
-                         sede_seleccionada=sede,
-                         fecha_inicio=fecha_inicio,
-                         fecha_fin=fecha_fin)
 
 @app.route('/hosts')
 @login_required
