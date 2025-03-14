@@ -1,0 +1,50 @@
+
+root@SECTRACKER-PRO:~/security_vuln# gunicorn --bind 0.0.0.0:5000 app:app
+[2025-03-14 14:15:57 +0000] [36934] [INFO] Starting gunicorn 23.0.0
+[2025-03-14 14:15:57 +0000] [36934] [INFO] Listening at: http://0.0.0.0:5000 (36934)
+[2025-03-14 14:15:57 +0000] [36934] [INFO] Using worker: sync
+[2025-03-14 14:15:57 +0000] [36936] [INFO] Booting worker with pid: 36936
+2025-03-14 14:15:57,785 - app - WARNING - SESSION_SECRET not set! Using a random secret key.
+2025-03-14 14:15:57,822 - database - WARNING - Attempt 1 failed, retrying in 5 seconds...
+2025-03-14 14:16:02,828 - database - WARNING - Attempt 2 failed, retrying in 5 seconds...
+2025-03-14 14:16:07,833 - database - WARNING - Attempt 3 failed, retrying in 5 seconds...
+2025-03-14 14:16:12,839 - database - WARNING - Attempt 4 failed, retrying in 5 seconds...
+2025-03-14 14:16:17,844 - database - ERROR - Error initializing database after 5 attempts: DATABASE_URL environment variable is not set
+Traceback (most recent call last):
+  File "/root/security_vuln/database.py", line 24, in init_db
+    raise ValueError("DATABASE_URL environment variable is not set")
+ValueError: DATABASE_URL environment variable is not set
+[2025-03-14 14:16:17 +0000] [36936] [ERROR] Exception in worker process
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.8/dist-packages/gunicorn/arbiter.py", line 608, in spawn_worker
+    worker.init_process()
+  File "/usr/local/lib/python3.8/dist-packages/gunicorn/workers/base.py", line 135, in init_process
+    self.load_wsgi()
+  File "/usr/local/lib/python3.8/dist-packages/gunicorn/workers/base.py", line 147, in load_wsgi
+    self.wsgi = self.app.wsgi()
+  File "/usr/local/lib/python3.8/dist-packages/gunicorn/app/base.py", line 66, in wsgi
+    self.callable = self.load()
+  File "/usr/local/lib/python3.8/dist-packages/gunicorn/app/wsgiapp.py", line 57, in load
+    return self.load_wsgiapp()
+  File "/usr/local/lib/python3.8/dist-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+    return util.import_app(self.app_uri)
+  File "/usr/local/lib/python3.8/dist-packages/gunicorn/util.py", line 370, in import_app
+    mod = importlib.import_module(module)
+  File "/usr/lib/python3.8/importlib/__init__.py", line 127, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1014, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 991, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 975, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 671, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 848, in exec_module
+  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed
+  File "/root/security_vuln/app.py", line 29, in <module>
+    init_db(app)
+  File "/root/security_vuln/database.py", line 24, in init_db
+    raise ValueError("DATABASE_URL environment variable is not set")
+ValueError: DATABASE_URL environment variable is not set
+[2025-03-14 14:16:17 +0000] [36936] [INFO] Worker exiting (pid: 36936)
+[2025-03-14 14:16:17 +0000] [36934] [ERROR] Worker (pid:36936) exited with code 3
+[2025-03-14 14:16:17 +0000] [36934] [ERROR] Shutting down: Master
+[2025-03-14 14:16:17 +0000] [36934] [ERROR] Reason: Worker failed to boot.
+root@SECTRACKER-PRO:~/security_vuln#

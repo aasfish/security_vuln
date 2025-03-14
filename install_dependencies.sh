@@ -1,10 +1,20 @@
 #!/bin/bash
 
 echo "=== Instalando SECTRACKER-PRO: Paso 1 - Dependencias ==="
+
+# Verificar si pip está instalado
+if ! command -v pip &> /dev/null; then
+    echo "❌ Error: pip no está instalado"
+    echo "Instalando pip..."
+    sudo apt update
+    sudo apt install -y python3-pip
+fi
+
 echo "Instalando dependencias de Python..."
 
 # Instalar dependencias de Python
-pip install flask==3.0.3 \
+pip install --no-cache-dir \
+    flask==3.0.3 \
     flask-login==0.6.3 \
     flask-sqlalchemy==3.1.1 \
     gunicorn==23.0.0 \
@@ -18,5 +28,10 @@ pip install flask==3.0.3 \
     flask-talisman==1.1.0 \
     pyopenssl==25.0.0
 
+if [ $? -ne 0 ]; then
+    echo "❌ Error: Falló la instalación de dependencias"
+    exit 1
+fi
+
 echo "✅ Dependencias instaladas correctamente"
-echo "Para continuar con la instalación, ejecute: ./setup_database.sh"
+echo "Para continuar con la instalación, ejecute: sudo ./setup_database.sh"
