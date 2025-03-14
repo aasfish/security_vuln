@@ -11,8 +11,7 @@ services:
       - FLASK_APP=app.py
       - FLASK_DEBUG=1
     depends_on:
-      db:
-        condition: service_healthy
+      - db
     restart: always
     volumes:
       - ./data:/app/data
