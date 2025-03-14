@@ -9,6 +9,8 @@ from exportar import exportar_a_csv, exportar_a_pdf
 import logging
 import os
 from datetime import datetime
+from flask_talisman import Talisman
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -16,6 +18,18 @@ logger = logging.getLogger(__name__)
 # create the app
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET")
+
+# Force HTTPS
+Talisman(app, force_https=True, content_security_policy={
+    'default-src': "'self'",
+    'script-src': ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "cdn.replit.com"],
+    'style-src': ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "cdn.replit.com"],
+    'img-src': ["'self'", "data:", "cdn.jsdelivr.net", "cdn.replit.com"],
+    'font-src': ["'self'", "cdn.jsdelivr.net", "cdn.replit.com"]
+})
+
+# Support for reverse proxy headers
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # Initialize Flask-Login
 login_manager = LoginManager()
@@ -738,13 +752,12 @@ def exportar(tipo, formato):
         if tipo == 'hosts':
             resultados = filtrar_resultados(sede, fecha_inicio, fecha_fin, riesgo)
             if not resultados:
-                flash('No hay datos disponibles para exportar', 'warning')
+                flash('No hay datosdisponibles para exportar', 'warning')
                 return redirect(url_for('hosts'))
-
             if formato == 'csv':
-                return exportar_a_csv(resultados, tipo='hosts')
+                return exportar_a_csv(resultados, tipo_reporte='hosts')
             else:  # pdf
-                return exportar_a_pdf(resultados, tipo='hosts')
+                return exportar_a_pdf(resultados, tipo_reporte='hosts')
         else:  # vulnerabilidades
             query = Vulnerabilidad.query.join(Host).join(Escaneo).join(Sede)
             if sede and sede != 'Todas las sedes':
@@ -762,9 +775,9 @@ def exportar(tipo, formato):
                 return redirect(url_for('vulnerabilidades'))
 
             if formato == 'csv':
-                return exportar_a_csv(vulnerabilidades, tipo='vulnerabilidades')
+                return exportar_a_csv(vulnerabilidades, tipo_reporte='vulnerabilidades')
             else:  # pdf
-                return exportar_a_pdf(vulnerabilidades, tipo='vulnerabilidades')
+                return exportar_a_pdf(vulnerabilidades, tipo_reporte='vulnerabilidades')
 
     except Exception as e:
         logger.error(f"Error al exportar datos: {str(e)}", exc_info=True)
