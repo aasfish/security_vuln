@@ -15,7 +15,7 @@ python3 -m venv venv
 source venv/bin/activate
 
 # Instalar dependencias de Python
-pip install flask==3.1.0 \
+pip install flask==3.0.3 \
     flask-login==0.6.3 \
     flask-sqlalchemy==3.1.1 \
     gunicorn==23.0.0 \
