@@ -59,4 +59,15 @@ EOF
 
 echo "✅ Base de datos configurada correctamente"
 echo "Variables de entorno creadas en archivo .env"
+
+# Activar el entorno virtual y crear las tablas
+echo "Creando tablas de la base de datos..."
+python3 create_tables.py
+
+if [ $? -ne 0 ]; then
+    echo "❌ Error: Falló la creación de las tablas"
+    exit 1
+fi
+
+echo "✅ Tablas creadas correctamente"
 echo "Para verificar la instalación, ejecute: ./verify_installation.sh"
