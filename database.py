@@ -1,5 +1,6 @@
 import os
 import logging
+import time
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 
@@ -13,25 +14,34 @@ db = SQLAlchemy(model_class=Base)
 
 def init_db(app):
     """Initialize database with the Flask app"""
-    try:
-        database_url = os.environ.get("DATABASE_URL")
-        if not database_url:
-            raise ValueError("DATABASE_URL environment variable is not set")
+    max_retries = 5
+    retry_delay = 5  # segundos
 
-        app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-            "pool_recycle": 300,
-            "pool_pre_ping": True
-        }
-        app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    for attempt in range(max_retries):
+        try:
+            database_url = os.environ.get("DATABASE_URL")
+            if not database_url:
+                raise ValueError("DATABASE_URL environment variable is not set")
 
-        db.init_app(app)
+            app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+            app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+                "pool_recycle": 300,
+                "pool_pre_ping": True
+            }
+            app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-        with app.app_context():
-            from models import User, Sede, Escaneo, Host, Vulnerabilidad, ActivityLog
-            db.create_all()
-            logger.info("Database initialized successfully")
+            db.init_app(app)
 
-    except Exception as e:
-        logger.error(f"Error initializing database: {str(e)}", exc_info=True)
-        raise
+            with app.app_context():
+                from models import User, Sede, Escaneo, Host, Vulnerabilidad, ActivityLog
+                db.create_all()
+                logger.info("Database initialized successfully")
+                return
+
+        except Exception as e:
+            if attempt < max_retries - 1:
+                logger.warning(f"Attempt {attempt + 1} failed, retrying in {retry_delay} seconds...")
+                time.sleep(retry_delay)
+            else:
+                logger.error(f"Error initializing database after {max_retries} attempts: {str(e)}", exc_info=True)
+                raise
