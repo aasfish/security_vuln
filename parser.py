@@ -26,6 +26,8 @@ class HostAnalisis:
 
 def extraer_vulnerabilidad(texto: str) -> Vulnerabilidad:
     """Extrae los detalles de una vulnerabilidad del texto proporcionado"""
+    logger.debug(f"Extrayendo vulnerabilidad del texto: {texto[:100]}...")  # Primeros 100 caracteres
+
     nvt = re.search(r'NVT:\s+(.+?)(?=\n|$)', texto)
     oid = re.search(r'OID:\s+(.+?)(?=\n|$)', texto)
     threat = re.search(r'Threat:\s+(\w+)\s+\(CVSS:\s+([\d\.]+)\)', texto)
@@ -45,7 +47,7 @@ def extraer_vulnerabilidad(texto: str) -> Vulnerabilidad:
             if line.strip():
                 referencias.append(line.strip())
 
-    return Vulnerabilidad(
+    vulnerabilidad = Vulnerabilidad(
         nvt=nvt.group(1) if nvt else "No especificado",
         oid=oid.group(1) if oid else "No especificado",
         nivel_amenaza=threat.group(1) if threat else "No especificado",
@@ -57,6 +59,8 @@ def extraer_vulnerabilidad(texto: str) -> Vulnerabilidad:
         metodo_deteccion=detection.group(1).strip() if detection else "",
         referencias=referencias
     )
+    logger.debug(f"Vulnerabilidad extraída: {vulnerabilidad.nvt} - {vulnerabilidad.nivel_amenaza}")
+    return vulnerabilidad
 
 def analizar_vulnerabilidades(filepath: str) -> Optional[Dict]:
     """
@@ -68,12 +72,19 @@ def analizar_vulnerabilidades(filepath: str) -> Optional[Dict]:
         with open(filepath, 'r', encoding='utf-8') as file:
             contenido = file.read()
             logger.debug(f"Archivo leído correctamente, tamaño: {len(contenido)} caracteres")
+
+            if len(contenido) == 0:
+                logger.error("El archivo está vacío")
+                return None
+
             hosts_detalle = {}
 
             # Buscar secciones de host y sus vulnerabilidades
             host_sections = re.finditer(r'Security Issues for Host ([\d\.]+)\n-+\n\n((?:.*?\n)*?)(?=(?:Security Issues for Host|$))', contenido, re.DOTALL)
 
+            host_count = 0
             for host_match in host_sections:
+                host_count += 1
                 ip = host_match.group(1)
                 host_content = host_match.group(2)
                 logger.debug(f"Procesando host {ip}")
@@ -96,11 +107,13 @@ def analizar_vulnerabilidades(filepath: str) -> Optional[Dict]:
                 # Extraer vulnerabilidades
                 vulnerabilidades = []
                 vuln_sections = re.finditer(r'Issue\n-----\n(.*?)(?=\n\nIssue\n-----|$)', host_content, re.DOTALL)
+                vuln_count = 0
 
                 for vuln_match in vuln_sections:
                     try:
                         vuln = extraer_vulnerabilidad(vuln_match.group(1))
                         vulnerabilidades.append(vuln)
+                        vuln_count += 1
                         logger.debug(f"Vulnerabilidad procesada: {vuln.nvt} ({vuln.nivel_amenaza})")
                     except Exception as e:
                         logger.error(f"Error procesando vulnerabilidad: {str(e)}")
@@ -130,6 +143,7 @@ def analizar_vulnerabilidades(filepath: str) -> Optional[Dict]:
                 logger.warning("No se encontraron hosts con vulnerabilidades")
                 return None
 
+            logger.info(f"Análisis completado: {host_count} hosts procesados")
             return {'hosts_detalle': hosts_detalle}
 
     except Exception as e:

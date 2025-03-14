@@ -246,6 +246,7 @@ def configuracion():
     """Vista de configuración que incluye la gestión de sedes y escaneos"""
     sedes = Sede.query.order_by(Sede.nombre).all()
     sedes_activas = [s for s in sedes if s.activa]
+    usuarios = User.query.all()  # Agregamos la consulta de usuarios
 
     # Obtener todos los escaneos organizados por sede
     escaneos_por_sede = {}
@@ -267,7 +268,8 @@ def configuracion():
                          today=datetime.now().strftime('%Y-%m-%d'),
                          sedes=sedes,
                          sedes_activas=sedes_activas,
-                         escaneos_por_sede=escaneos_por_sede)
+                         escaneos_por_sede=escaneos_por_sede,
+                         usuarios=usuarios)  # Agregamos los usuarios al contexto
 
 @app.route('/hosts')
 @login_required
@@ -771,7 +773,7 @@ def exportar(tipo, formato):
             if sede and sede != 'Todas las sedes':
                 query = query.filter(Sede.nombre ==sede)
             if fecha_inicio:
-                query = query.filter(Escaneo.fecha_escaneo >= datetime.strptime(fecha_inicio, '%Y-%m-%d').date())
+                query =query.filter(Escaneo.fecha_escaneo >= datetime.strptime(fecha_inicio, '%Y-%m-%d').date())
             if fecha_fin:
                 query = query.filter(Escaneo.fecha_escaneo <= datetime.strptime(fecha_fin, '%Y-%m-%d').date())
             if riesgo and riesgo != 'all':
@@ -898,91 +900,127 @@ def subir_reporte():
     """
     try:
         logger.debug("Iniciando procesamiento de archivo")
+        logger.debug(f"Formulario recibido: {request.form}")
+        logger.debug(f"Archivos recibidos: {request.files}")
 
         if 'archivo' not in request.files:
+            logger.error("No se encontró el archivo en la solicitud")
             flash('No se seleccionó ningún archivo', 'error')
-            return redirect(url_for('index'))
+            return redirect(url_for('configuracion'))
 
         archivo = request.files['archivo']
-        sede_id = request.form.get('sede')
+        sede_id = request.form.get('sede_id')  # Cambiado de 'sede' a 'sede_id'
         fecha_escaneo = request.form.get('fecha_escaneo')
 
         logger.debug(f"Sede ID: {sede_id}, Fecha escaneo: {fecha_escaneo}")
+        logger.debug(f"Nombre del archivo: {archivo.filename}")
 
         if archivo.filename == '':
+            logger.error("Nombre de archivo vacío")
             flash('No se seleccionó ningún archivo', 'error')
-            return redirect(url_for('index'))
+            return redirect(url_for('configuracion'))
 
         if not sede_id:
+            logger.error("No se seleccionó una sede")
             flash('Debe seleccionar una sede', 'error')
-            return redirect(url_for('index'))
+            return redirect(url_for('configuracion'))
 
-        if archivo and allowed_file(archivo.filename):
+        if not allowed_file(archivo.filename):
+            logger.error(f"Tipo de archivo no permitido: {archivo.filename}")
+            flash('Tipo de archivo no permitido. Solo se permiten archivos .txt', 'error')
+            return redirect(url_for('configuracion'))
+
+        try:
             filename = secure_filename(archivo.filename)
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             archivo.save(filepath)
+            logger.debug(f"Archivo guardado en: {filepath}")
 
             # Procesar el reporte
+            logger.debug("Iniciando análisis de vulnerabilidades")
             resultados = analizar_vulnerabilidades(filepath)
+            logger.debug(f"Resultados del análisis: {resultados is not None}")
+
             if not resultados:
+                logger.error("No se encontraron resultados al analizar el archivo")
                 flash('No se encontraron vulnerabilidades en el archivo', 'warning')
-                return redirect(url_for('index'))
+                if os.path.exists(filepath):
+                    os.remove(filepath)
+                return redirect(url_for('configuracion'))
 
-            # Crear el escaneo
-            escaneo = Escaneo(
-                sede_id=sede_id,
-                fecha_escaneo=datetime.strptime(fecha_escaneo, '%Y-%m-%d').date(),
-                fecha_creacion=datetime.utcnow()
-            )
-            db.session.add(escaneo)
-            db.session.flush()  # Para obtener el ID del escaneo
-
-            # Procesar cada host y sus vulnerabilidades
-            for ip, host_data in resultados['hosts_detalle'].items():
-                host = Host(
-                    ip=ip,
-                    nombre_host=host_data['nombre_host'],
-                    escaneo_id=escaneo.id
+            try:
+                # Crear el escaneo
+                escaneo = Escaneo(
+                    sede_id=sede_id,
+                    fecha_escaneo=datetime.strptime(fecha_escaneo, '%Y-%m-%d').date()
                 )
-                db.session.add(host)
-                db.session.flush()  # Para obtener el ID del host
+                db.session.add(escaneo)
+                db.session.flush()
+                logger.debug(f"Escaneo creado con ID: {escaneo.id}")
 
-                for vuln_data in host_data['vulnerabilidades']:
-                    vulnerabilidad = Vulnerabilidad(
-                        host_id=host.id,
-                        nvt=vuln_data['nvt'],
-                        oid=vuln_data['oid'],
-                        nivel_amenaza=vuln_data['nivel_amenaza'],
-                        cvss=vuln_data['cvss'],
-                        puerto=vuln_data['puerto'],
-                        resumen=vuln_data['resumen'],
-                        impacto=vuln_data['impacto'],
-                        solucion=vuln_data['solucion'],
-                        metodo_deteccion=vuln_data['metodo_deteccion'],
-                        referencias=vuln_data['referencias'],
-                        estado='ACTIVA'
+                # Procesar cada host y sus vulnerabilidades
+                total_hosts = 0
+                total_vulns = 0
+                for ip, host_data in resultados['hosts_detalle'].items():
+                    logger.debug(f"Procesando host: {ip}")
+                    host = Host(
+                        ip=ip,
+                        nombre_host=host_data.get('nombre_host', ''),
+                        escaneo_id=escaneo.id
                     )
-                    db.session.add(vulnerabilidad)
+                    db.session.add(host)
+                    db.session.flush()
+                    total_hosts += 1
 
-            db.session.commit()
-            log_activity('upload_report', f'Subió reporte para sede ID {sede_id}')
-            flash('Reporte procesado exitosamente', 'success')
+                    for vuln_data in host_data.get('vulnerabilidades', []):
+                        vulnerabilidad = Vulnerabilidad(
+                            host_id=host.id,
+                            nvt=vuln_data.get('nvt', ''),
+                            oid=vuln_data.get('oid', ''),
+                            nivel_amenaza=vuln_data.get('nivel_amenaza', ''),
+                            cvss=vuln_data.get('cvss', ''),
+                            puerto=vuln_data.get('puerto', ''),
+                            resumen=vuln_data.get('resumen', ''),
+                            impacto=vuln_data.get('impacto', ''),
+                            solucion=vuln_data.get('solucion', ''),
+                            metodo_deteccion=vuln_data.get('metodo_deteccion', ''),
+                            referencias=vuln_data.get('referencias', []),
+                            estado='ACTIVA'
+                        )
+                        db.session.add(vulnerabilidad)
+                        total_vulns += 1
 
-            return render_template('resultados.html',
-                                resultado=resultados,
-                                nombre_archivo=filename)
+                db.session.commit()
+                logger.info(f"Datos guardados exitosamente: {total_hosts} hosts, {total_vulns} vulnerabilidades")
+                log_activity('upload_report', f'Subió reporte para sede ID {sede_id}: {total_hosts} hosts, {total_vulns} vulnerabilidades')
+                flash('Reporte procesado exitosamente', 'success')
 
-        flash('Tipo de archivo no permitido', 'error')
-        return redirect(url_for('index'))
+            except Exception as db_error:
+                logger.error(f"Error al guardar en la base de datos: {str(db_error)}", exc_info=True)
+                db.session.rollback()
+                flash('Error al guardar los datos en la base de datos', 'error')
+                if os.path.exists(filepath):
+                    os.remove(filepath)
+                return redirect(url_for('configuracion'))
+
+            # Limpiar el archivo temporal
+            if os.path.exists(filepath):
+                os.remove(filepath)
+                logger.debug("Archivo temporal eliminado")
+
+            return redirect(url_for('configuracion'))
+
+        except Exception as file_error:
+            logger.error(f"Error al procesar el archivo: {str(file_error)}", exc_info=True)
+            if os.path.exists(filepath):
+                os.remove(filepath)
+            flash('Error al procesar el archivo', 'error')
+            return redirect(url_for('configuracion'))
 
     except Exception as e:
-        logger.error(f"Error al procesar el reporte: {str(e)}", exc_info=True)
-        db.session.rollback()
+        logger.error(f"Error general al procesar el reporte: {str(e)}", exc_info=True)
         flash('Error al procesar el reporte', 'error')
-        return redirect(url_for('index'))
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+        return redirect(url_for('configuracion'))
 
 @app.route('/toggle_sede/<int:sede_id>', methods=['POST'])
 @login_required
@@ -1024,6 +1062,58 @@ def fechas_por_sede(sede):
     except Exception as e:
         logger.error(f"Error al obtener fechas por sede: {str(e)}", exc_info=True)
         return jsonify([])
+
+@app.route('/crear_usuario', methods=['POST'])
+@login_required
+def crear_usuario():
+    """Crea un nuevo usuario"""
+    try:
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+
+        if not all([username, email, password]):
+            flash('Todos los campos son requeridos', 'error')
+            return redirect(url_for('configuracion'))
+
+        # Verificar si ya existe un usuario con ese nombre o email
+        if User.query.filter((User.username == username) | (User.email == email)).first():
+            flash('Ya existe un usuario con ese nombre de usuario o correo electrónico', 'error')
+            return redirect(url_for('configuracion'))
+
+        nuevo_usuario = User(
+            username=username,
+            email=email,
+            is_active=True
+        )
+        nuevo_usuario.set_password(password)
+
+        db.session.add(nuevo_usuario)
+        db.session.commit()
+        log_activity('create_user', f'Creó el usuario {username}')
+        flash('Usuario creado exitosamente', 'success')
+
+    except Exception as e:
+        logger.error(f"Error al crear usuario: {str(e)}", exc_info=True)
+        db.session.rollback()
+        flash('Error al crear el usuario', 'error')
+
+    return redirect(url_for('configuracion'))
+
+@app.route('/toggle_usuario/<int:user_id>', methods=['POST'])
+@login_required
+def toggle_usuario(user_id):
+    """Activa/desactiva un usuario"""
+    try:
+        usuario = User.query.get_or_404(user_id)
+        usuario.is_active = not usuario.is_active
+        db.session.commit()
+        log_activity('toggle_user', f'Cambió el estado del usuario {usuario.username} a {"activo" if usuario.is_active else "inactivo"}')
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.error(f"Error al cambiar estado de usuario: {str(e)}", exc_info=True)
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
