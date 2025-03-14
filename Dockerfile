@@ -12,7 +12,6 @@ RUN apt-get update && apt-get install -y \
     flask \
     flask-login \
     flask-sqlalchemy \
-    flask-talisman \
     flask-wtf \
     gunicorn \
     psycopg2-binary \
@@ -32,7 +31,6 @@ RUN chmod +x init_admin.sh
 
 # Create data directory
 RUN mkdir -p /app/data && chmod 777 /app/data
-RUN mkdir -p /app/certs && chmod 700 /app/certs
 
 # Expose port
 EXPOSE 5000
@@ -41,5 +39,5 @@ EXPOSE 5000
 ENV FLASK_APP=app.py
 ENV PYTHONUNBUFFERED=1
 
-# Run gunicorn with SSL configuration
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--certfile", "/app/certs/server.crt", "--keyfile", "/app/certs/server.key", "--access-logfile", "-", "--error-logfile", "-", "--capture-output", "--log-level", "debug", "app:app"]
+# Run gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--access-logfile", "-", "--error-logfile", "-", "--capture-output", "--log-level", "debug", "app:app"]
